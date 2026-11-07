@@ -340,3 +340,13 @@ Open link	Abrir el enlace	Link öffnen
 Send email	Enviar correo	E-Mail senden
 Refresh	Actualizar	Aktualisieren
 Complete	Completar	Abschließen
+%@ limit at %d%%	Límite de %@ al %d %%	%@-Limit bei %d %%
+Needs the GitHub CLI (gh), logged in	Requiere la CLI de GitHub (gh) con sesión iniciada	Benötigt die GitHub-CLI (gh) mit Anmeldung
+Try again	Reintentar	Erneut versuchen
+To review	Por revisar	Zu prüfen
+Yours	Tuyas	Deine
+Nothing open	Nada abierto	Nichts offen
+Pull requests	Pull requests	Pull Requests
+Edge bar	Barra en el borde	Randleiste
+Warn when an AI limit reaches	Avisar cuando un límite de IA llegue a	Warnen, wenn ein KI-Limit erreicht
+Never	Nunca	Nie

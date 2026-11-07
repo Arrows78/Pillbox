@@ -15,3 +15,4 @@
 "You have been working for %d min" = "You have been working for %d min";
 "Action: %@" = "Action: %@";
 "Failed (status %d)" = "Failed (status %d)";
+"%@ limit at %d%%" = "%@ limit at %d%%";

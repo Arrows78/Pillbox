@@ -28,7 +28,7 @@
 ### 🏝️ Island
 
 - **Hover to open**, auto-close when the pointer leaves, adjustable delay. A flick to the top edge counts.
-- **Tabs**: Home, Music, Timer, Stocks, AI usage, Reminders, Notifications, Notes, Clipboard, Shelf, Launcher, Terminal. Switch with ⌘1–9 or a two-finger swipe.
+- **Tabs**: Home, Music, Timer, Stocks, AI usage, Pull requests, Reminders, Notifications, Notes, Clipboard, Shelf, Launcher, Terminal. Switch with ⌘1–9 or a two-finger swipe.
 - **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown, microphone and camera dots, a pinned stock.
 - **Activity islands**: short messages in place of the pill, with an optional action button.
 - **Any Mac**: virtual pill with an adjustable width when there is no hardware notch.
@@ -62,7 +62,7 @@
 - **Mini player on hover** (opt-in): hovering the pill during playback opens the Music tab.
 - **Double-press Control** (opt-in) opens the notch on any Mac.
 - **Snap zones** (opt-in): drag a window to the notch and four zones appear (left half, right half, full screen, centre); release over one to snap. A real file drag is told apart from a window drag through the drag pasteboard's change count.
-- **Volume and brightness style**: bar or circle. **Brightness island** for the built-in display (private DisplayServices API: silently absent where unavailable).
+- **Volume and brightness style**: bar in the island, a slim **edge bar** on the right of the screen, or a circle. **Brightness island** for the built-in display (private DisplayServices API: silently absent where unavailable).
 - **Live audio spectrum** (opt-in): the pill's equalizer follows real system audio through a Core Audio process tap (macOS 14.4+, asks for audio capture).
 - **Focus mode island** and **notification mirror** tab: both read system files and need **Full Disk Access**. Everything stays on the Mac. An opt-in setting also shows each new notification as an island.
 - **Call island**: while Zoom, Teams, FaceTime, WhatsApp, Slack, Discord or Skype is open and the microphone is live, the pill shows the call and its duration.
@@ -97,6 +97,8 @@
 ### 🤖 AI tools
 
 - **AI usage**: tokens for the last 5 hours, today and 7 days, for **Claude Code** (`~/.claude/projects`) and **Codex** (`~/.codex/sessions`), read from the local logs. For Codex the limit window the CLI reports (percent used, reset time) is shown too. Nothing leaves the Mac, and cache reads are not counted.
+- **Limit alert** (opt-in): a warning island when a reported limit window reaches 70, 80 or 90 %, once per window. It uses the limit Codex reports; Claude Code logs carry no limit, so only its token counts are shown.
+- **Pull requests**: your open PRs and the ones waiting for your review, through the GitHub CLI (`gh`) and its existing login. Pillbox stores no token. Click one to open it.
 - **Terminal**: a real xterm-compatible login shell in its own tab ([SwiftTerm](https://github.com/migueldeicaza/SwiftTerm)). It keeps running when you switch tabs and restarts if you exit it.
 - **Long commands**: **Settings › Developer API › Copy zsh hook** gives an opt-in `preexec` / `precmd` snippet that shows an island when a command ran for 15 seconds or more.
 - **Agent approvals**: when Claude Code is about to run a tool, an Allow / Deny island appears and your answer goes back through a `PreToolUse` hook. *Ask in terminal*, or two minutes without an answer, hands the decision back to Claude Code's normal prompt. Enable the local API, then **Settings › Developer API › Copy Claude Code approval hook** and paste the result into `~/.claude/settings.json`.
@@ -183,6 +185,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Automation (Spotify, Music) | Music | Read the current track and send transport commands. |
 | Calendars | Home | Show the next event. |
 | Reminders | Reminders tab | List, add and complete reminders. |
+| GitHub CLI login (`gh auth login`) | Pull requests tab | Read your PRs. Nothing is stored by Pillbox. |
 | Automation (Notes) | `note` in the palette | Create an Apple Note. |
 | Location | Home | Local weather. |
 | Camera | Camera mirror | Show the preview. |
@@ -257,6 +260,7 @@ Pillbox/
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
     ├── Overlays.swift                   # Hidden notch, teleprompter
+    ├── Extras4.swift                    # Usage limit alert, GitHub pull requests, edge volume bar
     ├── Extras3.swift                    # Activity queue, themes, pill gestures, quick actions and web mini-apps, notification island
     ├── Features2.swift                  # Shake, break reminder, download and build islands, Bluetooth batteries, quick capture
     ├── Hyper, MenuBar, SystemWatch      # Hyper key, menu bar items, brightness, Focus, notifications, calls
@@ -276,7 +280,7 @@ Pillbox/
 
 ## 🗺️ Roadmap
 
-Answering calls from the island, message replies, connecting AirPods from the island, browser video speed, clipboard stack and importing other managers' history, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, notarised releases, native review of the Spanish and German texts. Face Unlock is deliberately left out.
+Answering calls from the island, MCP server for AI apps, resizable panel, floating player and full-screen lyrics, message replies, connecting AirPods from the island, browser video speed, clipboard stack and importing other managers' history, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, notarised releases, native review of the Spanish and German texts. Face Unlock is deliberately left out.
 
 ## 🙌 Contributing
 

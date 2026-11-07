@@ -342,3 +342,13 @@
 "Send email" = "Enviar correo";
 "Refresh" = "Actualizar";
 "Complete" = "Completar";
+"%@ limit at %d%%" = "Límite de %@ al %d %%";
+"Needs the GitHub CLI (gh), logged in" = "Requiere la CLI de GitHub (gh) con sesión iniciada";
+"Try again" = "Reintentar";
+"To review" = "Por revisar";
+"Yours" = "Tuyas";
+"Nothing open" = "Nada abierto";
+"Pull requests" = "Pull requests";
+"Edge bar" = "Barra en el borde";
+"Warn when an AI limit reaches" = "Avisar cuando un límite de IA llegue a";
+"Never" = "Nunca";

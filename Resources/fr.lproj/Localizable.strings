@@ -387,3 +387,15 @@
 "Send email" = "Envoyer un email";
 "Refresh" = "Actualiser";
 "Complete" = "Terminer";
+
+/* Alerte de limite, pull requests, barre au bord */
+"%@ limit at %d%%" = "Limite %@ à %d %%";
+"Needs the GitHub CLI (gh), logged in" = "Nécessite la CLI GitHub (gh), connectée";
+"Try again" = "Réessayer";
+"To review" = "À relire";
+"Yours" = "Les tiennes";
+"Nothing open" = "Rien d'ouvert";
+"Pull requests" = "Pull requests";
+"Edge bar" = "Barre au bord";
+"Warn when an AI limit reaches" = "Prévenir quand une limite d'IA atteint";
+"Never" = "Jamais";
