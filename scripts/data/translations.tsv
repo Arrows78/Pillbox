@@ -1,0 +1,342 @@
+Home	Inicio	Start
+Music	Música	Musik
+Timer	Temporizador	Timer
+Stocks	Bolsa	Aktien
+AI usage	Uso de IA	KI-Nutzung
+Notes	Notas	Notizen
+Clipboard	Portapapeles	Zwischenablage
+Shelf	Estante	Ablage
+Launcher	Lanzador	Starter
+Terminal	Terminal	Terminal
+Batt	Bat.	Akku
+Awake	Activo	Wach
+Color	Color	Farbe
+Capture	Captura	Aufnahme
+Mute	Silenciar	Stumm
+Mirror	Espejo	Spiegel
+Focus	Enfoque	Fokus
+Nothing playing	Nada en reproducción	Keine Wiedergabe
+Start Spotify or Apple Music	Abre Spotify o Apple Music	Starte Spotify oder Apple Music
+Break	Descanso	Pause
+Countdown	Cuenta atrás	Countdown
+Stopwatch	Cronómetro	Stoppuhr
+Start	Iniciar	Start
+Pause	Pausa	Pause
+Reset	Reiniciar	Zurücksetzen
+Repeat	Repetir	Wiederholen
+Chain	Encadenar	Verketten
+Name this timer	Nombra este temporizador	Timer benennen
+%lld min	%lld min	%lld Min.
+%lld day streak	Racha de %lld días	%lld Tage in Folge
+Focus sessions, last 7 days	Sesiones de enfoque, últimos 7 días	Fokus-Sitzungen, letzte 7 Tage
+Add a symbol (AAPL, ^GSPC, BTC-USD…)	Añade un símbolo (AAPL, ^GSPC, BTC-USD…)	Symbol hinzufügen (AAPL, ^GSPC, BTC-USD…)
+Open	Abierto	Geöffnet
+Closed	Cerrado	Geschlossen
+Pre-market	Preapertura	Vorbörslich
+After-hours	Fuera de horario	Nachbörslich
+Pin to pill	Fijar en la píldora	An Pille anheften
+Unpin from pill	Quitar de la píldora	Von Pille lösen
+Alert at ±2%	Alerta al ±2 %	Warnung bei ±2 %
+Alert at ±5%	Alerta al ±5 %	Warnung bei ±5 %
+Clear alert	Quitar la alerta	Warnung entfernen
+Remove	Quitar	Entfernen
+%@ above %@	%@ por encima de %@	%@ über %@
+%@ below %@	%@ por debajo de %@	%@ unter %@
+Reading local logs…	Leyendo los registros locales…	Lokale Protokolle werden gelesen…
+No Claude Code or Codex activity in the last 7 days	Sin actividad de Claude Code ni Codex en los últimos 7 días	Keine Claude-Code- oder Codex-Aktivität in den letzten 7 Tagen
+Last 5 hours	Últimas 5 horas	Letzte 5 Stunden
+Today	Hoy	Heute
+7 days	7 días	7 Tage
+%lldh limit	Límite de %lld h	%lld-Std.-Limit
+Resets %@	Se restablece %@	Wird zurückgesetzt %@
+Last activity %@ ago	Última actividad hace %@	Letzte Aktivität vor %@
+Tokens per day (cache reads excluded)	Tokens por día (sin lecturas de caché)	Tokens pro Tag (ohne Cache-Lesevorgänge)
+Jot something down…	Anota algo…	Notiz eingeben…
+Clear done	Borrar las terminadas	Erledigte löschen
+Quick notes and to-dos stay here until you check them off	Las notas y tareas se quedan aquí hasta que las marques	Notizen und Aufgaben bleiben hier, bis du sie abhakst
+Search text and screenshots	Buscar en textos y capturas	Texte und Screenshots durchsuchen
+Clear	Vaciar	Leeren
+Pin	Fijar	Anheften
+Unpin	Quitar fijación	Lösen
+Paste	Pegar	Einfügen
+Delete	Eliminar	Löschen
+%lld chars · %lld words	%lld caracteres · %lld palabras	%lld Zeichen · %lld Wörter
+Image	Imagen	Bild
+Copied	Copiado	Kopiert
+Drop files on the notch to stash them	Suelta archivos en la muesca para guardarlos	Lege Dateien auf der Notch ab, um sie zu parken
+AirDrop	AirDrop	AirDrop
+Zip / Unzip	Comprimir / Descomprimir	Zippen / Entzippen
+Reveal	Mostrar	Anzeigen
+Reveal in Finder	Mostrar en el Finder	Im Finder anzeigen
+Archive failed	Error al archivar	Archivierung fehlgeschlagen
+AirDrop unavailable	AirDrop no disponible	AirDrop nicht verfügbar
+Pin the apps you open most with +, drag to reorder	Fija tus apps favoritas con +, arrastra para reordenar	Hefte deine meistgenutzten Apps mit + an, zum Sortieren ziehen
+%@ wants to run	%@ quiere ejecutarse	%@ möchte ausgeführt werden
+Ask in terminal	Preguntar en el terminal	Im Terminal fragen
+Deny	Denegar	Ablehnen
+Allow	Permitir	Erlauben
+Type a command, search the clipboard, or do math…	Escribe un comando, busca en el portapapeles o calcula…	Befehl eingeben, Zwischenablage durchsuchen oder rechnen…
+Go to %@	Ir a %@	Gehe zu %@
+Turn keep awake off	Desactivar mantener activo	Wachhalten ausschalten
+Turn keep awake on	Activar mantener activo	Wachhalten einschalten
+Start focus session	Iniciar sesión de enfoque	Fokus-Sitzung starten
+Start stopwatch	Iniciar cronómetro	Stoppuhr starten
+Mute microphone	Silenciar el micrófono	Mikrofon stummschalten
+Unmute microphone	Activar el micrófono	Mikrofon einschalten
+Pick a color	Elegir un color	Farbe auswählen
+Capture an area	Capturar una zona	Bereich aufnehmen
+Play / pause music	Reproducir / pausar música	Musik abspielen / pausieren
+Camera mirror	Espejo de cámara	Kameraspiegel
+Lock keyboard to clean it (60 s, ⌘⎋ unlocks)	Bloquear el teclado para limpiarlo (60 s, ⌘⎋ lo desbloquea)	Tastatur zum Reinigen sperren (60 s, ⌘⎋ entsperrt)
+Black out screens to clean them	Apagar las pantallas para limpiarlas	Bildschirme zum Reinigen abdunkeln
+Settings	Ajustes	Einstellungen
+Snap window: %@	Ajustar ventana: %@	Fenster anordnen: %@
+Paste: %@	Pegar: %@	Einfügen: %@
+copy	copiar	kopieren
+Left half	Mitad izquierda	Linke Hälfte
+Right half	Mitad derecha	Rechte Hälfte
+Top half	Mitad superior	Obere Hälfte
+Bottom half	Mitad inferior	Untere Hälfte
+Full screen	Pantalla completa	Vollbild
+Center	Centrar	Zentrieren
+Left third	Tercio izquierdo	Linkes Drittel
+Right third	Tercio derecho	Rechtes Drittel
+Permissions	Permisos	Berechtigungen
+General	General	Allgemein
+Alerts	Alertas	Hinweise
+Shortcuts	Atajos	Kurzbefehle
+Open when hovering the notch	Abrir al pasar sobre la muesca	Beim Darüberfahren über die Notch öffnen
+Hover delay	Retardo al pasar	Verzögerung beim Darüberfahren
+Launch at login	Abrir al iniciar sesión	Bei der Anmeldung starten
+Pill width	Ancho de la píldora	Breite der Pille
+Caps Lock island	Isla de Bloq Mayús	Caps-Lock-Insel
+Download finished island	Isla de descarga terminada	Insel für abgeschlossene Downloads
+Microphone and camera indicator	Indicador de micrófono y cámara	Mikrofon- und Kameraanzeige
+Volume island	Isla de volumen	Lautstärke-Insel
+Show keystrokes (for presentations)	Mostrar pulsaciones (para presentaciones)	Tastenanschläge anzeigen (für Präsentationen)
+Shortcuts only, never plain typing	Solo atajos, nunca el texto escrito	Nur Tastenkürzel, nie normaler Text
+Charged island at %lld%%	Isla de carga al %lld %%	Lade-Insel bei %lld %%
+Developer API	API para desarrolladores	Entwickler-API
+Enable local API	Activar la API local	Lokale API aktivieren
+Copy Claude Code approval hook	Copiar el hook de aprobación de Claude Code	Claude-Code-Freigabe-Hook kopieren
+Copy zsh hook for long-running commands	Copiar el hook de zsh para comandos largos	zsh-Hook für lange Befehle kopieren
+Copy example request	Copiar una petición de ejemplo	Beispielanfrage kopieren
+⌃⌥K  command palette    ⌃⌥N  toggle notch	⌃⌥K  paleta de comandos    ⌃⌥N  abrir / cerrar la muesca	⌃⌥K  Befehlspalette    ⌃⌥N  Notch ein- / ausblenden
+Allow everything that is pending	Permitir todo lo pendiente	Alles Ausstehende erlauben
+Open Settings	Abrir Ajustes	Einstellungen öffnen
+Accessibility	Accesibilidad	Bedienungshilfen
+Input Monitoring	Monitorización de entrada	Eingabeüberwachung
+Calendars	Calendarios	Kalender
+Location	Ubicación	Standort
+Camera	Cámara	Kamera
+Automation: Spotify	Automatización: Spotify	Automation: Spotify
+Automation: Music	Automatización: Música	Automation: Musik
+Keyboard lock, window snapping and paste from the clipboard.	Bloqueo del teclado, ajuste de ventanas y pegado desde el portapapeles.	Tastatursperre, Fensteranordnung und Einfügen aus der Zwischenablage.
+Keystroke display.	Muestra de pulsaciones.	Anzeige der Tastenanschläge.
+Next event on Home.	Próximo evento en Inicio.	Nächster Termin auf dem Start-Tab.
+Local weather.	Tiempo local.	Lokales Wetter.
+Camera mirror.	Espejo de cámara.	Kameraspiegel.
+Now playing and controls (open Spotify first).	Reproducción actual y controles (abre Spotify antes).	Aktuelle Wiedergabe und Steuerung (Spotify zuerst öffnen).
+Now playing and controls (open Music first).	Reproducción actual y controles (abre Música antes).	Aktuelle Wiedergabe und Steuerung (Musik zuerst öffnen).
+Charging	Cargando	Lädt
+On battery	Con batería	Akkubetrieb
+Charged	Cargado	Geladen
+Low battery	Batería baja	Akku schwach
+Download finished	Descarga terminada	Download abgeschlossen
+Caps Lock on	Bloq Mayús activado	Caps Lock an
+Caps Lock off	Bloq Mayús desactivado	Caps Lock aus
+Keep awake on	Mantener activo: sí	Wachhalten an
+Keep awake off	Mantener activo: no	Wachhalten aus
+for %d min	durante %d min	für %d Min.
+until turned off	hasta desactivarlo	bis zum Ausschalten
+Screenshot copied	Captura copiada	Screenshot kopiert
+Volume	Volumen	Lautstärke
+Microphone in use	Micrófono en uso	Mikrofon in Benutzung
+Camera in use	Cámara en uso	Kamera in Benutzung
+Microphone muted	Micrófono silenciado	Mikrofon stummgeschaltet
+Microphone on	Micrófono activado	Mikrofon an
+This microphone can't be muted	Este micrófono no se puede silenciar	Dieses Mikrofon lässt sich nicht stummschalten
+Camera access denied	Acceso a la cámara denegado	Kamerazugriff verweigert
+Allow it in System Settings	Permítelo en Ajustes del Sistema	Erlaube es in den Systemeinstellungen
+No camera found	No se encontró ninguna cámara	Keine Kamera gefunden
+Accessibility needed	Se necesita Accesibilidad	Bedienungshilfen erforderlich
+Allow Pillbox, then try again	Permite Pillbox y vuelve a intentarlo	Erlaube Pillbox und versuche es erneut
+All clean	Todo limpio	Alles sauber
+Focus session done	Sesión de enfoque terminada	Fokus-Sitzung beendet
+%@ finished	%@ terminado	%@ beendet
+Focus finished	Enfoque terminado	Fokus beendet
+Countdown finished	Cuenta atrás terminada	Countdown beendet
+Break finished	Descanso terminado	Pause beendet
+Clear sky	Cielo despejado	Klarer Himmel
+Partly cloudy	Parcialmente nublado	Teilweise bewölkt
+Overcast	Cubierto	Bedeckt
+Fog	Niebla	Nebel
+Drizzle	Llovizna	Nieselregen
+Rain	Lluvia	Regen
+Snow	Nieve	Schnee
+Thunderstorm	Tormenta	Gewitter
+Cloudy	Nublado	Wolkig
+History	Historial	Verlauf
+Snippets	Fragmentos	Textbausteine
+Name	Nombre	Name
+Text to paste	Texto a pegar	Einzufügender Text
+Save snippet	Guardar fragmento	Textbaustein speichern
+Save text you paste often, then paste it from the palette	Guarda el texto que pegas a menudo y pégalo desde la paleta	Speichere oft eingefügten Text und füge ihn über die Palette ein
+Snippet: %@	Fragmento: %@	Textbaustein: %@
+30 minutes	30 minutos	30 Minuten
+1 hour	1 hora	1 Stunde
+2 hours	2 horas	2 Stunden
+Until 6 pm	Hasta las 18:00	Bis 18 Uhr
+Until turned off	Hasta desactivarlo	Bis zum Ausschalten
+Turn off	Desactivar	Ausschalten
+Screenshot ready	Captura lista	Screenshot bereit
+On the shelf, drag it anywhere	En el estante, arrástrala donde quieras	In der Ablage, ziehe ihn überallhin
+Copy	Copiar	Kopieren
+Drive connected	Disco conectado	Laufwerk verbunden
+Eject	Expulsar	Auswerfen
+Safe to disconnect	Se puede desconectar	Sicher zu trennen
+Could not eject	No se pudo expulsar	Auswerfen nicht möglich
+Convert	Convertir	Konvertieren
+Converted	Convertido	Konvertiert
+Conversion failed	Error de conversión	Konvertierung fehlgeschlagen
+Remove background	Quitar el fondo	Hintergrund entfernen
+Audio only (M4A)	Solo audio (M4A)	Nur Audio (M4A)
+Hide from screenshots and screen sharing	Ocultar de capturas y pantalla compartida	Vor Screenshots und Bildschirmfreigabe verbergen
+Stage new screenshots on the shelf	Colocar las capturas nuevas en el estante	Neue Screenshots in der Ablage ablegen
+Drive connected island with Eject	Isla de disco conectado con Expulsar	Insel für verbundene Laufwerke mit Auswerfen
+Reminders	Recordatorios	Erinnerungen
+Reminders tab.	Pestaña Recordatorios.	Tab „Erinnerungen“.
+Pillbox needs access to your reminders	Pillbox necesita acceso a tus recordatorios	Pillbox benötigt Zugriff auf deine Erinnerungen
+Add a reminder, e.g. call mum tomorrow at 9am	Añade un recordatorio, p. ej. llamar a mamá mañana a las 9	Erinnerung hinzufügen, z. B. Mama morgen um 9 anrufen
+Nothing to do	Nada que hacer	Nichts zu tun
+Could not save the reminder	No se pudo guardar el recordatorio	Erinnerung konnte nicht gespeichert werden
+Sound output	Salida de sonido	Tonausgabe
+Could not switch the output	No se pudo cambiar la salida	Ausgabe konnte nicht gewechselt werden
+Sound output: %@	Salida de sonido: %@	Tonausgabe: %@
+Apps	Apps	Apps
+No shortcuts found. Create some in the Shortcuts app.	No se encontraron atajos. Crea alguno en la app Atajos.	Keine Kurzbefehle gefunden. Erstelle welche in der Kurzbefehle-App.
+Shortcut: %@	Atajo: %@	Kurzbefehl: %@
+Shortcut finished	Atajo terminado	Kurzbefehl beendet
+Shortcut failed	Error en el atajo	Kurzbefehl fehlgeschlagen
+Search %@: %@	Buscar en %@: %@	%@ durchsuchen: %@
+Translate	Traducir	Übersetzen
+Palette search engine	Buscador de la paleta	Suchmaschine der Palette
+Hide the notch (black menu bar)	Ocultar la muesca (barra de menús negra)	Notch ausblenden (schwarze Menüleiste)
+Open teleprompter	Abrir el teleprompter	Teleprompter öffnen
+%@ · now	%@ · ahora	%@ · jetzt
+%@ · in %d min	%@ · en %d min	%@ · in %d Min.
+Notifications	Notificaciones	Mitteilungen
+No notifications	Sin notificaciones	Keine Mitteilungen
+Reading notifications needs Full Disk Access	Leer las notificaciones requiere Acceso total al disco	Zum Lesen der Mitteilungen ist der Vollzugriff auf die Festplatte nötig
+Screen Recording	Grabación de pantalla	Bildschirmaufnahme
+Full Disk Access	Acceso total al disco	Vollzugriff auf die Festplatte
+Window watch and Ask about screen.	Vigilar zona y Preguntar a la pantalla.	Bereichsüberwachung und „Frag den Bildschirm“.
+Notification mirror and Focus island.	Espejo de notificaciones e isla de Enfoque.	Mitteilungsspiegel und Fokus-Insel.
+No answer (check the API key)	Sin respuesta (revisa la clave de API)	Keine Antwort (API-Schlüssel prüfen)
+Copy text	Copiar el texto	Text kopieren
+Search	Buscar	Suchen
+Ask a question about this text	Haz una pregunta sobre este texto	Stelle eine Frage zu diesem Text
+Ask	Preguntar	Fragen
+Ask about screen	Preguntar a la pantalla	Frag den Bildschirm
+Add an Anthropic API key in Settings to ask questions. Only the recognised text is sent.	Añade una clave de API de Anthropic en Ajustes para hacer preguntas. Solo se envía el texto reconocido.	Füge in den Einstellungen einen Anthropic-API-Schlüssel hinzu, um Fragen zu stellen. Nur der erkannte Text wird gesendet.
+Could not capture the screen	No se pudo capturar la pantalla	Bildschirm konnte nicht aufgenommen werden
+Watch a screen area	Vigilar una zona de la pantalla	Bildschirmbereich überwachen
+Stop watching the screen area	Dejar de vigilar la zona	Bereichsüberwachung beenden
+Watching this area	Vigilando esta zona	Dieser Bereich wird überwacht
+Watched area changed	La zona vigilada ha cambiado	Der überwachte Bereich hat sich geändert
+Do Not Disturb	No molestar	Nicht stören
+Focus off	Enfoque desactivado	Fokus aus
+In a call	En una llamada	In einem Anruf
+Brightness	Brillo	Helligkeit
+Allow Pillbox, then turn Hyper on again	Permite Pillbox y vuelve a activar Hyper	Erlaube Pillbox und aktiviere Hyper erneut
+Island	Isla	Insel
+Show a mini player when hovering during playback	Mostrar un minirreproductor al pasar durante la reproducción	Minimplayer beim Darüberfahren während der Wiedergabe zeigen
+Double-press Control to open the notch	Pulsa Control dos veces para abrir la muesca	Control doppelt drücken, um die Notch zu öffnen
+Snap zones when dragging a window to the notch	Zonas de ajuste al arrastrar una ventana a la muesca	Anordnungszonen beim Ziehen eines Fensters zur Notch
+Volume and brightness style	Estilo de volumen y brillo	Stil für Lautstärke und Helligkeit
+Bar	Barra	Balken
+Circle	Círculo	Kreis
+Timer mascot	Mascota del temporizador	Timer-Maskottchen
+Idle animation: none	Animación en reposo: ninguna	Ruheanimation: keine
+Choose Lottie file…	Elegir archivo Lottie…	Lottie-Datei wählen…
+Menu bar and desktop	Barra de menús y escritorio	Menüleiste und Schreibtisch
+Hide menu bar icons (⌘-drag them left of the divider)	Ocultar iconos de la barra de menús (⌘-arrástralos a la izquierda del separador)	Menüleisten-Symbole ausblenden (mit ⌘ links vom Trenner ablegen)
+Next calendar event in the menu bar	Próximo evento del calendario en la barra de menús	Nächster Kalendertermin in der Menüleiste
+Show %@ in the menu bar	Mostrar %@ en la barra de menús	%@ in der Menüleiste anzeigen
+Desktop widgets (clock, world clock, weather, music)	Widgets de escritorio (reloj, husos horarios, tiempo, música)	Schreibtisch-Widgets (Uhr, Weltzeit, Wetter, Musik)
+Hyper key: Caps Lock becomes ⌃⌥⇧⌘	Tecla Hyper: Bloq Mayús pasa a ser ⌃⌥⇧⌘	Hyper-Taste: Feststelltaste wird zu ⌃⌥⇧⌘
+A quick press sends Escape	Una pulsación breve envía Escape	Kurzes Drücken sendet Escape
+More alerts	Más alertas	Weitere Hinweise
+Brightness island	Isla de brillo	Helligkeits-Insel
+Focus mode island	Isla del modo Enfoque	Fokus-Insel
+Call in progress island	Isla de llamada en curso	Insel für laufende Anrufe
+Live audio spectrum (asks for audio capture)	Espectro de audio en vivo (pide captura de audio)	Live-Audiospektrum (fragt nach Audioaufnahme)
+Save key	Guardar la clave	Schlüssel speichern
+Remove key	Eliminar la clave	Schlüssel entfernen
+Anthropic API key	Clave de API de Anthropic	Anthropic-API-Schlüssel
+A key is saved in your Keychain	Hay una clave guardada en tu Llavero	Ein Schlüssel ist in deinem Schlüsselbund gespeichert
+No key saved	Ninguna clave guardada	Kein Schlüssel gespeichert
+You have been working for %d min	Llevas trabajando %d min	Du arbeitest seit %d Min.
+Time for a break	Hora de un descanso	Zeit für eine Pause
+Build finished	Compilación terminada	Build abgeschlossen
+Added to favorites	Añadido a favoritos	Zu Favoriten hinzugefügt
+Add event: %@	Añadir evento: %@	Termin hinzufügen: %@
+Save to Apple Notes: %@	Guardar en Notas: %@	In Notizen sichern: %@
+Saved to Notes	Guardado en Notas	In Notizen gesichert
+Could not save to Notes	No se pudo guardar en Notas	Sichern in Notizen nicht möglich
+Allow Pillbox to control Notes	Permite que Pillbox controle Notas	Erlaube Pillbox, Notizen zu steuern
+Event added	Evento añadido	Termin hinzugefügt
+Could not add the event	No se pudo añadir el evento	Termin konnte nicht hinzugefügt werden
+Calendar access needed	Se necesita acceso al calendario	Kalenderzugriff erforderlich
+Allow it in Settings › Permissions	Permítelo en Ajustes › Permisos	Erlaube es unter Einstellungen › Berechtigungen
+Shake a dragged file to open the shelf	Agita un archivo arrastrado para abrir el estante	Gezogene Datei schütteln, um die Ablage zu öffnen
+Hide the island in full screen	Ocultar la isla a pantalla completa	Insel im Vollbild ausblenden
+Display	Pantalla	Bildschirm
+Automatic	Automático	Automatisch
+Build island (Xcode and swift build)	Isla de compilación (Xcode y swift build)	Build-Insel (Xcode und swift build)
+Break reminder	Recordatorio de descanso	Pausenerinnerung
+Off	Desactivado	Aus
+Every 20 min	Cada 20 min	Alle 20 Min.
+Every 30 min	Cada 30 min	Alle 30 Min.
+Every 45 min	Cada 45 min	Alle 45 Min.
+Every hour	Cada hora	Jede Stunde
+Nothing	Nada	Nichts
+Toggle keep awake	Activar / desactivar mantener activo	Wachhalten umschalten
+Command palette	Paleta de comandos	Befehlspalette
+Open the clipboard	Abrir el portapapeles	Zwischenablage öffnen
+Open the shelf	Abrir el estante	Ablage öffnen
+Quit Pillbox	Salir de Pillbox	Pillbox beenden
+Failed (status %d)	Error (código %d)	Fehlgeschlagen (Code %d)
+Add shell commands, links and web mini-apps in Settings › Quick actions	Añade comandos de shell, enlaces y miniapps web en Ajustes › Acciones rápidas	Füge Shell-Befehle, Links und Web-Mini-Apps unter Einstellungen › Schnellaktionen hinzu
+Command	Comando	Befehl
+Link	Enlace	Link
+Web app	App web	Web-App
+Add action	Añadir acción	Aktion hinzufügen
+Check the name and the link	Revisa el nombre y el enlace	Prüfe Name und Link
+Action: %@	Acción: %@	Aktion: %@
+Island theme	Tema de la isla	Insel-Design
+Double-click the pill	Doble clic en la píldora	Doppelklick auf die Pille
+Triple-click the pill	Triple clic en la píldora	Dreifachklick auf die Pille
+Show new notifications as islands (Full Disk Access)	Mostrar las notificaciones nuevas como islas (Acceso total al disco)	Neue Mitteilungen als Inseln anzeigen (Vollzugriff auf die Festplatte)
+Quick actions	Acciones rápidas	Schnellaktionen
+Actions	Acciones	Aktionen
+Shell command, e.g. open -a Safari	Comando de shell, p. ej. open -a Safari	Shell-Befehl, z. B. open -a Safari
+Black	Negro	Schwarz
+Graphite	Grafito	Graphit
+Glass	Cristal	Glas
+Accent	Acento	Akzent
+Close	Cerrar	Schließen
+Restart	Reiniciar	Neu starten
+Play	Reproducir	Wiedergabe
+Done editing	Terminar de editar	Bearbeitung beenden
+Edit script	Editar el guion	Skript bearbeiten
+Previous track	Pista anterior	Vorheriger Titel
+Next track	Pista siguiente	Nächster Titel
+Shuffle	Aleatorio	Zufallswiedergabe
+Favorite	Favorito	Favorit
+Mark as done	Marcar como hecho	Als erledigt markieren
+Mark as not done	Marcar como no hecho	Als nicht erledigt markieren
+Open link	Abrir el enlace	Link öffnen
+Send email	Enviar correo	E-Mail senden
+Refresh	Actualizar	Aktualisieren
+Complete	Completar	Abschließen

@@ -13,3 +13,5 @@
 "Add event: %@" = "Add event: %@";
 "Save to Apple Notes: %@" = "Save to Apple Notes: %@";
 "You have been working for %d min" = "You have been working for %d min";
+"Action: %@" = "Action: %@";
+"Failed (status %d)" = "Failed (status %d)";

@@ -343,3 +343,47 @@
 "Every 30 min" = "Toutes les 30 min";
 "Every 45 min" = "Toutes les 45 min";
 "Every hour" = "Toutes les heures";
+
+/* Thèmes, gestes, actions rapides */
+"Nothing" = "Rien";
+"Toggle keep awake" = "Activer / désactiver le maintien éveillé";
+"Command palette" = "Palette de commandes";
+"Open the clipboard" = "Ouvrir le presse-papiers";
+"Open the shelf" = "Ouvrir l'étagère";
+"Quit Pillbox" = "Quitter Pillbox";
+"Failed (status %d)" = "Échec (code %d)";
+"Add shell commands, links and web mini-apps in Settings › Quick actions" = "Ajoute des commandes shell, des liens et des mini-apps web dans Réglages › Actions rapides";
+"Command" = "Commande";
+"Link" = "Lien";
+"Web app" = "App web";
+"Add action" = "Ajouter l'action";
+"Check the name and the link" = "Vérifie le nom et le lien";
+"Action: %@" = "Action : %@";
+"Island theme" = "Thème de l'îlot";
+"Double-click the pill" = "Double-clic sur la pilule";
+"Triple-click the pill" = "Triple-clic sur la pilule";
+"Show new notifications as islands (Full Disk Access)" = "Afficher les nouvelles notifications en îlots (accès complet au disque)";
+"Quick actions" = "Actions rapides";
+"Actions" = "Actions";
+"Shell command, e.g. open -a Safari" = "Commande shell, ex. open -a Safari";
+"Black" = "Noir";
+"Graphite" = "Graphite";
+"Glass" = "Verre";
+"Accent" = "Accent";
+
+/* Accessibilité (VoiceOver) */
+"Close" = "Fermer";
+"Restart" = "Recommencer";
+"Play" = "Lecture";
+"Done editing" = "Terminer la modification";
+"Edit script" = "Modifier le script";
+"Previous track" = "Piste précédente";
+"Next track" = "Piste suivante";
+"Shuffle" = "Aléatoire";
+"Favorite" = "Favori";
+"Mark as done" = "Marquer comme terminé";
+"Mark as not done" = "Marquer comme non terminé";
+"Open link" = "Ouvrir le lien";
+"Send email" = "Envoyer un email";
+"Refresh" = "Actualiser";
+"Complete" = "Terminer";
