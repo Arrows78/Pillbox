@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 
 /// Non-interactive checks behind `--selftest` (no window, no permission, no network).
 @MainActor
@@ -11,7 +12,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -194,6 +195,59 @@ enum SelfTest {
         check("shelf: unique names never overwrite", ShelfService.uniqueURL(file).lastPathComponent == "hello 2.txt", ShelfService.uniqueURL(file).lastPathComponent)
         shelf.remove(Set(shelf.items.map(\.id)))
         check("shelf: remove", shelf.items.isEmpty)
+    }
+
+    private static func palette() {
+        let m = PaletteModel()
+        check("palette lists every tab", Tab.allCases.allSatisfy { t in m.commands.contains { $0.title.contains("Go to \(t.title)") } })
+        m.query = "snap"
+        check("palette filters by query", !m.commands.isEmpty && m.commands.allSatisfy { $0.title.localizedCaseInsensitiveContains("snap") })
+        m.query = "2+2*5"
+        check("palette answers maths first", m.commands.first?.title.hasPrefix("= 12") == true, m.commands.first?.title ?? "none")
+        m.query = "zzzz-no-such-command"
+        check("palette shows nothing for nonsense", m.commands.isEmpty)
+    }
+}
+
+
+/// `--render <dir>` draws the island states to PNG with ImageRenderer: no screen, no permission.
+/// ImageRenderer cannot draw AppKit-backed controls (text fields, pickers), so tabs using them are skipped.
+@MainActor
+enum ViewRenderer {
+    static func run(into dir: String) -> Int32 {
+        let out = URL(fileURLWithPath: dir)
+        try? FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
+        let model = NotchModel.shared
+        model.geometry = NotchGeometry(width: 185, height: 32, screen: nil)
+        var ok = true
+        func save<V: View>(_ name: String, _ view: V, size: CGSize) {
+            let framed = view.frame(width: size.width, height: size.height, alignment: .top)
+                .background(Color(white: 0.45)).environment(\.colorScheme, .dark)
+            let r = ImageRenderer(content: framed); r.scale = 2
+            guard let img = r.nsImage, let png = img.pngData() else { print("FAIL  render \(name)"); ok = false; return }
+            try? png.write(to: out.appendingPathComponent(name + ".png")); print("wrote \(name).png")
+        }
+        func island<V: View>(_ v: V, _ size: CGSize) -> some View {
+            ZStack(alignment: .top) {
+                UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28).fill(.black)
+                v.foregroundStyle(.white)
+            }.frame(width: size.width, height: size.height)
+        }
+        for tab in [Tab.home, .music, .ai, .shelf] {
+            model.tab = tab; model.expanded = true
+            save("tab-\(tab.rawValue)", island(ExpandedView(), NotchModel.expandedSize), size: NotchModel.expandedSize)
+        }
+        model.expanded = false
+        let acts = [Activity(symbol: "hammer.fill", title: "Build done", subtitle: "main passed in 42s", tint: .green),
+                    Activity(symbol: "speaker.wave.2.fill", title: "Volume", progress: 0.6),
+                    Activity(symbol: "arrow.down.circle.fill", title: "Download finished", subtitle: "report.pdf", tint: .blue, actionTitle: "Reveal")]
+        for (i, a) in acts.enumerated() {
+            let size = CGSize(width: 330, height: 66)
+            save("activity-\(i)", island(ActivityView(activity: a), size), size: size)
+        }
+        let appr = Approval(tool: "Bash", detail: "rm -rf ./build && swift build", respond: { _ in })
+        save("approval", island(ApprovalView(approval: appr), CGSize(width: 520, height: 124)), size: CGSize(width: 520, height: 124))
+        return ok ? 0 : 1
     }
 }
 

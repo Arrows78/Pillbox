@@ -112,6 +112,7 @@ curl -X POST http://127.0.0.1:9998/notify \
 | `build/Pillbox.app/Contents/MacOS/Pillbox --selftest` | Non-interactive checks (parsers, maths, timers, stores, shelf zip, usage scan, island geometry, approvals) against a throwaway data folder. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --usage` | Prints the Claude Code and Codex usage scan and how long it took. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --open-tab <tab>` | Opens the notch on a tab and keeps it open (`home`, `music`, `timer`, `stocks`, `ai`, `notes`, `clipboard`, `shelf`, `launcher`, `terminal`). |
+| `build/Pillbox.app/Contents/MacOS/Pillbox --render <dir>` | Draws the island, activities, approval and some tabs to PNG without a screen. |
 | `swift Resources/make_icon.swift <out.png>` | Renders the 1024 px app icon. |
 
 ## 🔐 Permissions

@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AIUsageService.shared.start()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
+        if CommandLine.arguments.contains("--open-palette") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { PaletteController.shared.show() } }
         // Debug aid: `Pillbox --open-tab ai` opens the notch on a tab and keeps it open (used to screenshot each tab).
         if let i = CommandLine.arguments.firstIndex(of: "--open-tab"), CommandLine.arguments.indices.contains(i + 1),
            let tab = Tab(rawValue: CommandLine.arguments[i + 1]) {

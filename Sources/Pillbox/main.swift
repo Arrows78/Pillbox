@@ -9,6 +9,9 @@ MainActor.assumeIsolated {
         try? FileManager.default.removeItem(at: dir)
         exit(code)
     }
+    if let i = CommandLine.arguments.firstIndex(of: "--render"), CommandLine.arguments.indices.contains(i + 1) {
+        exit(ViewRenderer.run(into: CommandLine.arguments[i + 1]))
+    }
     if CommandLine.arguments.contains("--usage") {   // prints the AI usage scan and how long it took
         for scan in [{ AIUsageService.scanClaude() }, { AIUsageService.scanCodex() }] {
             let t = Date(); let u = scan()
