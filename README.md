@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/icon.png" alt="Pillbox app icon" width="128">
+
 # 💊 Pillbox
 
 **A notch island for macOS: music, timers, clipboard, files and system alerts, one hover away.**
@@ -98,6 +100,13 @@ curl -X POST http://127.0.0.1:9998/notify \
 | `⌃⌥N` | Toggle the notch |
 | `⌘1`–`⌘9` | Switch tab while the notch is open |
 
+## 🛠️ Scripts
+
+| Command | Description |
+| --- | --- |
+| `./build.sh` | Builds `build/Pillbox.app`. |
+| `swift Resources/make_icon.swift <out.png>` | Renders the 1024 px app icon. |
+
 ## 🔐 Permissions
 
 Pillbox asks for nothing at launch. **Settings › Permissions** (opened on first launch) shows the state of each one with an **Allow** button that triggers the system prompt, or **Open Settings** once macOS has refused.
@@ -145,7 +154,7 @@ open build/Pillbox.app
 Pillbox/
 ├── Package.swift          # Swift Package, one executable target
 ├── build.sh               # Builds and signs build/Pillbox.app
-├── Resources/Info.plist
+├── Resources/             # Info.plist, app icon and its generator
 ├── scripts/claude-hook.sh # Claude Code approval hook
 └── Sources/Pillbox/
     ├── main.swift, AppDelegate.swift    # Entry point, menu bar, hover and drag monitors
