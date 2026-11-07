@@ -26,6 +26,7 @@
 - **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown, microphone and camera dots, a pinned stock.
 - **Activity islands**: short messages in place of the pill, with an optional action button.
 - **Any Mac**: virtual pill with an adjustable width when there is no hardware notch.
+- **English and French**, following the macOS language. Dates, weekdays and relative times follow it too.
 
 ### 🎵 Music
 
@@ -108,7 +109,8 @@ curl -X POST http://127.0.0.1:9998/notify \
 | Command | Description |
 | --- | --- |
 | `./build.sh` | Builds `build/Pillbox.app`. |
-| `./scripts/ci.sh` | Builds, then runs the self-test: the same checks as CI. |
+| `./scripts/ci.sh` | Checks translations, builds, then runs the self-test in English and French: the same checks as CI. |
+| `python3 scripts/check_l10n.py` | Fails when an English text has no French translation. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --selftest` | Non-interactive checks (parsers, maths, timers, stores, shelf zip, usage scan, island geometry, approvals) against a throwaway data folder. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --usage` | Prints the Claude Code and Codex usage scan and how long it took. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --open-tab <tab>` | Opens the notch on a tab and keeps it open (`home`, `music`, `timer`, `stocks`, `ai`, `notes`, `clipboard`, `shelf`, `launcher`, `terminal`). |
@@ -164,8 +166,8 @@ open build/Pillbox.app
 Pillbox/
 ├── Package.swift          # Swift Package, one executable target
 ├── build.sh               # Builds and signs build/Pillbox.app
-├── Resources/             # Info.plist, app icon and its generator
-├── scripts/               # ci.sh, claude-hook.sh (Claude Code approval hook)
+├── Resources/             # Info.plist, app icon and its generator, en.lproj and fr.lproj
+├── scripts/               # ci.sh, check_l10n.py, claude-hook.sh (Claude Code approval hook)
 ├── .github/workflows/     # CI
 └── Sources/Pillbox/
     ├── main.swift, AppDelegate.swift    # Entry point, menu bar, hover and drag monitors
@@ -178,6 +180,7 @@ Pillbox/
     ├── Weather, Stocks, AIUsage         # Weather, watchlist, Claude Code and Codex usage
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Permissions.swift                # Permissions center
+    ├── L10n.swift                       # L() helper for text built in code
     ├── SelfTest.swift                   # Behind --selftest
     ├── Palette, Settings, DevAPI        # Command palette, hotkeys, settings, local API
 ```
@@ -191,7 +194,7 @@ Pillbox/
 
 ## 🗺️ Roadmap
 
-Brightness HUD, call and message islands, Cursor and Copilot usage, drag-to-notch snap zones, desktop and lock-screen widgets, localisation.
+Brightness HUD, call and message islands, Cursor and Copilot usage, drag-to-notch snap zones, desktop and lock-screen widgets, more languages.
 
 ## 🙌 Contributing
 
