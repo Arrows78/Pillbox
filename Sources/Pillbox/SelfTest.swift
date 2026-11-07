@@ -631,6 +631,10 @@ enum SelfTest {
         let env = TerminalSession.sanitized(["PATH=/usr/bin", "PWD=/somewhere", "OLDPWD=/else", "CLAUDE_PROJECT_DIR=/proj", "TERM=xterm", "INIT_CWD=/x"], home: "/Users/me")
         check("terminal: inherited directory variables are dropped and PWD is the home folder", env.sorted() == ["PATH=/usr/bin", "PWD=/Users/me", "TERM=xterm"], "\(env)")
 
+        check("equalizer: real levels set the bar, a wave otherwise, and both stay in range",
+              Equalizer.barHeight(index: 0, time: 0, levels: [0, 1, 0, 0, 0, 0]) == 16 && Equalizer.barHeight(index: 0, time: 0, levels: [0, 0, 0, 0, 0, 0]) == 3
+              && (5...16).contains(Equalizer.barHeight(index: 2, time: 1.7, levels: nil)))
+
         // Copy stack and calculation history
         var st = CopyStack(); st.push("one"); st.push("two"); st.push("three")
         check("stack: pastes in the order of copying", st.pop() == "one" && st.pop() == "two" && st.items == ["three"])

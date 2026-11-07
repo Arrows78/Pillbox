@@ -133,14 +133,25 @@ struct CollapsedWings: View {
 
 struct Equalizer: View {
     @ObservedObject var spectrum = AudioSpectrum.shared
+
+    /// Height of one bar: the real level when the live spectrum is on, a gentle wave otherwise.
+    /// (Kept out of the view body with explicit types: older compilers cannot type-check the mixed expression.)
+    static func barHeight(index i: Int, time t: Double, levels: [Float]?) -> CGFloat {
+        if let levels, !levels.isEmpty {
+            let level: Float = levels[min(i + 1, levels.count - 1)]
+            return 3 + 13 * CGFloat(level)
+        }
+        let wave: Double = abs(sin(t * 4 + Double(i) * 1.3))
+        return 5 + 11 * CGFloat(wave)
+    }
+
     var body: some View {
         TimelineView(.animation(minimumInterval: 0.12)) { ctx in
-            let t = ctx.date.timeIntervalSinceReferenceDate
+            let t: Double = ctx.date.timeIntervalSinceReferenceDate
+            let levels: [Float]? = spectrum.running ? spectrum.bands : nil
             HStack(alignment: .bottom, spacing: 2) {
                 ForEach(0..<4, id: \.self) { i in
-                    // Real levels when the live spectrum is on, a gentle wave otherwise.
-                    let h = spectrum.running ? 3 + 13 * CGFloat(spectrum.bands[min(i + 1, spectrum.bands.count - 1)]) : 5 + 11 * abs(sin(t * 4 + Double(i) * 1.3))
-                    Capsule().fill(.white).frame(width: 3, height: h)
+                    Capsule().fill(.white).frame(width: 3, height: Self.barHeight(index: i, time: t, levels: levels))
                 }
             }.frame(height: 16).accessibilityHidden(true)
         }
