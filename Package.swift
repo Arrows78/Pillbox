@@ -4,7 +4,10 @@ import PackageDescription
 let package = Package(
     name: "Pillbox",
     platforms: [.macOS(.v14)],
+    dependencies: [
+        .package(url: "https://github.com/migueldeicaza/SwiftTerm", from: "1.2.0")
+    ],
     targets: [
-        .executableTarget(name: "Pillbox", path: "Sources/Pillbox")
+        .executableTarget(name: "Pillbox", dependencies: [.product(name: "SwiftTerm", package: "SwiftTerm")], path: "Sources/Pillbox")
     ]
 )

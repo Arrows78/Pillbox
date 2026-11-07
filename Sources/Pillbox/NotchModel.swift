@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum Tab: String, CaseIterable, Identifiable {
-    case home, music, timer, stocks, ai, notes, clipboard, shelf, launcher
+    case home, music, timer, stocks, ai, notes, clipboard, shelf, launcher, terminal
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -14,6 +14,7 @@ enum Tab: String, CaseIterable, Identifiable {
         case .clipboard: "Clipboard"
         case .shelf: "Shelf"
         case .launcher: "Launcher"
+        case .terminal: "Terminal"
         }
     }
     var symbol: String {
@@ -27,6 +28,7 @@ enum Tab: String, CaseIterable, Identifiable {
         case .clipboard: "doc.on.clipboard"
         case .shelf: "tray.full.fill"
         case .launcher: "square.grid.2x2.fill"
+        case .terminal: "terminal.fill"
         }
     }
 }
@@ -77,7 +79,7 @@ extension Double { var nonZero: Double? { self == 0 ? nil : self } }
 final class NotchModel: ObservableObject {
     static let shared = NotchModel()
 
-    static let windowSize = CGSize(width: 680, height: 250)
+    static let windowSize = CGSize(width: 780, height: 380)
     static let expandedSize = CGSize(width: 620, height: 210)
     static let wing: CGFloat = 62
 
@@ -95,7 +97,7 @@ final class NotchModel: ObservableObject {
     /// Size of the visible black shape for the current state.
     func size(hasWings: Bool) -> CGSize {
         if approval != nil { return CGSize(width: 520, height: geometry.height + 92) }
-        if expanded { return Self.expandedSize }
+        if expanded { return tab == .terminal ? CGSize(width: 740, height: 340) : Self.expandedSize }
         if activity != nil { return CGSize(width: max(geometry.width + 150, 330), height: geometry.height + 34) }
         let extra = hasWings ? Self.wing * 2 : 0
         return CGSize(width: geometry.width + extra, height: geometry.height)

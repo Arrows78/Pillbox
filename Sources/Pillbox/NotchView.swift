@@ -177,6 +177,7 @@ struct ExpandedView: View {
                 case .clipboard: ClipboardTab()
                 case .shelf: ShelfTab()
                 case .launcher: LauncherTab()
+                case .terminal: TerminalTab().clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -185,6 +186,7 @@ struct ExpandedView: View {
             .transition(.opacity)
         }
         .foregroundStyle(.white)
+        .onChange(of: model.tab) { model.pinnedOpen = $0 == .terminal }
         .onDrop(of: [.fileURL], isTargeted: $model.dropTargeted) { providers in
             model.tab = .shelf
             for p in providers {
