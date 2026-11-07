@@ -111,6 +111,8 @@ final class StatsService: ObservableObject {
     @Published private(set) var down: Double = 0
     @Published private(set) var up: Double = 0
     @Published private(set) var devices: [DeviceBattery] = []
+    @Published private(set) var bluetooth: [String] = []
+    private var btTimer: Timer?
     private var prevNet: [String: (rx: UInt32, tx: UInt32)] = [:]
     private var prevNetDate = Date()
     private var prev: host_cpu_load_info?
@@ -118,12 +120,21 @@ final class StatsService: ObservableObject {
 
     func start() {
         guard timer == nil else { return }
+        refreshBluetooth()
+        btTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.refreshBluetooth() } }
         sample()
         timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.sample() }
         }
     }
-    func stop() { timer?.invalidate(); timer = nil; prev = nil; prevNet = [:] }
+    func stop() { timer?.invalidate(); timer = nil; btTimer?.invalidate(); btTimer = nil; prev = nil; prevNet = [:] }
+
+    private func refreshBluetooth() {
+        DispatchQueue.global(qos: .utility).async {
+            let r = BluetoothBattery.read()
+            DispatchQueue.main.async { MainActor.assumeIsolated { self.bluetooth = r } }
+        }
+    }
 
     private func sample() {
         let net = NetworkRate.counters(), now = Date()
@@ -340,6 +351,22 @@ final class CalendarService: ObservableObject {
                 }
             }
         }
+    }
+
+    /// Adds a one-hour event (starting at the next full hour when no time was given) to the default calendar.
+    func addEvent(title: String, start: Date?) {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess, let cal = store.defaultCalendarForNewEvents else {
+            NotchModel.shared.show(Activity(symbol: "calendar.badge.exclamationmark", title: "Calendar access needed", subtitle: "Allow it in Settings › Permissions", tint: .orange)); return
+        }
+        let e = EKEvent(eventStore: store)
+        e.title = title; e.calendar = cal
+        e.startDate = start ?? Calendar.current.nextDate(after: Date(), matching: DateComponents(minute: 0), matchingPolicy: .nextTime) ?? Date()
+        e.endDate = e.startDate.addingTimeInterval(3600)
+        do {
+            try store.save(e, span: .thisEvent)
+            refresh()
+            NotchModel.shared.show(Activity(symbol: "calendar.badge.plus", title: "Event added", subtitle: title, tint: .green))
+        } catch { NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Could not add the event", tint: .orange)) }
     }
 
     func refresh() {

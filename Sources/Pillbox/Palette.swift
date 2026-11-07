@@ -60,7 +60,16 @@ final class PaletteModel: ObservableObject {
                 NSPasteboard.general.clearContents(); NSPasteboard.general.setString(v, forType: .string)
             }, at: 0)
         }
-        if Self.evaluate(q) == nil, let r = WebSearch.resolve(q, defaultKey: UserDefaults.standard.string(forKey: "searchEngine") ?? "google") {
+        if let t = QuickCapture.argument(q, keywords: ["event", "ev"]) {
+            let (title, due) = RemindersService.parse(t)
+            out.insert(PaletteCommand(localized: L("Add event: %@", title) + (due.map { " · " + $0.formatted(date: .abbreviated, time: .shortened) } ?? ""), symbol: "calendar.badge.plus") {
+                CalendarService.shared.addEvent(title: title, start: due)
+            }, at: 0)
+        }
+        if let t = QuickCapture.argument(q, keywords: ["note", "n"]) {
+            out.insert(PaletteCommand(localized: L("Save to Apple Notes: %@", String(t.prefix(40))), symbol: "note.text.badge.plus") { QuickCapture.addNote(t) }, at: 0)
+        }
+        if Self.evaluate(q) == nil, QuickCapture.argument(q, keywords: ["event", "ev", "note", "n"]) == nil, let r = WebSearch.resolve(q, defaultKey: UserDefaults.standard.string(forKey: "searchEngine") ?? "google") {
             out.append(PaletteCommand(localized: L("Search %@: %@", L(r.label), q), symbol: r.label == "Translate" ? "character.bubble" : "magnifyingglass") {
                 NotchModel.shared.collapse(); NSWorkspace.shared.open(r.url)
             })

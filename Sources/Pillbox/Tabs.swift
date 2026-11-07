@@ -24,6 +24,9 @@ struct HomeTab: View {
                 }
                 Spacer(minLength: 4)
                 Text("↓ \(NetworkRate.format(stats.down))  ↑ \(NetworkRate.format(stats.up))").font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                ForEach(stats.bluetooth, id: \.self) { line in
+                    Label { Text(verbatim: line) } icon: { Image(systemName: "airpodspro") }.font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                }
                 if !stats.devices.isEmpty {
                     Label(stats.devices.map { "\($0.name) \($0.percent)%" }.joined(separator: " · "), systemImage: "battery.75percent")
                         .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
@@ -129,6 +132,9 @@ struct MusicTab: View {
                         Button { music.playPause() } label: { Image(systemName: music.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 20)) }
                         Button { music.next() } label: { Image(systemName: "forward.fill") }
                         Spacer()
+                        Button { music.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(music.shuffling ? Color.accentColor : .white.opacity(0.6)) }
+                        Button { music.toggleRepeat() } label: { Image(systemName: "repeat").foregroundStyle(music.repeating ? Color.accentColor : .white.opacity(0.6)) }
+                        if music.player == .music { Button { music.favorite() } label: { Image(systemName: "heart").foregroundStyle(.white.opacity(0.6)) } }
                     }.buttonStyle(.plain).font(.system(size: 16))
                 }
             }
