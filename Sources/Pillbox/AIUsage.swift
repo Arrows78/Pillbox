@@ -21,6 +21,7 @@ final class AIUsageService: ObservableObject {
     static let shared = AIUsageService()
     @Published private(set) var providers: [ProviderUsage] = []
     @Published private(set) var loading = false
+    var alertState = UsageAlertState()
     private var timer: Timer?
 
     func start() {
@@ -35,7 +36,7 @@ final class AIUsageService: ObservableObject {
         loading = true
         DispatchQueue.global(qos: .utility).async {
             let all = [Self.scanClaude(), Self.scanCodex()].filter { $0.week > 0 || $0.lastActivity != nil }
-            DispatchQueue.main.async { MainActor.assumeIsolated { self.providers = all; self.loading = false } }
+            DispatchQueue.main.async { MainActor.assumeIsolated { self.providers = all; self.loading = false; self.checkAlerts(all) } }
         }
     }
 
