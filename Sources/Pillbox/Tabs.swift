@@ -55,7 +55,7 @@ struct HomeTab: View {
         .onDisappear { stats.stop() }
     }
 
-    private func gauge(_ name: String, _ v: Double, _ c: Color, icon: String? = nil) -> some View {
+    private func gauge(_ name: LocalizedStringKey, _ v: Double, _ c: Color, icon: String? = nil) -> some View {
         VStack(spacing: 4) {
             ZStack {
                 Circle().stroke(c.opacity(0.2), lineWidth: 5)
@@ -67,7 +67,7 @@ struct HomeTab: View {
         }.frame(maxWidth: .infinity)
     }
 
-    private func quick(_ symbol: String, _ title: String, active: Bool = false, action: @escaping () -> Void) -> some View {
+    private func quick(_ symbol: String, _ title: LocalizedStringKey, active: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: symbol).font(.system(size: 15))
@@ -149,15 +149,15 @@ struct TimerTab: View {
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: 0) {
                     Text(t.display).font(.system(size: 22, weight: .semibold, design: .monospaced))
-                    Text(t.mode.rawValue).font(.system(size: 10)).foregroundStyle(.secondary)
+                    Text(LocalizedStringKey(t.mode.rawValue)).font(.system(size: 10)).foregroundStyle(.secondary)
                 }
             }.frame(width: 118, height: 118)
 
             VStack(alignment: .leading, spacing: 8) {
-                Picker("", selection: $t.mode) { ForEach(TimerService.Mode.allCases) { Text($0.rawValue).tag($0) } }
+                Picker("", selection: $t.mode) { ForEach(TimerService.Mode.allCases) { Text(LocalizedStringKey($0.rawValue)).tag($0) } }
                     .pickerStyle(.segmented).labelsHidden()
                 HStack(spacing: 8) {
-                    Button { t.toggle() } label: { Label(t.running ? "Pause" : "Start", systemImage: t.running ? "pause.fill" : "play.fill") }
+                    Button { t.toggle() } label: { Label(LocalizedStringKey(t.running ? "Pause" : "Start"), systemImage: t.running ? "pause.fill" : "play.fill") }
                         .buttonStyle(.borderedProminent).tint(.orange)
                     Button("Reset") { t.reset() }
                     if t.mode == .countdown { Button("Repeat") { t.repeatTimer() } }
@@ -272,7 +272,7 @@ struct ClipCard: View {
         .onTapGesture { clip.copy(item); NotchModel.shared.show(Activity(symbol: "doc.on.doc.fill", title: "Copied", duration: 1.2)) }
         .onTapGesture(count: 2) { clip.paste(item) }
         .contextMenu {
-            Button(item.pinned ? "Unpin" : "Pin") { clip.togglePin(item) }
+            Button(LocalizedStringKey(item.pinned ? "Unpin" : "Pin")) { clip.togglePin(item) }
             Button("Paste") { clip.paste(item) }
             Button("Delete") { clip.remove(item) }
         }
@@ -411,7 +411,7 @@ struct StocksTab: View {
                     if stocks.pinned == w.symbol { Image(systemName: "pin.fill").font(.system(size: 8)).foregroundStyle(.orange) }
                     if w.above != nil { Image(systemName: "bell.fill").font(.system(size: 8)).foregroundStyle(.yellow) }
                 }
-                Text(q?.state ?? "…").font(.system(size: 9)).foregroundStyle(.secondary)
+                Text(LocalizedStringKey(q?.state ?? "…")).font(.system(size: 9)).foregroundStyle(.secondary)
             }.frame(width: 90, alignment: .leading)
             Sparkline(values: q?.series ?? [], color: up ? .green : .red).frame(height: 22)
             if let q {
@@ -426,7 +426,7 @@ struct StocksTab: View {
         .contentShape(Rectangle())
         .onTapGesture { if let u = URL(string: "https://finance.yahoo.com/quote/\(w.symbol)") { NSWorkspace.shared.open(u) } }
         .contextMenu {
-            Button(stocks.pinned == w.symbol ? "Unpin from pill" : "Pin to pill") { stocks.pinned = stocks.pinned == w.symbol ? nil : w.symbol }
+            Button(LocalizedStringKey(stocks.pinned == w.symbol ? "Unpin from pill" : "Pin to pill")) { stocks.pinned = stocks.pinned == w.symbol ? nil : w.symbol }
             Button("Alert at ±2%") { stocks.setAlert(w.symbol, percent: 2) }
             Button("Alert at ±5%") { stocks.setAlert(w.symbol, percent: 5) }
             Button("Clear alert") { stocks.setAlert(w.symbol, percent: nil) }
@@ -461,7 +461,7 @@ struct AIUsageTab: View {
         if usage.providers.isEmpty {
             VStack(spacing: 6) {
                 Image(systemName: "sparkles").font(.system(size: 26)).foregroundStyle(.secondary)
-                Text(usage.loading ? "Reading local logs…" : "No Claude Code or Codex activity in the last 7 days").foregroundStyle(.secondary)
+                Text(LocalizedStringKey(usage.loading ? "Reading local logs…" : "No Claude Code or Codex activity in the last 7 days")).foregroundStyle(.secondary)
             }.onAppear { usage.refresh() }
         } else {
             let p = usage.providers[min(selected, usage.providers.count - 1)]
@@ -504,7 +504,7 @@ struct AIUsageTab: View {
         }
     }
 
-    private func stat(_ name: String, _ n: Int) -> some View {
+    private func stat(_ name: LocalizedStringKey, _ n: Int) -> some View {
         HStack { Text(name).foregroundStyle(.secondary); Spacer(); Text(AIUsageService.short(n)).font(.system(size: 14, weight: .semibold, design: .rounded)) }
             .font(.system(size: 11)).padding(.horizontal, 8).padding(.vertical, 3)
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))

@@ -7,6 +7,14 @@ struct PaletteCommand: Identifiable {
     let title: String
     let symbol: String
     let run: @MainActor () -> Void
+
+    /// `title` is an English key, localised here so filtering matches what the user reads.
+    init(title: String, symbol: String, run: @escaping @MainActor () -> Void) {
+        self.title = L(title); self.symbol = symbol; self.run = run
+    }
+    init(localized title: String, symbol: String, run: @escaping @MainActor () -> Void) {
+        self.title = title; self.symbol = symbol; self.run = run
+    }
 }
 
 @MainActor
@@ -17,7 +25,7 @@ final class PaletteModel: ObservableObject {
     var commands: [PaletteCommand] {
         let m = NotchModel.shared, t = TimerService.shared
         var list = Tab.allCases.enumerated().map { i, tab in
-            PaletteCommand(title: "Go to \(tab.title)  ⌘\(i + 1)", symbol: tab.symbol) { m.expand(tab) }
+            PaletteCommand(localized: L("Go to %@", tab.title) + "  ⌘\(i + 1)", symbol: tab.symbol) { m.expand(tab) }
         }
         list += [
             PaletteCommand(title: CaffeineService.shared.active ? "Turn keep awake off" : "Turn keep awake on", symbol: "cup.and.saucer.fill") { CaffeineService.shared.toggle() },
@@ -32,15 +40,15 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Black out screens to clean them", symbol: "display") { CleaningLock.shared.startScreenBlackout() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
-        list += SnapZone.allCases.map { z in PaletteCommand(title: "Snap window: \(z.rawValue)", symbol: "rectangle.split.2x1") { WindowSnap.snap(z) } }
+        list += SnapZone.allCases.map { z in PaletteCommand(localized: L("Snap window: %@", L(z.rawValue)), symbol: "rectangle.split.2x1") { WindowSnap.snap(z) } }
         let q = query.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return list }
         var out = list.filter { $0.title.localizedCaseInsensitiveContains(q) }
         out += ClipboardService.shared.items.filter { $0.searchable.localizedCaseInsensitiveContains(q) }.prefix(5).map { item in
-            PaletteCommand(title: "Paste: " + String((item.text ?? item.ocr ?? "Image").prefix(50)), symbol: "doc.on.clipboard") { ClipboardService.shared.paste(item) }
+            PaletteCommand(localized: L("Paste: %@", String((item.text ?? item.ocr ?? L("Image")).prefix(50))), symbol: "doc.on.clipboard") { ClipboardService.shared.paste(item) }
         }
         if let v = Self.evaluate(q) {
-            out.insert(PaletteCommand(title: "= \(v)  (copy)", symbol: "equal.circle") {
+            out.insert(PaletteCommand(localized: "= \(v)  (" + L("copy") + ")", symbol: "equal.circle") {
                 NSPasteboard.general.clearContents(); NSPasteboard.general.setString(v, forType: .string)
             }, at: 0)
         }

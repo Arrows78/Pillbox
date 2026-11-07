@@ -55,7 +55,7 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
             let day = (cur["is_day"] as? Int ?? 1) == 1
             let (sym, text) = Self.describe(code, day: day)
             DispatchQueue.main.async {
-                MainActor.assumeIsolated { self.temperature = Int(t.rounded()); self.symbol = sym; self.summary = text }
+                MainActor.assumeIsolated { self.temperature = Int(t.rounded()); self.symbol = sym; self.summary = L(text) }
             }
         }.resume()
     }
@@ -63,7 +63,7 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     /// WMO weather interpretation codes.
     nonisolated static func describe(_ code: Int, day: Bool) -> (String, String) {
         switch code {
-        case 0: return (day ? "sun.max.fill" : "moon.stars.fill", "Clear")
+        case 0: return (day ? "sun.max.fill" : "moon.stars.fill", "Clear sky")
         case 1, 2: return (day ? "cloud.sun.fill" : "cloud.moon.fill", "Partly cloudy")
         case 3: return ("cloud.fill", "Overcast")
         case 45, 48: return ("cloud.fog.fill", "Fog")

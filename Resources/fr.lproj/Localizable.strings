@@ -1,0 +1,209 @@
+/* Pillbox, français. Les clés sont les textes anglais. */
+
+/* Onglets */
+"Home" = "Accueil";
+"Music" = "Musique";
+"Timer" = "Minuteur";
+"Stocks" = "Bourse";
+"AI usage" = "Usage IA";
+"Notes" = "Notes";
+"Clipboard" = "Presse-papiers";
+"Shelf" = "Étagère";
+"Launcher" = "Lanceur";
+"Terminal" = "Terminal";
+
+/* Accueil */
+"Batt" = "Batt.";
+"Awake" = "Éveil";
+"Color" = "Couleur";
+"Capture" = "Capture";
+"Mute" = "Muet";
+"Mirror" = "Miroir";
+"Focus" = "Focus";
+
+/* Musique */
+"Nothing playing" = "Aucune lecture";
+"Start Spotify or Apple Music" = "Lance Spotify ou Apple Music";
+
+/* Minuteur */
+"Break" = "Pause";
+"Countdown" = "Compte à rebours";
+"Stopwatch" = "Chronomètre";
+"Start" = "Démarrer";
+"Pause" = "Pause";
+"Reset" = "Réinitialiser";
+"Repeat" = "Répéter";
+"Chain" = "Enchaîner";
+"Name this timer" = "Nommer ce minuteur";
+"%lld min" = "%lld min";
+"%lld day streak" = "%lld jours d'affilée";
+"Focus sessions, last 7 days" = "Sessions de focus, 7 derniers jours";
+
+/* Bourse */
+"Add a symbol (AAPL, ^GSPC, BTC-USD…)" = "Ajouter un symbole (AAPL, ^GSPC, BTC-USD…)";
+"Open" = "Ouvert";
+"Closed" = "Fermé";
+"Pre-market" = "Pré-marché";
+"After-hours" = "Après-bourse";
+"Pin to pill" = "Épingler sur la pilule";
+"Unpin from pill" = "Retirer de la pilule";
+"Alert at ±2%" = "Alerte à ±2 %";
+"Alert at ±5%" = "Alerte à ±5 %";
+"Clear alert" = "Supprimer l'alerte";
+"Remove" = "Retirer";
+"%@ above %@" = "%@ au-dessus de %@";
+"%@ below %@" = "%@ en dessous de %@";
+
+/* Usage IA */
+"Reading local logs…" = "Lecture des journaux locaux…";
+"No Claude Code or Codex activity in the last 7 days" = "Aucune activité Claude Code ou Codex ces 7 derniers jours";
+"Last 5 hours" = "5 dernières heures";
+"Today" = "Aujourd'hui";
+"7 days" = "7 jours";
+"%lldh limit" = "Limite %lld h";
+"Resets %@" = "Réinitialisation %@";
+"Last activity %@ ago" = "Dernière activité il y a %@";
+"Tokens per day (cache reads excluded)" = "Tokens par jour (lectures de cache exclues)";
+
+/* Notes */
+"Jot something down…" = "Note quelque chose…";
+"Clear done" = "Effacer les terminées";
+"Quick notes and to-dos stay here until you check them off" = "Tes notes et tâches restent ici jusqu'à ce que tu les coches";
+
+/* Presse-papiers */
+"Search text and screenshots" = "Chercher dans les textes et captures";
+"Clear" = "Vider";
+"Pin" = "Épingler";
+"Unpin" = "Désépingler";
+"Paste" = "Coller";
+"Delete" = "Supprimer";
+"%lld chars · %lld words" = "%lld caractères · %lld mots";
+"Image" = "Image";
+"Copied" = "Copié";
+
+/* Étagère */
+"Drop files on the notch to stash them" = "Dépose des fichiers sur l'encoche pour les mettre de côté";
+"AirDrop" = "AirDrop";
+"Zip / Unzip" = "Zip / Dézip";
+"Reveal" = "Afficher";
+"Reveal in Finder" = "Afficher dans le Finder";
+"Archive failed" = "Échec de l'archive";
+"AirDrop unavailable" = "AirDrop indisponible";
+
+/* Lanceur */
+"Pin the apps you open most with +, drag to reorder" = "Épingle tes apps favorites avec +, glisse pour réordonner";
+
+/* Approbation d'agent */
+"%@ wants to run" = "%@ veut s'exécuter";
+"Ask in terminal" = "Demander dans le terminal";
+"Deny" = "Refuser";
+"Allow" = "Autoriser";
+
+/* Palette */
+"Type a command, search the clipboard, or do math…" = "Tape une commande, cherche dans le presse-papiers ou calcule…";
+"Go to %@" = "Aller à %@";
+"Turn keep awake off" = "Désactiver le maintien éveillé";
+"Turn keep awake on" = "Activer le maintien éveillé";
+"Start focus session" = "Démarrer une session de focus";
+"Start stopwatch" = "Démarrer le chronomètre";
+"Mute microphone" = "Couper le micro";
+"Unmute microphone" = "Réactiver le micro";
+"Pick a color" = "Choisir une couleur";
+"Capture an area" = "Capturer une zone";
+"Play / pause music" = "Lecture / pause";
+"Camera mirror" = "Miroir caméra";
+"Lock keyboard to clean it (60 s, ⌘⎋ unlocks)" = "Verrouiller le clavier pour le nettoyer (60 s, ⌘⎋ déverrouille)";
+"Black out screens to clean them" = "Éteindre les écrans pour les nettoyer";
+"Settings" = "Réglages";
+"Snap window: %@" = "Aligner la fenêtre : %@";
+"Paste: %@" = "Coller : %@";
+"copy" = "copier";
+"Left half" = "Moitié gauche";
+"Right half" = "Moitié droite";
+"Top half" = "Moitié haute";
+"Bottom half" = "Moitié basse";
+"Full screen" = "Plein écran";
+"Center" = "Centrer";
+"Left third" = "Tiers gauche";
+"Right third" = "Tiers droit";
+
+/* Réglages */
+"Permissions" = "Permissions";
+"General" = "Général";
+"Alerts" = "Alertes";
+"Shortcuts" = "Raccourcis";
+"Open when hovering the notch" = "Ouvrir au survol de l'encoche";
+"Hover delay" = "Délai de survol";
+"Launch at login" = "Lancer à l'ouverture de session";
+"Pill width" = "Largeur de la pilule";
+"Caps Lock island" = "Îlot Verrouillage majuscules";
+"Download finished island" = "Îlot de téléchargement terminé";
+"Microphone and camera indicator" = "Indicateur micro et caméra";
+"Volume island" = "Îlot de volume";
+"Show keystrokes (for presentations)" = "Afficher les frappes (présentations)";
+"Shortcuts only, never plain typing" = "Raccourcis uniquement, jamais le texte saisi";
+"Charged island at %lld%%" = "Îlot de charge à %lld %%";
+"Developer API" = "API développeur";
+"Enable local API" = "Activer l'API locale";
+"Copy Claude Code approval hook" = "Copier le hook d'approbation Claude Code";
+"Copy zsh hook for long-running commands" = "Copier le hook zsh pour les commandes longues";
+"Copy example request" = "Copier un exemple de requête";
+"⌃⌥K  command palette    ⌃⌥N  toggle notch" = "⌃⌥K  palette de commandes    ⌃⌥N  ouvrir / fermer l'encoche";
+"Allow everything that is pending" = "Tout autoriser";
+"Open Settings" = "Ouvrir les Réglages";
+"Accessibility" = "Accessibilité";
+"Input Monitoring" = "Surveillance de l'entrée";
+"Calendars" = "Calendriers";
+"Location" = "Localisation";
+"Camera" = "Caméra";
+"Automation: Spotify" = "Automatisation : Spotify";
+"Automation: Music" = "Automatisation : Musique";
+"Keyboard lock, window snapping and paste from the clipboard." = "Verrouillage du clavier, alignement des fenêtres et collage depuis le presse-papiers.";
+"Keystroke display." = "Affichage des frappes.";
+"Next event on Home." = "Prochain événement sur l'accueil.";
+"Local weather." = "Météo locale.";
+"Camera mirror." = "Miroir caméra.";
+"Now playing and controls (open Spotify first)." = "Lecture en cours et commandes (ouvre Spotify d'abord).";
+"Now playing and controls (open Music first)." = "Lecture en cours et commandes (ouvre Musique d'abord).";
+
+/* Îlots d'activité */
+"Charging" = "En charge";
+"On battery" = "Sur batterie";
+"Charged" = "Chargé";
+"Low battery" = "Batterie faible";
+"Download finished" = "Téléchargement terminé";
+"Caps Lock on" = "Verr. maj. activé";
+"Caps Lock off" = "Verr. maj. désactivé";
+"Keep awake on" = "Maintien éveillé activé";
+"Keep awake off" = "Maintien éveillé désactivé";
+"for %d min" = "pendant %d min";
+"until turned off" = "jusqu'à désactivation";
+"Screenshot copied" = "Capture copiée";
+"Volume" = "Volume";
+"Microphone in use" = "Micro utilisé";
+"Camera in use" = "Caméra utilisée";
+"Microphone muted" = "Micro coupé";
+"Microphone on" = "Micro activé";
+"This microphone can't be muted" = "Ce micro ne peut pas être coupé";
+"Camera access denied" = "Accès à la caméra refusé";
+"Allow it in System Settings" = "Autorise-le dans les Réglages Système";
+"No camera found" = "Aucune caméra trouvée";
+"Accessibility needed" = "Accessibilité requise";
+"Allow Pillbox, then try again" = "Autorise Pillbox, puis réessaie";
+"All clean" = "Tout est propre";
+"Focus session done" = "Session de focus terminée";
+"%@ finished" = "%@ terminé";
+"Focus finished" = "Focus terminé";
+"Countdown finished" = "Compte à rebours terminé";
+"Break finished" = "Pause terminée";
+
+/* Météo */
+"Clear sky" = "Ciel dégagé";
+"Partly cloudy" = "Partiellement nuageux";
+"Overcast" = "Couvert";
+"Fog" = "Brouillard";
+"Drizzle" = "Bruine";
+"Rain" = "Pluie";
+"Snow" = "Neige";
+"Thunderstorm" = "Orage";
+"Cloudy" = "Nuageux";

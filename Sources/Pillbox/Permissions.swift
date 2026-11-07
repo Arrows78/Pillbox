@@ -10,25 +10,25 @@ enum PermissionKind: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .accessibility: "Accessibility"
-        case .inputMonitoring: "Input Monitoring"
-        case .calendar: "Calendars"
-        case .location: "Location"
-        case .camera: "Camera"
-        case .spotify: "Automation: Spotify"
-        case .music: "Automation: Music"
+        case .accessibility: L("Accessibility")
+        case .inputMonitoring: L("Input Monitoring")
+        case .calendar: L("Calendars")
+        case .location: L("Location")
+        case .camera: L("Camera")
+        case .spotify: L("Automation: Spotify")
+        case .music: L("Automation: Music")
         }
     }
 
     var reason: String {
         switch self {
-        case .accessibility: "Keyboard lock, window snapping and paste from the clipboard."
-        case .inputMonitoring: "Keystroke display."
-        case .calendar: "Next event on Home."
-        case .location: "Local weather."
-        case .camera: "Camera mirror."
-        case .spotify: "Now playing and controls (open Spotify first)."
-        case .music: "Now playing and controls (open Music first)."
+        case .accessibility: L("Keyboard lock, window snapping and paste from the clipboard.")
+        case .inputMonitoring: L("Keystroke display.")
+        case .calendar: L("Next event on Home.")
+        case .location: L("Local weather.")
+        case .camera: L("Camera mirror.")
+        case .spotify: L("Now playing and controls (open Spotify first).")
+        case .music: L("Now playing and controls (open Music first).")
         }
     }
 
@@ -136,7 +136,7 @@ struct PermissionsSection: View {
                     }
                     Spacer()
                     if st != .granted {
-                        Button(st == .denied || st == .unavailable ? "Open Settings" : "Allow") { center.request(k) }
+                        Button(LocalizedStringKey(st == .denied || st == .unavailable ? "Open Settings" : "Allow")) { center.request(k) }
                             .controlSize(.small)
                     }
                 }

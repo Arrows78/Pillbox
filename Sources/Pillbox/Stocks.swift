@@ -94,11 +94,11 @@ final class StocksService: ObservableObject {
         quotes[q.symbol] = q
         guard let w = watchlist.first(where: { $0.symbol == q.symbol }) else { return }
         if let a = w.above, q.price >= a, alerted.insert(q.symbol + "↑").inserted {
-            NotchModel.shared.show(Activity(symbol: "arrow.up.right.circle.fill", title: "\(q.symbol) above \(String(format: "%.2f", a))",
+            NotchModel.shared.show(Activity(symbol: "arrow.up.right.circle.fill", title: L("%@ above %@", q.symbol, String(format: "%.2f", a)),
                                             subtitle: String(format: "%.2f", q.price), tint: .green, duration: 6))
         }
         if let b = w.below, q.price <= b, alerted.insert(q.symbol + "↓").inserted {
-            NotchModel.shared.show(Activity(symbol: "arrow.down.right.circle.fill", title: "\(q.symbol) below \(String(format: "%.2f", b))",
+            NotchModel.shared.show(Activity(symbol: "arrow.down.right.circle.fill", title: L("%@ below %@", q.symbol, String(format: "%.2f", b)),
                                             subtitle: String(format: "%.2f", q.price), tint: .red, duration: 6))
         }
     }

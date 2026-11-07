@@ -1,0 +1,8 @@
+/* English is the development language: keys are the English text. This file only declares the formats. */
+"Go to %@" = "Go to %@";
+"Snap window: %@" = "Snap window: %@";
+"Paste: %@" = "Paste: %@";
+"%@ above %@" = "%@ above %@";
+"%@ below %@" = "%@ below %@";
+"for %d min" = "for %d min";
+"%@ finished" = "%@ finished";

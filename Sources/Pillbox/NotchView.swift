@@ -122,8 +122,8 @@ struct ActivityView: View {
         HStack(spacing: 10) {
             Image(systemName: activity.symbol).font(.system(size: 18, weight: .semibold)).foregroundStyle(activity.tint)
             VStack(alignment: .leading, spacing: 1) {
-                Text(activity.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
-                if let s = activity.subtitle { Text(s).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1) }
+                Text(LocalizedStringKey(activity.title)).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                if let s = activity.subtitle { Text(LocalizedStringKey(s)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1) }
             }
             Spacer(minLength: 0)
             if let p = activity.progress {
@@ -131,7 +131,7 @@ struct ActivityView: View {
                     .overlay(alignment: .leading) { Capsule().fill(activity.tint).frame(width: 90 * min(max(p, 0), 1)) }
             }
             if let t = activity.actionTitle {
-                Button(t) { activity.action?(); model.dismissActivity() }
+                Button(LocalizedStringKey(t)) { activity.action?(); model.dismissActivity() }
                     .buttonStyle(.borderedProminent).controlSize(.small)
             }
         }

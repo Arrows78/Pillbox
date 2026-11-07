@@ -38,7 +38,8 @@ struct SettingsView: View {
                 if keystrokeHUD { Toggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }
                 Stepper("Charged island at \(fullCharge)%", value: $fullCharge, in: 80...100, step: 5)
             }
-            Section("Developer API (127.0.0.1:\(DevAPI.defaultPort))") {
+            Section("Developer API") {
+                Text(verbatim: "127.0.0.1:\(DevAPI.defaultPort)").font(.caption).foregroundStyle(.secondary)
                 Toggle("Enable local API", isOn: $devAPI).onChange(of: devAPI) { _ in DevAPI.shared.apply() }
                 if devAPI {
                     Button("Copy Claude Code approval hook") {
@@ -56,7 +57,7 @@ struct SettingsView: View {
                         """
                         NSPasteboard.general.clearContents(); NSPasteboard.general.setString(hook, forType: .string)
                     }
-                    Button(copied ? "Copied" : "Copy example request") {
+                    Button(LocalizedStringKey(copied ? "Copied" : "Copy example request")) {
                         let cmd = "curl -X POST http://127.0.0.1:\(DevAPI.defaultPort)/notify -H 'Authorization: Bearer \(DevAPI.token)' -d '{\"title\":\"Build done\",\"symbol\":\"hammer.fill\"}'"
                         NSPasteboard.general.clearContents(); NSPasteboard.general.setString(cmd, forType: .string); copied = true
                     }

@@ -5,16 +5,16 @@ enum Tab: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .home: "Home"
-        case .music: "Music"
-        case .timer: "Timer"
-        case .stocks: "Stocks"
-        case .ai: "AI usage"
-        case .notes: "Notes"
-        case .clipboard: "Clipboard"
-        case .shelf: "Shelf"
-        case .launcher: "Launcher"
-        case .terminal: "Terminal"
+        case .home: L("Home")
+        case .music: L("Music")
+        case .timer: L("Timer")
+        case .stocks: L("Stocks")
+        case .ai: L("AI usage")
+        case .notes: L("Notes")
+        case .clipboard: L("Clipboard")
+        case .shelf: L("Shelf")
+        case .launcher: L("Launcher")
+        case .terminal: L("Terminal")
         }
     }
     var symbol: String {

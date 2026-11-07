@@ -88,7 +88,7 @@ final class TimerService: ObservableObject {
             let k = Self.dayKey(Date()); sessions[k, default: 0] += 1; Store.save(sessions, "sessions.json")
         }
         NotchModel.shared.show(Activity(symbol: finished == .focus ? "checkmark.circle.fill" : "bell.fill",
-                                        title: finished == .focus ? "Focus session done" : "\(finished.rawValue) finished",
+                                        title: finished == .focus ? L("Focus session done") : L("%@ finished", L(finished.rawValue)),
                                         subtitle: label.isEmpty ? nil : label, tint: .green, duration: 5))
         if chain && finished == .focus { mode = .rest; start() }
         else if chain && finished == .rest { mode = .focus; start() }

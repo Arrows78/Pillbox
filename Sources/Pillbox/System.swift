@@ -28,7 +28,7 @@ final class CaffeineService: ObservableObject {
             }
         }
         NotchModel.shared.show(Activity(symbol: "cup.and.saucer.fill", title: "Keep awake on",
-                                        subtitle: minutes.map { "for \($0) min" } ?? "until turned off", tint: .orange))
+                                        subtitle: minutes.map { L("for %d min", $0) } ?? L("until turned off"), tint: .orange))
     }
 
     func stop(silently: Bool = false) {
