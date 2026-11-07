@@ -86,9 +86,13 @@ extension Double { var nonZero: Double? { self == 0 ? nil : self } }
 final class NotchModel: ObservableObject {
     static let shared = NotchModel()
 
-    static let windowSize = CGSize(width: 780, height: 380)
+    static let windowSize = CGSize(width: 1000, height: 480)
     static let expandedSize = CGSize(width: 620, height: 210)
     static let wing: CGFloat = 62
+
+    /// User-chosen scale of the open panel (0.8 to 1.3).
+    static var scale: CGFloat { CGFloat(min(max(UserDefaults.standard.object(forKey: "panelScale") as? Double ?? 1, 0.8), 1.3)) }
+    static func baseExpanded(_ tab: Tab) -> CGSize { tab == .terminal ? CGSize(width: 740, height: 340) : expandedSize }
 
     @Published var expanded = false
     @Published var tab: Tab = .home
@@ -104,7 +108,7 @@ final class NotchModel: ObservableObject {
     /// Size of the visible black shape for the current state.
     func size(hasWings: Bool) -> CGSize {
         if approval != nil { return CGSize(width: 520, height: geometry.height + 92) }
-        if expanded { return tab == .terminal ? CGSize(width: 740, height: 340) : Self.expandedSize }
+        if expanded { let b = Self.baseExpanded(tab); return CGSize(width: b.width * Self.scale, height: b.height * Self.scale) }
         if activity != nil { return CGSize(width: max(geometry.width + 150, 330), height: geometry.height + 34) }
         let extra = hasWings ? Self.wing * 2 : 0
         return CGSize(width: geometry.width + extra, height: geometry.height)

@@ -27,6 +27,8 @@ struct SettingsView: View {
     @AppStorage("callIsland") private var callIsland = true
     @AppStorage("hudStyle") private var hudStyle = "notch"
     @AppStorage("usageAlert") private var usageAlert = 0
+    @AppStorage("panelScale") private var panelScale = 1.0
+    @AppStorage("copyStack") private var copyStack = false
     @AppStorage("islandTheme") private var islandTheme = "black"
     @AppStorage("doubleClickAction") private var doubleClickAction = "none"
     @AppStorage("tripleClickAction") private var tripleClickAction = "none"
@@ -79,6 +81,8 @@ struct SettingsView: View {
                 Toggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
                 Toggle("Double-press Control to open the notch", isOn: $doubleTapOpen)
                 Toggle("Snap zones when dragging a window to the notch", isOn: $snapZones)
+                Slider(value: $panelScale, in: 0.8...1.3) { Text("Panel size") }
+                Toggle("Copy stack: copy several things, paste them in order with ⌃⌥V", isOn: $copyStack)
                 Toggle("Shake a dragged file to open the shelf", isOn: $shakeToOpen)
                 Toggle("Hide the island in full screen", isOn: $hideInFullScreen)
                 Picker("Display", selection: $targetDisplay) {
@@ -134,6 +138,15 @@ struct SettingsView: View {
                 Text(verbatim: "127.0.0.1:\(DevAPI.defaultPort)").font(.caption).foregroundStyle(.secondary)
                 Toggle("Enable local API", isOn: $devAPI).onChange(of: devAPI) { _ in DevAPI.shared.apply() }
                 if devAPI {
+                    Button("Copy MCP configuration") {
+                        let exe = Bundle.main.executablePath ?? "/Applications/Pillbox.app/Contents/MacOS/Pillbox"
+                        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(MCPServer.configuration(executable: exe), forType: .string)
+                    }
+                    Button("Copy Claude Code turn-summary hook") {
+                        let path = Bundle.main.path(forResource: "claude-stop-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-stop-hook.sh"
+                        let cfg = "{\"hooks\":{\"Stop\":[{\"hooks\":[{\"type\":\"command\",\"command\":\"\(path)\",\"timeout\":10}]}]}}"
+                        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(cfg, forType: .string)
+                    }
                     Button("Copy Claude Code approval hook") {
                         let path = Bundle.main.path(forResource: "claude-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-hook.sh"
                         let cfg = "{\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash|Write|Edit\",\"hooks\":[{\"type\":\"command\",\"command\":\"\(path)\",\"timeout\":130}]}]}}"

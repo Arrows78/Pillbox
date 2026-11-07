@@ -19,9 +19,16 @@ final class TerminalSession: NSObject, LocalProcessTerminalViewDelegate {
 
     private func startShell() {
         let shell = ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
-        var env = Terminal.getEnvironmentVariables(termName: "xterm-256color")
+        // The shell starts in the home folder whatever Pillbox itself inherited: a working directory, project or
+        // previous-directory variable from the launching process must not send it elsewhere.
+        var env = Self.sanitized(Terminal.getEnvironmentVariables(termName: "xterm-256color"), home: NSHomeDirectory())
         env.append("PILLBOX=1")
         view.startProcess(executable: shell, args: ["-l"], environment: env, execName: "-" + (shell as NSString).lastPathComponent, currentDirectory: NSHomeDirectory())
+    }
+
+    nonisolated static func sanitized(_ env: [String], home: String) -> [String] {
+        let dropped = ["PWD=", "OLDPWD=", "INIT_CWD=", "CLAUDE_PROJECT_DIR=", "CLAUDE_WORKING_DIR="]
+        return env.filter { e in !dropped.contains { e.hasPrefix($0) } } + ["PWD=" + home]
     }
 
     nonisolated func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {}

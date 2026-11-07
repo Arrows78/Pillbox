@@ -32,7 +32,12 @@ struct NotchRootView: View {
             IslandBackground(expanded: model.expanded)
             Group {
                 if let a = model.approval { ApprovalView(approval: a) }
-                else if model.expanded { ExpandedView() }
+                else if model.expanded {
+                    // Laid out at its base size, then scaled: the panel keeps its proportions at any size.
+                    let base = NotchModel.baseExpanded(model.tab)
+                    ExpandedView().frame(width: base.width, height: base.height).scaleEffect(NotchModel.scale, anchor: .top)
+                        .frame(width: size.width, height: size.height, alignment: .top)
+                }
                 else if let a = model.activity { ActivityView(activity: a) }
                 else if wings { CollapsedWings() }
             }
