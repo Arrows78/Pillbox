@@ -29,6 +29,8 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 ### Fixed
 
 - **api**: Read the whole request body before routing
+- **build**: Show compile errors and stop when the build fails
+- **island**: Type-check the equalizer bar height with explicit types
 
 ## [0.1.0] - 2026-11-07
 
