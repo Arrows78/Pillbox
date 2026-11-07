@@ -1,6 +1,6 @@
 import SwiftUI
 
-private let card = Color.white.opacity(0.08)
+private let card = DS.card
 
 struct HomeTab: View {
     @ObservedObject var battery = BatteryService.shared
@@ -80,18 +80,20 @@ struct HomeTab: View {
                 else { Text("\(Int(v * 100))").font(.system(size: 11, weight: .semibold, design: .rounded)) }
             }.frame(width: 46, height: 46)
             Text(name).font(.system(size: 10)).foregroundStyle(.secondary)
-        }.frame(maxWidth: .infinity)
+        }.frame(maxWidth: .infinity).padding(.vertical, 8)
+        .background(card, in: RoundedRectangle(cornerRadius: DS.radius, style: .continuous))
         .accessibilityElement(children: .ignore).accessibilityLabel(Text(name)).accessibilityValue("\(Int(v * 100))%")
     }
 
     private func quick(_ symbol: String, _ title: LocalizedStringKey, active: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(systemName: symbol).font(.system(size: 15))
+                Image(systemName: symbol).font(.system(size: 15)).frame(height: 18)
                 Text(title).font(.system(size: 9))
             }
             .frame(maxWidth: .infinity, minHeight: 44)
-            .background(active ? Color.orange.opacity(0.35) : card, in: RoundedRectangle(cornerRadius: 10))
+            .background(active ? Color.orange.opacity(0.30) : card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(active ? Color.orange.opacity(0.6) : DS.hairline, lineWidth: 0.5))
         }.buttonStyle(.plain)
     }
 }
@@ -112,11 +114,12 @@ struct MusicTab: View {
                     if let a = music.artwork { Image(nsImage: a).resizable() }
                     else { Rectangle().fill(card).overlay(Image(systemName: "music.note")) }
                 }
-                .frame(width: 118, height: 118).clipShape(RoundedRectangle(cornerRadius: 14))
+                .frame(width: 118, height: 118).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .shadow(color: .black.opacity(0.6), radius: 10, y: 4)
                 .onTapGesture { music.openPlayer() }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(music.title).font(.system(size: 15, weight: .semibold)).lineLimit(1)
+                    Text(music.title).font(.system(size: 17, weight: .bold)).lineLimit(1)
                     Text(music.artist).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                     if let l = music.currentLyric {
                         Text(l).font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.85)).lineLimit(2)
@@ -130,7 +133,10 @@ struct MusicTab: View {
                     HStack(spacing: 26) {
                         Spacer()
                         Button { music.previous() } label: { Image(systemName: "backward.fill") }.accessibilityLabel("Previous track")
-                        Button { music.playPause() } label: { Image(systemName: music.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 20)) }.accessibilityLabel(LocalizedStringKey(music.isPlaying ? "Pause" : "Play"))
+                        Button { music.playPause() } label: {
+                            Image(systemName: music.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 16, weight: .bold)).foregroundStyle(.black)
+                                .frame(width: 38, height: 38).background(.white, in: Circle())
+                        }.accessibilityLabel(LocalizedStringKey(music.isPlaying ? "Pause" : "Play"))
                         Button { music.next() } label: { Image(systemName: "forward.fill") }.accessibilityLabel("Next track")
                         Spacer()
                         Button { music.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(music.shuffling ? Color.accentColor : .white.opacity(0.6)) }.accessibilityLabel("Shuffle").accessibilityAddTraits(music.shuffling ? .isSelected : [])
@@ -149,12 +155,12 @@ struct ProgressBar: View {
     var body: some View {
         GeometryReader { g in
             ZStack(alignment: .leading) {
-                Capsule().fill(.white.opacity(0.2))
+                Capsule().fill(.white.opacity(0.18))
                 Capsule().fill(.white).frame(width: g.size.width * (total > 0 ? min(value / total, 1) : 0))
             }
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onEnded { onSeek(total * min(max($0.location.x / g.size.width, 0), 1)) })
-        }.frame(height: 4)
+        }.frame(height: 5)
     }
 }
 
@@ -166,7 +172,7 @@ struct TimerTab: View {
             ZStack {
                 Circle().stroke(.white.opacity(0.12), lineWidth: 7)
                 Circle().trim(from: 0, to: t.progress).stroke(Color.orange, style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
+                    .rotationEffect(.degrees(-90)).shadow(color: .orange.opacity(t.running ? 0.55 : 0), radius: 5)
                 VStack(spacing: 0) {
                     if let e = Mascot.emoji(for: Mascot.current, progress: t.progress) { Text(e).font(.system(size: 20)).scaleEffect(t.running ? 1.08 : 1).animation(t.running ? .easeInOut(duration: 0.8).repeatForever() : .default, value: t.running) }
                     Text(t.display).font(.system(size: 22, weight: .semibold, design: .monospaced))
@@ -175,19 +181,26 @@ struct TimerTab: View {
             }.frame(width: 118, height: 118)
 
             VStack(alignment: .leading, spacing: 8) {
-                Picker("", selection: $t.mode) { ForEach(TimerService.Mode.allCases) { Text(LocalizedStringKey($0.rawValue)).tag($0) } }
-                    .pickerStyle(.segmented).labelsHidden()
+                PillSegmented(options: TimerService.Mode.allCases, selection: $t.mode, tint: .orange) { LocalizedStringKey($0.rawValue) }
                 HStack(spacing: 8) {
                     Button { t.toggle() } label: { Label(LocalizedStringKey(t.running ? "Pause" : "Start"), systemImage: t.running ? "pause.fill" : "play.fill") }
-                        .buttonStyle(.borderedProminent).tint(.orange)
-                    Button("Reset") { t.reset() }
-                    if t.mode == .countdown { Button("Repeat") { t.repeatTimer() } }
-                    Stepper(value: stepBinding, in: 1...180) { Text("\(stepBinding.wrappedValue) min").font(.system(size: 11)).monospacedDigit() }
-                        .disabled(t.mode == .stopwatch || t.running)
-                }.controlSize(.small)
-                TextField("Name this timer", text: $t.label).textFieldStyle(.roundedBorder).controlSize(.small)
+                        .buttonStyle(PillButtonStyle(tint: .orange))
+                    Button("Reset") { t.reset() }.buttonStyle(PillButtonStyle())
+                    if t.mode == .countdown { Button("Repeat") { t.repeatTimer() }.buttonStyle(PillButtonStyle()) }
+                    Spacer(minLength: 0)
+                    HStack(spacing: 6) {
+                        Button { stepBinding.wrappedValue = max(1, stepBinding.wrappedValue - 1) } label: { Image(systemName: "minus") }.accessibilityLabel("Fewer minutes")
+                        Text("\(stepBinding.wrappedValue) min").font(.system(size: 11, weight: .medium)).monospacedDigit().frame(minWidth: 44)
+                        Button { stepBinding.wrappedValue = min(180, stepBinding.wrappedValue + 1) } label: { Image(systemName: "plus") }.accessibilityLabel("More minutes")
+                    }
+                    .buttonStyle(.plain).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.8))
+                    .padding(.horizontal, 10).padding(.vertical, 5).background(DS.card, in: Capsule())
+                    .disabled(t.mode == .stopwatch || t.running).opacity(t.mode == .stopwatch || t.running ? 0.4 : 1)
+                }
+                TextField("Name this timer", text: $t.label).textFieldStyle(.plain).font(.system(size: 12))
+                    .padding(.horizontal, 10).padding(.vertical, 6).background(DS.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 HStack(spacing: 10) {
-                    Toggle("Chain", isOn: $t.chain).toggleStyle(.checkbox).font(.system(size: 11))
+                    Toggle("Chain", isOn: $t.chain).toggleStyle(.switch).controlSize(.mini).tint(.orange).font(.system(size: 11))
                     Label("\(t.streak) day streak", systemImage: "flame.fill").font(.system(size: 11)).foregroundStyle(.orange)
                     Spacer()
                     HStack(alignment: .bottom, spacing: 3) {

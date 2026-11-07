@@ -18,3 +18,5 @@
 "%@ limit at %d%%" = "%@ limit at %d%%";
 "Stack: %d" = "Stack: %d";
 "%@ tokens" = "%@ tokens";
+"Fewer minutes" = "Fewer minutes";
+"More minutes" = "More minutes";
