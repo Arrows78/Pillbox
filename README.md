@@ -108,6 +108,10 @@ curl -X POST http://127.0.0.1:9998/notify \
 | Command | Description |
 | --- | --- |
 | `./build.sh` | Builds `build/Pillbox.app`. |
+| `./scripts/ci.sh` | Builds, then runs the self-test: the same checks as CI. |
+| `build/Pillbox.app/Contents/MacOS/Pillbox --selftest` | Non-interactive checks (parsers, maths, timers, stores, shelf zip, usage scan, island geometry, approvals) against a throwaway data folder. |
+| `build/Pillbox.app/Contents/MacOS/Pillbox --usage` | Prints the Claude Code and Codex usage scan and how long it took. |
+| `build/Pillbox.app/Contents/MacOS/Pillbox --open-tab <tab>` | Opens the notch on a tab and keeps it open (`home`, `music`, `timer`, `stocks`, `ai`, `notes`, `clipboard`, `shelf`, `launcher`, `terminal`). |
 | `swift Resources/make_icon.swift <out.png>` | Renders the 1024 px app icon. |
 
 ## 🔐 Permissions
@@ -160,7 +164,8 @@ Pillbox/
 ├── Package.swift          # Swift Package, one executable target
 ├── build.sh               # Builds and signs build/Pillbox.app
 ├── Resources/             # Info.plist, app icon and its generator
-├── scripts/claude-hook.sh # Claude Code approval hook
+├── scripts/               # ci.sh, claude-hook.sh (Claude Code approval hook)
+├── .github/workflows/     # CI
 └── Sources/Pillbox/
     ├── main.swift, AppDelegate.swift    # Entry point, menu bar, hover and drag monitors
     ├── NotchModel, NotchPanel           # State, geometry, click-through panel
@@ -172,6 +177,7 @@ Pillbox/
     ├── Weather, Stocks, AIUsage         # Weather, watchlist, Claude Code and Codex usage
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Permissions.swift                # Permissions center
+    ├── SelfTest.swift                   # Behind --selftest
     ├── Palette, Settings, DevAPI        # Command palette, hotkeys, settings, local API
 ```
 
@@ -188,4 +194,4 @@ Brightness HUD, call and message islands, Cursor and Copilot usage, drag-to-notc
 
 ## 🙌 Contributing
 
-Issues and pull requests are welcome. Commit with [Conventional Commits](https://www.conventionalcommits.org/) and keep pull requests focused.
+Issues and pull requests are welcome. Run `./scripts/ci.sh` first, and extend `Sources/Pillbox/SelfTest.swift` for anything testable without a screen. Commit with [Conventional Commits](https://www.conventionalcommits.org/) and keep pull requests focused.
