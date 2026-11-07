@@ -12,6 +12,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller = NotchWindowController()
+        // pkill and install.sh send SIGTERM, which skips applicationWillTerminate: route it there so Caps Lock is restored.
+        signal(SIGTERM, SIG_IGN)
+        let term = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
+        term.setEventHandler { NSApp.terminate(nil) }
+        term.resume(); sigterm = term
         MusicService.shared.start()
         ClipboardService.shared.start()
         BatteryService.shared.start()
@@ -81,6 +86,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var swipeCooldown = Date.distantPast
+    private var sigterm: DispatchSourceSignal?
 
     /// Caps Lock must never stay remapped after Pillbox quits.
     func applicationWillTerminate(_ notification: Notification) { HyperKey.shared.disable(); AudioSpectrum.shared.stop() }
