@@ -10,3 +10,6 @@
 "Sound output: %@" = "Sound output: %@";
 "Shortcut: %@" = "Shortcut: %@";
 "Search %@: %@" = "Search %@: %@";
+"Add event: %@" = "Add event: %@";
+"Save to Apple Notes: %@" = "Save to Apple Notes: %@";
+"You have been working for %d min" = "You have been working for %d min";

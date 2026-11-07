@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -429,6 +429,66 @@ enum SelfTest {
         check("world clock: each zone shows its own time", DesktopWidgetView.time(noon, zone: "Asia/Tokyo") == "21:00" && DesktopWidgetView.time(noon, zone: "America/New_York") == "07:00" && DesktopWidgetView.time(noon, zone: "Europe/London") == "12:00",
               "\(DesktopWidgetView.time(noon, zone: "Asia/Tokyo")) \(DesktopWidgetView.time(noon, zone: "America/New_York"))")
         check("mascot: the plant grows with progress", Mascot.emoji(for: .plant, progress: 0.1) == "🌱" && Mascot.emoji(for: .plant, progress: 0.5) == "🌿" && Mascot.emoji(for: .plant, progress: 0.9) == "🌳" && Mascot.emoji(for: .none, progress: 0.5) == nil)
+    }
+
+    private static func batch4() {
+        // Shake to open the shelf
+        var shake = ShakeDetector(); var t = Date(); var fired = false
+        for x in stride(from: 0.0, through: 300.0, by: 20.0) { t += 0.02; if shake.add(CGPoint(x: x, y: 0), at: t) { fired = true } }   // a straight drag
+        check("shake: a straight drag is not a shake", !fired)
+        shake.reset(); t = Date()
+        let zig: [Double] = [0, 70, 0, 70, 0, 70, 0, 70]
+        for target in zig { for step in 1...7 { t += 0.02; if shake.add(CGPoint(x: target == 70 ? Double(step) * 10 : 70 - Double(step) * 10, y: 0), at: t) { fired = true } } }
+        check("shake: back-and-forth opens the shelf", fired)
+        shake.reset(); t = Date(); fired = false
+        for target in zig { for step in 1...7 { t += 0.4; if shake.add(CGPoint(x: target == 70 ? Double(step) * 10 : 70 - Double(step) * 10, y: 0), at: t) { fired = true } } }
+        check("shake: a slow wander is not a shake", !fired)
+
+        // Break reminders
+        var b = BreakLogic(); let start = Date(); var fires = 0
+        for m in 0...50 { if b.tick(idle: 2, now: start.addingTimeInterval(Double(m) * 60), every: 20 * 60) { fires += 1 } }
+        check("break: reminds every 20 minutes of activity", fires == 2, "\(fires)")
+        var c = BreakLogic(); var cf = 0
+        for m in 0...50 { if c.tick(idle: m == 15 ? 90 : 2, now: start.addingTimeInterval(Double(m) * 60), every: 20 * 60) { cf += 1 } }
+        check("break: an idle minute counts as a break", cf == 1, "\(cf)")
+
+        // Download progress
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appendingPathComponent("pillbox-dl-\(UUID().uuidString)")
+        try? fm.createDirectory(at: dir.appendingPathComponent("Movie.mp4.download/inner"), withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: dir) }
+        try? Data(count: 5000).write(to: dir.appendingPathComponent("big.zip.crdownload"))
+        try? Data(count: 1000).write(to: dir.appendingPathComponent("Movie.mp4.download/inner/part"))
+        try? Data(count: 700).write(to: dir.appendingPathComponent("done.pdf"))
+        try? Data(count: 10).write(to: dir.appendingPathComponent(".hidden.crdownload"))
+        let dl = DownloadScan.scan(dir)
+        check("downloads: finds partial files and folders, biggest first, ignores finished and hidden ones", dl == [DownloadItem(name: "big.zip", bytes: 5000), DownloadItem(name: "Movie.mp4", bytes: 1000)], "\(dl)")
+
+        // Build island
+        check("build: spots xcodebuild and swift-build in ps output", BuildWatcher.isBuilding(psOutput: "/sbin/launchd\n/Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild\n") && BuildWatcher.isBuilding(psOutput: "/usr/bin/swift-build\n"))
+        check("build: ignores other processes and look-alikes", !BuildWatcher.isBuilding(psOutput: "/sbin/launchd\n/usr/bin/swift-format\n/Applications/Xcode.app/Contents/MacOS/Xcode\n"))
+        let w = BuildWatcher()
+        w.update(true, now: Date()); check("build: starts the stopwatch", w.since != nil)
+        w.update(false, now: Date().addingTimeInterval(2)); check("build: stops it when the build ends", w.since == nil)
+
+        // Bluetooth batteries
+        let bt = #"{"SPBluetoothDataType":[{"device_connected":[{"AirPods Pro":{"device_batteryLevelLeft":"85%","device_batteryLevelRight":"80%","device_batteryLevelCase":"60%"}},{"Magic Mouse":{"device_batteryLevelMain":"42%"}},{"Keyboard":{"device_address":"x"}}]}]}"#
+        let lines = BluetoothBattery.parse(Data(bt.utf8))
+        check("bluetooth: AirPods per bud and case, others by main level, no battery means no line", lines == ["AirPods Pro: L 85% · R 80% · Case 60%", "Magic Mouse: 42%"], "\(lines)")
+        check("bluetooth: garbage gives nothing", BluetoothBattery.parse(Data("{}".utf8)).isEmpty && BluetoothBattery.parse(Data("x".utf8)).isEmpty)
+        _ = BluetoothBattery.read()   // the real system_profiler call must not crash or hang
+
+        // Quick capture
+        check("capture: keyword and argument", QuickCapture.argument("event lunch with Sam tomorrow noon", keywords: ["event", "ev"]) == "lunch with Sam tomorrow noon"
+              && QuickCapture.argument("ev  x", keywords: ["event", "ev"]) == "x" && QuickCapture.argument("events", keywords: ["event"]) == nil && QuickCapture.argument("event ", keywords: ["event"]) == nil)
+        check("capture: AppleScript text is escaped", QuickCapture.appleScriptString("say \"hi\" \\ now") == "\"say \\\"hi\\\" \\\\ now\"" && QuickCapture.appleScriptString("a\nb") == "\"a\" & linefeed & \"b\"", QuickCapture.appleScriptString("say \"hi\" \\ now"))
+        // The escaped expression must be valid AppleScript: evaluating it returns the original text.
+        let nasty = "quote \" slash \\ end"
+        let back = MusicService.run("return \(QuickCapture.appleScriptString(nasty))")?.stringValue
+        check("capture: escaped text survives a round trip through AppleScript", back == nasty, back ?? "nil")
+
+        // Display options
+        check("display: an unknown display name falls back to automatic", { UserDefaults.standard.set("No Such Display", forKey: "targetDisplay"); defer { UserDefaults.standard.removeObject(forKey: "targetDisplay") }; return NotchGeometry.detect().screen != nil }())
     }
 }
 

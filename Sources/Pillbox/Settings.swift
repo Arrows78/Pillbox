@@ -26,6 +26,11 @@ struct SettingsView: View {
     @AppStorage("focusIsland") private var focusIsland = true
     @AppStorage("callIsland") private var callIsland = true
     @AppStorage("hudStyle") private var hudStyle = "notch"
+    @AppStorage("shakeToOpen") private var shakeToOpen = true
+    @AppStorage("breakReminder") private var breakReminder = 0
+    @AppStorage("buildIsland") private var buildIsland = true
+    @AppStorage("hideInFullScreen") private var hideInFullScreen = false
+    @AppStorage("targetDisplay") private var targetDisplay = ""
     @AppStorage("mascot") private var mascot = "none"
     @AppStorage("lottiePath") private var lottiePath = ""
     @State private var apiKey = ""
@@ -69,6 +74,12 @@ struct SettingsView: View {
                 Toggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
                 Toggle("Double-press Control to open the notch", isOn: $doubleTapOpen)
                 Toggle("Snap zones when dragging a window to the notch", isOn: $snapZones)
+                Toggle("Shake a dragged file to open the shelf", isOn: $shakeToOpen)
+                Toggle("Hide the island in full screen", isOn: $hideInFullScreen)
+                Picker("Display", selection: $targetDisplay) {
+                    Text("Automatic").tag("")
+                    ForEach(NSScreen.screens, id: \.localizedName) { Text(verbatim: $0.localizedName).tag($0.localizedName) }
+                }
                 Picker("Volume and brightness style", selection: $hudStyle) { Text("Bar").tag("notch"); Text("Circle").tag("circle") }
                 Picker("Timer mascot", selection: $mascot) { ForEach(Mascot.allCases) { m in Text(verbatim: (m.emoji ?? "") + " " + m.title).tag(m.rawValue) } }
                 HStack {
@@ -93,6 +104,10 @@ struct SettingsView: View {
                 Toggle("Brightness island", isOn: $brightnessHUD)
                 Toggle("Focus mode island", isOn: $focusIsland)
                 Toggle("Call in progress island", isOn: $callIsland)
+                Toggle("Build island (Xcode and swift build)", isOn: $buildIsland)
+                Picker("Break reminder", selection: $breakReminder) {
+                    Text("Off").tag(0); Text("Every 20 min").tag(20); Text("Every 30 min").tag(30); Text("Every 45 min").tag(45); Text("Every hour").tag(60)
+                }
                 Toggle("Live audio spectrum (asks for audio capture)", isOn: $liveSpectrum)
             }
             Section("Ask about screen") {

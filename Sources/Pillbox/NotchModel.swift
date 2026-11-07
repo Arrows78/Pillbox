@@ -66,11 +66,12 @@ struct NotchGeometry {
 
     static func detect() -> NotchGeometry {
         let screens = NSScreen.screens
-        if let s = screens.first(where: { $0.safeAreaInsets.top > 0 }),
+        let chosen = UserDefaults.standard.string(forKey: "targetDisplay").flatMap { n in screens.first { $0.localizedName == n } }
+        if let s = chosen ?? screens.first(where: { $0.safeAreaInsets.top > 0 }), s.safeAreaInsets.top > 0,
            let l = s.auxiliaryTopLeftArea, let r = s.auxiliaryTopRightArea {
             return NotchGeometry(width: s.frame.width - l.width - r.width, height: s.safeAreaInsets.top, screen: s)
         }
-        let s = NSScreen.main ?? screens.first
+        let s = chosen ?? NSScreen.main ?? screens.first
         let menuBar = s.map { $0.frame.maxY - $0.visibleFrame.maxY } ?? 24
         return NotchGeometry(width: CGFloat(UserDefaults.standard.double(forKey: "pillWidth").nonZero ?? 170),
                              height: max(menuBar, 24), screen: s)

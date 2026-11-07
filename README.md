@@ -38,6 +38,7 @@
 
 - **Spotify and Apple Music**: title, artist, artwork, seek, previous / play / next.
 - **Synced lyrics** from LRCLIB, the current line shown under the title.
+- **Shuffle and repeat** for both players (state read back from the app), and a **favourite** heart for Apple Music.
 
 ### ⏱️ Timer
 
@@ -75,7 +76,7 @@
 
 ### 🗂️ Shelf and apps
 
-- **File shelf**: drop files on the notch, or drag a file toward it and it opens. Drag items back out later. Items survive relaunches.
+- **File shelf**: drop files on the notch, or drag a file toward it, or shake it, and the shelf opens. Drag items back out later. Items survive relaunches.
 - **Shelf actions**: AirDrop, zip and unzip (native `ditto`, archives expand into a new folder and nothing is overwritten), reveal in Finder.
 - **Convert** (offline, system frameworks): images between PNG, JPEG, HEIC, TIFF and PDF, background removal (Vision); video to MP4, HEVC or audio only; audio to AAC, WAV or AIFF.
 - **Screenshots**: a new screenshot (wherever macOS saves them) becomes an island and is staged on the shelf, ready to drag into any app.
@@ -98,7 +99,9 @@
 ### 🔔 Alerts and tools
 
 - **Battery**: plugged in, unplugged, charged at a level you choose (80–100 %), low battery.
-- **Downloads**: an island with a Reveal button when a file lands in Downloads, whatever the browser.
+- **Downloads**: the pill shows the size of a download in progress (partial files and Safari's `.download` folders), then an island with a Reveal button when it lands in Downloads, whatever the browser.
+- **Builds**: a stopwatch on the pill while `xcodebuild` or `swift build` runs, and its duration when it ends (no error count).
+- **Break reminder** (opt-in): after 20, 30, 45 or 60 minutes of activity, one minute without input counts as a break.
 - **Privacy indicator**: dots on the pill while any app uses the microphone or the camera.
 - **Volume** island with a level bar, **Caps Lock** island.
 - **Keystrokes** (off by default): shows the shortcuts you press, or everything you type if you turn *Shortcuts only* off. Never shown while macOS secure input is on (password fields), never stored.
@@ -110,14 +113,15 @@
 - **Drives**: an island with a one-tap **Eject** when a removable drive is plugged in, then *Safe to disconnect*.
 - **Hide from capture**: asks screenshot and screen-sharing tools to leave the island out (some apps may still capture it).
 - **Colour eyedropper** (HEX copied), **area screenshot** to the clipboard.
-- **Home**: clock, weather, next calendar event, CPU, memory and battery gauges, live network speed, and the battery of your Magic Mouse, Keyboard and Trackpad.
+- **Home**: clock, weather, next calendar event, CPU, memory and battery gauges, live network speed, the battery of your Magic Mouse, Keyboard and Trackpad, and your AirPods and other Bluetooth accessories (per bud and case).
 - **Sound output switcher**: the speaker menu in the island header (and the palette) changes the output device in one tap.
+- **Display options**: choose which display hosts the island, and hide it in full screen.
 - **Hide the notch**: an option that paints the top strip black behind the menu bar, so the notch blends into it.
 - **Teleprompter**: `Open teleprompter` in the palette shows a script that scrolls under the webcam, with speed, restart and an editor. The panel is excluded from screen sharing and recordings, so only you see it.
 
 ### ⌨️ Command palette
 
-`⌃⌥K` opens it from anywhere: jump to a tab, toggle keep awake, start a timer, pick a colour, switch the sound output, run a Shortcut, search the clipboard and paste, or type a calculation.
+`⌃⌥K` opens it from anywhere. Type `event dinner tomorrow 8pm` to add a calendar event (one hour, default calendar) or `note buy milk` to save an Apple Note. Otherwise: jump to a tab, toggle keep awake, start a timer, pick a colour, switch the sound output, run a Shortcut, search the clipboard and paste, or type a calculation.
 
 Anything else becomes a **web search** with your default engine (Google, DuckDuckGo, Bing, Brave, Ecosia, YouTube, Wikipedia, GitHub or Apple Maps, set in Settings). Start with a bang to pick one: `yt lofi`, `gh swiftterm`, `w notch`. `tr good morning` opens a translation in your language.
 
@@ -172,6 +176,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Automation (Spotify, Music) | Music | Read the current track and send transport commands. |
 | Calendars | Home | Show the next event. |
 | Reminders | Reminders tab | List, add and complete reminders. |
+| Automation (Notes) | `note` in the palette | Create an Apple Note. |
 | Location | Home | Local weather. |
 | Camera | Camera mirror | Show the preview. |
 | Input Monitoring | Keystroke display, double-press Control | Observe key presses system-wide. |
@@ -245,6 +250,7 @@ Pillbox/
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
     ├── Overlays.swift                   # Hidden notch, teleprompter
+    ├── Features2.swift                  # Shake, break reminder, download and build islands, Bluetooth batteries, quick capture
     ├── Hyper, MenuBar, SystemWatch      # Hyper key, menu bar items, brightness, Focus, notifications, calls
     ├── Screen, Spectrum, Gestures       # Region picker, window watch, Ask about screen, audio spectrum, snap zones, Lottie, widgets
     ├── Permissions.swift                # Permissions center
@@ -262,7 +268,7 @@ Pillbox/
 
 ## 🗺️ Roadmap
 
-Answering calls from the island, message replies, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, more languages. Face Unlock is deliberately left out.
+Answering calls from the island, message replies, connecting AirPods from the island, browser video speed, clipboard stack and importing other managers' history, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, more languages. Face Unlock is deliberately left out.
 
 ## 🙌 Contributing
 

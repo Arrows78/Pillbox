@@ -317,3 +317,29 @@
 "Anthropic API key" = "Clé d'API Anthropic";
 "A key is saved in your Keychain" = "Une clé est enregistrée dans ton Trousseau";
 "No key saved" = "Aucune clé enregistrée";
+
+/* Musique, pause, build, capture rapide, affichage */
+"You have been working for %d min" = "Tu travailles depuis %d min";
+"Time for a break" = "C'est l'heure d'une pause";
+"Build finished" = "Build terminé";
+"Added to favorites" = "Ajouté aux favoris";
+"Add event: %@" = "Ajouter l'événement : %@";
+"Save to Apple Notes: %@" = "Enregistrer dans Notes : %@";
+"Saved to Notes" = "Enregistré dans Notes";
+"Could not save to Notes" = "Enregistrement dans Notes impossible";
+"Allow Pillbox to control Notes" = "Autorise Pillbox à contrôler Notes";
+"Event added" = "Événement ajouté";
+"Could not add the event" = "Ajout de l'événement impossible";
+"Calendar access needed" = "Accès au calendrier requis";
+"Allow it in Settings › Permissions" = "Autorise-le dans Réglages › Permissions";
+"Shake a dragged file to open the shelf" = "Secouer un fichier glissé pour ouvrir l'étagère";
+"Hide the island in full screen" = "Masquer l'îlot en plein écran";
+"Display" = "Écran";
+"Automatic" = "Automatique";
+"Build island (Xcode and swift build)" = "Îlot de build (Xcode et swift build)";
+"Break reminder" = "Rappel de pause";
+"Off" = "Désactivé";
+"Every 20 min" = "Toutes les 20 min";
+"Every 30 min" = "Toutes les 30 min";
+"Every 45 min" = "Toutes les 45 min";
+"Every hour" = "Toutes les heures";
