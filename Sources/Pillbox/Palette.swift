@@ -47,6 +47,9 @@ final class PaletteModel: ObservableObject {
         out += ClipboardService.shared.items.filter { $0.searchable.localizedCaseInsensitiveContains(q) }.prefix(5).map { item in
             PaletteCommand(localized: L("Paste: %@", String((item.text ?? item.ocr ?? L("Image")).prefix(50))), symbol: "doc.on.clipboard") { ClipboardService.shared.paste(item) }
         }
+        out += SnippetsStore.shared.snippets.filter { $0.name.localizedCaseInsensitiveContains(q) }.prefix(5).map { sn in
+            PaletteCommand(localized: L("Snippet: %@", sn.name), symbol: "text.quote") { SnippetsStore.shared.paste(sn) }
+        }
         if let v = Self.evaluate(q) {
             out.insert(PaletteCommand(localized: "= \(v)  (" + L("copy") + ")", symbol: "equal.circle") {
                 NSPasteboard.general.clearContents(); NSPasteboard.general.setString(v, forType: .string)

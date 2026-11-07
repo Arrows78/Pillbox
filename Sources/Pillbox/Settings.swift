@@ -10,6 +10,9 @@ struct SettingsView: View {
     @AppStorage("privacyIndicator") private var privacyIndicator = true
     @AppStorage("volumeHUD") private var volumeHUD = true
     @AppStorage("keystrokeHUD") private var keystrokeHUD = false
+    @AppStorage("hideFromCapture") private var hideFromCapture = false
+    @AppStorage("screenshotShelf") private var screenshotShelf = true
+    @AppStorage("driveEject") private var driveEject = true
     @AppStorage("shortcutsOnly") private var shortcutsOnly = true
     @AppStorage("fullChargeLevel") private var fullCharge = 100
     @AppStorage("pillWidth") private var pillWidth = 170.0
@@ -23,6 +26,7 @@ struct SettingsView: View {
             Section("General") {
                 Toggle("Open when hovering the notch", isOn: $hoverOpen)
                 if hoverOpen { Slider(value: $hoverDelay, in: 0.05...0.6) { Text("Hover delay") } }
+                Toggle("Hide from screenshots and screen sharing", isOn: $hideFromCapture)
                 Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { on in try? on ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister() }
                 if NotchModel.shared.geometry.screen?.safeAreaInsets.top == 0 {
@@ -34,6 +38,8 @@ struct SettingsView: View {
                 Toggle("Download finished island", isOn: $downloadAlerts)
                 Toggle("Microphone and camera indicator", isOn: $privacyIndicator)
                 Toggle("Volume island", isOn: $volumeHUD)
+                Toggle("Stage new screenshots on the shelf", isOn: $screenshotShelf)
+                Toggle("Drive connected island with Eject", isOn: $driveEject)
                 Toggle("Show keystrokes (for presentations)", isOn: $keystrokeHUD)
                 if keystrokeHUD { Toggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }
                 Stepper("Charged island at \(fullCharge)%", value: $fullCharge, in: 80...100, step: 5)

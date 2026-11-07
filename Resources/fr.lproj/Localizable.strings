@@ -207,3 +207,35 @@
 "Snow" = "Neige";
 "Thunderstorm" = "Orage";
 "Cloudy" = "Nuageux";
+
+/* Snippets et maintien éveillé */
+"History" = "Historique";
+"Snippets" = "Snippets";
+"Name" = "Nom";
+"Text to paste" = "Texte à coller";
+"Save snippet" = "Enregistrer le snippet";
+"Save text you paste often, then paste it from the palette" = "Enregistre le texte que tu colles souvent, puis colle-le depuis la palette";
+"Snippet: %@" = "Snippet : %@";
+"30 minutes" = "30 minutes";
+"1 hour" = "1 heure";
+"2 hours" = "2 heures";
+"Until 6 pm" = "Jusqu'à 18 h";
+"Until turned off" = "Jusqu'à désactivation";
+"Turn off" = "Désactiver";
+
+/* Captures, disques, conversion */
+"Screenshot ready" = "Capture prête";
+"On the shelf, drag it anywhere" = "Sur l'étagère, glisse-la où tu veux";
+"Copy" = "Copier";
+"Drive connected" = "Disque connecté";
+"Eject" = "Éjecter";
+"Safe to disconnect" = "Tu peux le débrancher";
+"Could not eject" = "Éjection impossible";
+"Convert" = "Convertir";
+"Converted" = "Converti";
+"Conversion failed" = "Échec de la conversion";
+"Remove background" = "Supprimer l'arrière-plan";
+"Audio only (M4A)" = "Audio seul (M4A)";
+"Hide from screenshots and screen sharing" = "Masquer des captures et du partage d'écran";
+"Stage new screenshots on the shelf" = "Placer les nouvelles captures sur l'étagère";
+"Drive connected island with Eject" = "Îlot de disque connecté avec Éjecter";

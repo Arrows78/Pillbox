@@ -1,5 +1,8 @@
 import AppKit
 import SwiftUI
+import AVFoundation
+import PDFKit
+import ImageIO
 
 /// Non-interactive checks behind `--selftest` (no window, no permission, no network).
 @MainActor
@@ -12,7 +15,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -207,8 +210,107 @@ enum SelfTest {
         m.query = "zzzz-no-such-command"
         check("palette shows nothing for nonsense", m.commands.isEmpty)
     }
-}
 
+    /// Runs an async operation to completion while keeping the main run loop alive.
+    private static func wait<T>(_ op: @escaping () async throws -> T) -> Result<T, Error> {
+        var result: Result<T, Error>?
+        Task { @MainActor in do { result = .success(try await op()) } catch { result = .failure(error) } }
+        let deadline = Date().addingTimeInterval(30)
+        while result == nil && Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.05)) }
+        return result ?? .failure(ConvertError.failed("timeout"))
+    }
+
+    private static func snippets() {
+        let st = SnippetsStore.shared   // the palette reads the shared store
+        st.snippets = []
+        st.draftName = "Sign-off"; st.draftText = "Best regards,\nThomas"; st.add()
+        st.draftName = "  "; st.draftText = "x"; st.add()
+        st.draftName = "Empty"; st.draftText = "   "; st.add()
+        check("snippets: add keeps valid, rejects blank name or text", st.snippets.count == 1 && st.snippets[0].text.contains("\n"), "\(st.snippets.count)")
+        check("snippets: saved to disk", Store.load("snippets.json", as: [Snippet].self)?.count == 1)
+        let m = PaletteModel(); m.query = "sign"
+        check("snippets: found from the palette", m.commands.contains { $0.title == L("Snippet: %@", "Sign-off") })
+        st.remove(st.snippets[0])
+        check("snippets: remove", st.snippets.isEmpty)
+    }
+
+    private static func watchers() {
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appendingPathComponent("pillbox-watch-\(UUID().uuidString)")
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: dir) }
+        try? "old".write(to: dir.appendingPathComponent("old.txt"), atomically: true, encoding: .utf8)
+        var seen: [String] = []
+        let w = FolderWatcher(dir: dir) { seen.append($0.lastPathComponent) }
+        w.start()
+        for n in ["report.pdf", ".hidden", "movie.mp4.crdownload", "photo.png"] { try? "x".write(to: dir.appendingPathComponent(n), atomically: true, encoding: .utf8) }
+        w.changed(); w.changed()
+        check("folder watcher: reports new files once, skips hidden and temporary", seen.sorted() == ["photo.png", "report.pdf"], "\(seen)")
+        w.stop()
+
+        let shot = dir.appendingPathComponent("photo.png")
+        check("screenshot: untagged image is ignored", !ScreenshotWatcher.isScreenshot(shot))
+        let tag = Array("1".utf8)
+        setxattr(shot.path, "com.apple.metadata:kMDItemIsScreenCapture", tag, tag.count, 0, 0)
+        check("screenshot: tagged image is recognised", ScreenshotWatcher.isScreenshot(shot))
+        check("drive: the boot volume is not ejectable", !DriveWatcher.isEjectable(URL(fileURLWithPath: "/")))
+    }
+
+    private static func converter() {
+        let fm = FileManager.default
+        let dir = fm.temporaryDirectory.appendingPathComponent("pillbox-conv-\(UUID().uuidString)")
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: dir) }
+
+        // A 64x64 gradient PNG.
+        let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 64, pixelsHigh: 64, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        for x in 0..<64 { for y in 0..<64 { rep.setColor(NSColor(srgbRed: CGFloat(x) / 64, green: CGFloat(y) / 64, blue: 0.5, alpha: 1), atX: x, y: y) } }
+        let png = dir.appendingPathComponent("pic.png")
+        try? rep.representation(using: .png, properties: [:])?.write(to: png)
+
+        func type(of url: URL) -> String? { CGImageSourceCreateWithURL(url as CFURL, nil).flatMap { CGImageSourceGetType($0) as String? } }
+        for (target, expected) in [(ConvertTarget.jpeg, "public.jpeg"), (.tiff, "public.tiff"), (.heic, "public.heic")] {
+            switch wait({ try await Converter.convert(png, to: target) }) {
+            case .success(let out): check("convert: PNG to \(target.rawValue)", type(of: out) == expected && out.pathExtension == target.ext, "\(type(of: out) ?? "nil")")
+            case .failure(let e): check("convert: PNG to \(target.rawValue)", false, "\(e)")
+            }
+        }
+        switch wait({ try await Converter.convert(png, to: .pdf) }) {
+        case .success(let out): check("convert: PNG to PDF has one page", PDFDocument(url: out)?.pageCount == 1)
+        case .failure(let e): check("convert: PNG to PDF has one page", false, "\(e)")
+        }
+        switch wait({ try await Converter.convert(png, to: .jpeg) }) {
+        case .success(let out): check("convert: output never overwrites", out.lastPathComponent == "pic 2.jpg", out.lastPathComponent)
+        case .failure(let e): check("convert: output never overwrites", false, "\(e)")
+        }
+        switch wait({ try await Converter.convert(png, to: .cutout) }) {
+        case .success(let out): check("convert: cut-out returns a PNG, or a clean error without a subject", type(of: out) == "public.png")
+        case .failure: check("convert: cut-out returns a PNG, or a clean error without a subject", true)
+        }
+        check("convert: targets by file type", ConvertTarget.targets(for: png).contains(.heic) && ConvertTarget.targets(for: URL(fileURLWithPath: "a.mov")).contains(.mp4)
+              && ConvertTarget.targets(for: URL(fileURLWithPath: "a.wav")).contains(.aiff) && ConvertTarget.targets(for: URL(fileURLWithPath: "a.txt")).isEmpty)
+
+        // One second of 440 Hz, 44.1 kHz mono, as WAV.
+        let wav = dir.appendingPathComponent("tone.wav")
+        if let fmt = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 44100, channels: 1, interleaved: true),
+           let file = try? AVAudioFile(forWriting: wav, settings: fmt.settings, commonFormat: .pcmFormatInt16, interleaved: true),
+           let buf = AVAudioPCMBuffer(pcmFormat: fmt, frameCapacity: 44100) {
+            buf.frameLength = 44100
+            for i in 0..<44100 { buf.int16ChannelData![0][i] = Int16(10000 * sin(2 * .pi * 440 * Double(i) / 44100)) }
+            try? file.write(from: buf)
+        }
+        switch wait({ try await Converter.convert(wav, to: .aiff) }) {
+        case .success(let out): check("convert: WAV to AIFF keeps every frame", (try? AVAudioFile(forReading: out))?.length == 44100)
+        case .failure(let e): check("convert: WAV to AIFF keeps every frame", false, "\(e)")
+        }
+        switch wait({ try await Converter.convert(wav, to: .m4a) }) {
+        case .success(let out):
+            let secs = (try? AVAudioFile(forReading: out)).map { Double($0.length) / $0.processingFormat.sampleRate } ?? 0
+            check("convert: WAV to M4A keeps the duration", abs(secs - 1) < 0.2, "\(secs)s")
+        case .failure(let e): check("convert: WAV to M4A keeps the duration", false, "\(e)")
+        }
+    }
+}
 
 /// `--render <dir>` draws the island states to PNG with ImageRenderer: no screen, no permission.
 /// ImageRenderer cannot draw AppKit-backed controls (text fields, pickers), so tabs using them are skipped.

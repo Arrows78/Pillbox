@@ -43,6 +43,14 @@ struct HomeTab: View {
                 }
                 HStack(spacing: 8) {
                     quick("cup.and.saucer.fill", "Awake", active: caffeine.active) { caffeine.toggle() }
+                        .contextMenu {
+                            Button("30 minutes") { caffeine.start(minutes: 30) }
+                            Button("1 hour") { caffeine.start(minutes: 60) }
+                            Button("2 hours") { caffeine.start(minutes: 120) }
+                            Button("Until 6 pm") { caffeine.start(until: 18) }
+                            Button("Until turned off") { caffeine.start() }
+                            if caffeine.active { Divider(); Button("Turn off") { caffeine.stop() } }
+                        }
                     quick("eyedropper", "Color") { Tools.pickColor() }
                     quick("camera.viewfinder", "Capture") { Tools.captureArea() }
                     quick("mic.slash.fill", "Mute", active: audio.micMuted) { audio.toggleMic() }
@@ -225,7 +233,8 @@ struct NotesTab: View {
     }
 }
 
-struct ClipboardTab: View {
+struct ClipboardHistory: View {
+    @Binding var mode: Int
     @ObservedObject var clip = ClipboardService.shared
     @ObservedObject var model = NotchModel.shared
     @FocusState private var focused: Bool
@@ -236,6 +245,7 @@ struct ClipboardTab: View {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Search text and screenshots", text: $clip.query).textFieldStyle(.plain).focused($focused)
                 Button("Clear") { clip.clearUnpinned() }.controlSize(.small)
+                ClipboardModePicker(mode: $mode)
             }
             .padding(6).background(card, in: RoundedRectangle(cornerRadius: 8))
             .onChange(of: focused) { model.pinnedOpen = $0 }
@@ -248,13 +258,67 @@ struct ClipboardTab: View {
     }
 }
 
+struct ClipboardTab: View {
+    @State private var mode = 0
+    var body: some View {
+        if mode == 0 { ClipboardHistory(mode: $mode) } else { SnippetsView(mode: $mode) }
+    }
+}
+
+struct ClipboardModePicker: View {
+    @Binding var mode: Int
+    var body: some View {
+        Picker("", selection: $mode) { Text("History").tag(0); Text("Snippets").tag(1) }
+            .pickerStyle(.segmented).labelsHidden().controlSize(.small).frame(width: 170)
+    }
+}
+
+struct SnippetsView: View {
+    @Binding var mode: Int
+    @ObservedObject var store = SnippetsStore.shared
+    @ObservedObject var model = NotchModel.shared
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(spacing: 6) {
+                ClipboardModePicker(mode: $mode)
+                TextField("Name", text: $store.draftName).textFieldStyle(.roundedBorder).focused($focused)
+                TextField("Text to paste", text: $store.draftText, axis: .vertical).lineLimit(2, reservesSpace: true).textFieldStyle(.roundedBorder).focused($focused)
+                Button("Save snippet") { store.add() }.controlSize(.small)
+            }
+            .frame(width: 220)
+            .onChange(of: focused) { model.pinnedOpen = $0 }
+            ScrollView {
+                VStack(spacing: 4) {
+                    if store.snippets.isEmpty {
+                        Text("Save text you paste often, then paste it from the palette").font(.system(size: 11)).foregroundStyle(.tertiary)
+                    }
+                    ForEach(store.snippets) { sn in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(sn.name).font(.system(size: 12, weight: .medium))
+                                Text(sn.text).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                            Spacer()
+                            Button { store.remove(sn) } label: { Image(systemName: "trash").foregroundStyle(.secondary) }.buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 8).padding(.vertical, 5).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                        .contentShape(Rectangle()).onTapGesture { store.paste(sn) }
+                    }
+                }
+            }
+        }
+    }
+}
+
 struct ClipCard: View {
     let item: ClipItem
     @ObservedObject var clip = ClipboardService.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            content.frame(width: 130, height: 76, alignment: .topLeading).clipped()
+            content.frame(width: 130, height: 60, alignment: .topLeading).clipped()
             HStack(spacing: 6) {
                 if item.pinned { Image(systemName: "pin.fill").foregroundStyle(.orange) }
                 Text(item.date, style: .relative).foregroundStyle(.secondary)
@@ -284,7 +348,7 @@ struct ClipCard: View {
         } else if let t = item.text {
             switch ClipboardService.kind(of: t) {
             case .color(let c, let hex):
-                VStack(alignment: .leading) { RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: c)).frame(height: 48); Text(hex.uppercased()).font(.system(size: 10, design: .monospaced)) }
+                VStack(alignment: .leading) { RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: c)).frame(height: 36); Text(hex.uppercased()).font(.system(size: 10, design: .monospaced)) }
             default:
                 VStack(alignment: .leading, spacing: 2) {
                     Text(t).font(.system(size: 10)).lineLimit(4)
@@ -313,6 +377,11 @@ struct ShelfTab: View {
                     let target = shelf.selection.isEmpty ? shelf.items : shelf.selected
                     Button("AirDrop") { shelf.airDrop(target) }
                     Button("Zip / Unzip") { shelf.zipOrUnzip(target) }
+                    let kinds = Array(Set(target.flatMap { ConvertTarget.targets(for: $0.url) })).sorted { $0.rawValue < $1.rawValue }
+                    if !kinds.isEmpty {
+                        Menu("Convert") { ForEach(kinds) { k in Button(LocalizedStringKey(k.rawValue)) { shelf.convert(target.filter { ConvertTarget.targets(for: $0.url).contains(k) }, to: k) } } }
+                            .menuStyle(.button).fixedSize()
+                    }
                     Button("Reveal") { shelf.reveal(target) }
                     Spacer()
                     Button("Clear") { shelf.clear() }

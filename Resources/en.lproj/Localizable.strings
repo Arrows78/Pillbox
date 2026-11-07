@@ -6,3 +6,4 @@
 "%@ below %@" = "%@ below %@";
 "for %d min" = "for %d min";
 "%@ finished" = "%@ finished";
+"Snippet: %@" = "Snippet: %@";

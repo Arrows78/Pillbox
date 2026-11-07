@@ -38,7 +38,11 @@ final class NotchWindowController {
         hosting.frame = NSRect(origin: .zero, size: size)
         panel.contentView = hosting
         reposition()
+        applyCapturePreference()
         panel.orderFrontRegardless()
+        observers.append(NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.applyCapturePreference() }
+        })
 
         observers.append(NotificationCenter.default.addObserver(forName: .notchStateChanged, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.updateActiveRect() }
@@ -72,6 +76,11 @@ final class NotchWindowController {
         // NSHostingView is flipped (origin top-left); plain NSViews are not.
         let y = hosting.isFlipped ? b.minY : b.maxY - s.height
         hosting.activeRect = NSRect(x: b.midX - s.width / 2, y: y, width: s.width, height: s.height)
+    }
+
+    /// Asks capture apps to leave the island out of screenshots, recordings and screen shares.
+    func applyCapturePreference() {
+        panel.sharingType = UserDefaults.standard.bool(forKey: "hideFromCapture") ? .none : .readOnly
     }
 
     func makeKey() { panel.makeKey() }
