@@ -4,6 +4,8 @@ import SwiftUI
 /// Hosting view that lets clicks fall through everywhere outside the visible shape.
 final class PassthroughHostingView<Content: View>: NSHostingView<Content> {
     var activeRect: NSRect = .zero
+    /// The panel never activates the app, so the very first click must reach the buttons.
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override func hitTest(_ point: NSPoint) -> NSView? {
         let local = convert(point, from: superview)
         return activeRect.contains(local) ? super.hitTest(point) : nil
@@ -67,7 +69,9 @@ final class NotchWindowController {
     func updateActiveRect() {
         let s = model.size(hasWings: LiveState.shared.hasWings)
         let b = hosting.bounds
-        hosting.activeRect = NSRect(x: b.midX - s.width / 2, y: b.maxY - s.height, width: s.width, height: s.height)
+        // NSHostingView is flipped (origin top-left); plain NSViews are not.
+        let y = hosting.isFlipped ? b.minY : b.maxY - s.height
+        hosting.activeRect = NSRect(x: b.midX - s.width / 2, y: y, width: s.width, height: s.height)
     }
 
     func makeKey() { panel.makeKey() }
