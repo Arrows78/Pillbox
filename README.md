@@ -20,8 +20,8 @@
 ### 🏝️ Island
 
 - **Hover to open**, auto-close when the pointer leaves, adjustable delay. A flick to the top edge counts.
-- **Tabs**: Home, Music, Timer, Notes, Clipboard, Shelf, Launcher. Switch with ⌘1–7 or a two-finger swipe.
-- **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown.
+- **Tabs**: Home, Music, Timer, Stocks, AI usage, Notes, Clipboard, Shelf, Launcher. Switch with ⌘1–9 or a two-finger swipe.
+- **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown, microphone and camera dots, a pinned stock.
 - **Activity islands**: short messages in place of the pill, with an optional action button.
 - **Any Mac**: virtual pill with an adjustable width when there is no hardware notch.
 
@@ -49,11 +49,27 @@
 - **Launcher**: pin apps, reorder by dragging.
 - **Notes**: a quick checklist that stays in the pill.
 
+### 📈 Stocks and weather
+
+- **Watchlist** with day sparklines and pre-market, open, after-hours and closed states (Yahoo Finance).
+- **Price alerts** at ±2 % or ±5 % of the current price, and one symbol pinned to the collapsed pill.
+- **Weather** on Home from Open-Meteo, using your location (Celsius or Fahrenheit following your region).
+
+### 🤖 AI tools
+
+- **AI usage**: Claude Code tokens for the last 5 hours, today and 7 days, read from the local session logs in `~/.claude/projects`. Nothing leaves the Mac. Cache reads are shown separately.
+- **Agent approvals**: when Claude Code is about to run a tool, an Allow / Deny island appears and your answer goes back through a `PreToolUse` hook. *Ask in terminal*, or two minutes without an answer, hands the decision back to Claude Code's normal prompt. Enable the local API, then **Settings › Developer API › Copy Claude Code approval hook** and paste the result into `~/.claude/settings.json`.
+
 ### 🔔 Alerts and tools
 
 - **Battery**: plugged in, unplugged, charged at a level you choose (80–100 %), low battery.
 - **Downloads**: an island with a Reveal button when a file lands in Downloads, whatever the browser.
-- **Caps Lock** island.
+- **Privacy indicator**: dots on the pill while any app uses the microphone or the camera.
+- **Volume** island with a level bar, **Caps Lock** island.
+- **Mic mute**: one switch mutes the input device itself, so every call app goes silent.
+- **Camera mirror**: a local preview under the notch. Nothing is recorded.
+- **Cleaning**: lock the keyboard for 60 s (⌘⎋ unlocks) or black out the displays.
+- **Window snapping**: halves, thirds, centre and full screen from the command palette.
 - **Keep awake**: indefinite or for a set duration.
 - **Colour eyedropper** (HEX copied), **area screenshot** to the clipboard.
 - **Home**: clock, next calendar event, CPU, memory and battery gauges.
@@ -72,7 +88,7 @@ curl -X POST http://127.0.0.1:9998/notify \
   -d '{"title":"Build done","message":"main passed","symbol":"hammer.fill","duration":4}'
 ```
 
-The token is generated per install (**Settings › Developer API › Copy example request**). Titles are limited to 120 characters, messages to 500, durations to 1–10 seconds.
+`POST /approve` takes a Claude Code hook payload and answers with its decision (see AI tools). The token is generated per install (**Settings › Developer API › Copy example request**). Titles are limited to 120 characters, messages to 500, durations to 1–10 seconds.
 
 ## ⌨️ Default shortcuts
 
@@ -80,7 +96,7 @@ The token is generated per install (**Settings › Developer API › Copy exampl
 | --- | --- |
 | `⌃⌥K` | Command palette |
 | `⌃⌥N` | Toggle the notch |
-| `⌘1`–`⌘7` | Switch tab while the notch is open |
+| `⌘1`–`⌘9` | Switch tab while the notch is open |
 
 ## 🔐 Permissions
 
@@ -88,7 +104,9 @@ The token is generated per install (**Settings › Developer API › Copy exampl
 | --- | --- | --- |
 | Automation (Spotify, Music) | Music | Read the current track and send transport commands. |
 | Calendars | Home | Show the next event. |
-| Accessibility | Clipboard paste | Send ⌘V to the front app. Without it, double-click only copies. |
+| Location | Home | Local weather. |
+| Camera | Camera mirror | Show the preview. |
+| Accessibility | Keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
 | Downloads folder | Download alerts | Notice finished downloads. |
 
 ## 🧱 Technology stack
@@ -97,8 +115,9 @@ The token is generated per install (**Settings › Developer API › Copy exampl
 | --- | --- |
 | Language | Swift (Swift Package, no Xcode project) |
 | User interface | SwiftUI (island, tabs, settings), AppKit (borderless panel, hover and drag monitors) |
-| Media | AppleScript for Spotify and Music, LRCLIB for lyrics |
-| System | IOKit (battery, keep awake), Mach (CPU and memory), EventKit, Network.framework |
+| Media | AppleScript for Spotify and Music, LRCLIB for lyrics, AVFoundation (camera mirror) |
+| Web data | Open-Meteo (weather), Yahoo Finance (quotes) |
+| System | IOKit (battery, keep awake), Mach (CPU and memory), CoreAudio and CoreMediaIO (volume, mic, camera), EventKit, CoreLocation, Network.framework, Accessibility |
 | Recognition | Vision (clipboard OCR) |
 | Persistence | JSON files in Application Support, `UserDefaults` for settings |
 
@@ -125,6 +144,7 @@ Pillbox/
 ├── Package.swift          # Swift Package, one executable target
 ├── build.sh               # Builds and signs build/Pillbox.app
 ├── Resources/Info.plist
+├── scripts/claude-hook.sh # Claude Code approval hook
 └── Sources/Pillbox/
     ├── main.swift, AppDelegate.swift    # Entry point, menu bar, hover and drag monitors
     ├── NotchModel, NotchPanel           # State, geometry, click-through panel
@@ -132,6 +152,8 @@ Pillbox/
     ├── Music, Timers, Clipboard, Shelf  # Feature services
     ├── System.swift                     # Keep awake, battery, stats, downloads, tools, calendar
     ├── Stores.swift                     # Notes and launcher
+    ├── Audio, Mirror, Cleaning, WindowSnap  # Volume, mic, privacy, camera, locks, snapping
+    ├── Weather, Stocks, AIUsage         # Weather, watchlist, Claude Code usage
     ├── Palette, Settings, DevAPI        # Command palette, hotkeys, settings, local API
 ```
 
@@ -140,11 +162,11 @@ Pillbox/
 | What | Where |
 | --- | --- |
 | Settings | `UserDefaults` (bundle identifier `dev.labs.pillbox`) |
-| Clipboard, shelf, notes, launcher, sessions | `~/Library/Application Support/Pillbox` |
+| Clipboard, shelf, notes, launcher, sessions, watchlist | `~/Library/Application Support/Pillbox` |
 
 ## 🗺️ Roadmap
 
-AI usage tracking, agent approvals, notch terminal, volume and brightness HUDs, call and message islands, privacy indicator, mic mute, camera mirror, keystroke HUD, cleaning lock, stocks, weather, window snapping, widgets, localisation.
+Notch terminal, brightness HUD, call and message islands, keystroke HUD, Codex and Cursor usage, drag-to-notch snap zones, desktop and lock-screen widgets, localisation.
 
 ## 🙌 Contributing
 
