@@ -6,7 +6,7 @@ final class LiveState {
     static let shared = LiveState()
     var hasWings: Bool {
         let t = TimerService.shared, m = MusicService.shared
-        return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live
+        return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
     }
 }
 
@@ -16,8 +16,9 @@ struct NotchRootView: View {
     @ObservedObject var music = MusicService.shared
     @ObservedObject var caffeine = CaffeineService.shared
     @ObservedObject var privacy = PrivacyService.shared
+    @ObservedObject var cleaning = CleaningLock.shared
 
-    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live }
+    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active }
     private var size: CGSize { model.size(hasWings: wings) }
 
     var body: some View {
@@ -48,6 +49,7 @@ struct NotchRootView: View {
 }
 
 struct CollapsedWings: View {
+    @ObservedObject var cleaning = CleaningLock.shared
     @ObservedObject var privacy = PrivacyService.shared
     @ObservedObject var model = NotchModel.shared
     @ObservedObject var timer = TimerService.shared
@@ -64,7 +66,9 @@ struct CollapsedWings: View {
     }
 
     @ViewBuilder private var left: some View {
-        if privacy.live {
+        if CleaningLock.shared.active {
+            Image(systemName: "lock.fill").foregroundStyle(.yellow)
+        } else if privacy.live {
             HStack(spacing: 4) {
                 if privacy.micLive { Image(systemName: "mic.fill").foregroundStyle(.orange) }
                 if privacy.cameraLive { Image(systemName: "video.fill").foregroundStyle(.green) }
@@ -81,7 +85,9 @@ struct CollapsedWings: View {
     }
 
     @ViewBuilder private var right: some View {
-        if timer.isActive {
+        if CleaningLock.shared.active {
+            Text("\(CleaningLock.shared.remaining)s").font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.yellow)
+        } else if timer.isActive {
             Text(timer.display).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.orange)
         } else if music.hasTrack && music.isPlaying {
             Equalizer()

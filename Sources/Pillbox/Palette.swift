@@ -27,8 +27,12 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Pick a color", symbol: "eyedropper") { Tools.pickColor() },
             PaletteCommand(title: "Capture an area", symbol: "camera.viewfinder") { Tools.captureArea() },
             PaletteCommand(title: "Play / pause music", symbol: "playpause.fill") { MusicService.shared.playPause() },
+            PaletteCommand(title: "Camera mirror", symbol: "video.fill") { CameraMirror.shared.toggle() },
+            PaletteCommand(title: "Lock keyboard to clean it (60 s, ⌘⎋ unlocks)", symbol: "keyboard") { CleaningLock.shared.startKeyboardLock() },
+            PaletteCommand(title: "Black out screens to clean them", symbol: "display") { CleaningLock.shared.startScreenBlackout() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
+        list += SnapZone.allCases.map { z in PaletteCommand(title: "Snap window: \(z.rawValue)", symbol: "rectangle.split.2x1") { WindowSnap.snap(z) } }
         let q = query.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return list }
         var out = list.filter { $0.title.localizedCaseInsensitiveContains(q) }

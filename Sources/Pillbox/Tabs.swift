@@ -46,6 +46,7 @@ struct HomeTab: View {
                     quick("eyedropper", "Color") { Tools.pickColor() }
                     quick("camera.viewfinder", "Capture") { Tools.captureArea() }
                     quick("mic.slash.fill", "Mute", active: audio.micMuted) { audio.toggleMic() }
+                    quick("video.fill", "Mirror") { CameraMirror.shared.toggle() }
                     quick("timer", "Focus", active: timer.running) { timer.mode = .focus; timer.toggle() }
                 }
             }.frame(width: 260)
