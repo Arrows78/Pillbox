@@ -25,7 +25,7 @@ final class PaletteModel: ObservableObject {
     var commands: [PaletteCommand] {
         let m = NotchModel.shared, t = TimerService.shared
         var list = Tab.allCases.enumerated().map { i, tab in
-            PaletteCommand(localized: L("Go to %@", tab.title) + "  ⌘\(i + 1)", symbol: tab.symbol) { m.expand(tab) }
+            PaletteCommand(localized: L("Go to %@", tab.title) + (i < 9 ? "  ⌘\(i + 1)" : ""), symbol: tab.symbol) { m.expand(tab) }
         }
         list += [
             PaletteCommand(title: CaffeineService.shared.active ? "Turn keep awake off" : "Turn keep awake on", symbol: "cup.and.saucer.fill") { CaffeineService.shared.toggle() },

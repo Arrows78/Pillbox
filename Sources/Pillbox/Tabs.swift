@@ -579,3 +579,40 @@ struct AIUsageTab: View {
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
     }
 }
+
+struct RemindersTab: View {
+    @ObservedObject var rem = RemindersService.shared
+    @ObservedObject var model = NotchModel.shared
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        if !rem.authorized {
+            VStack(spacing: 8) {
+                Image(systemName: "checklist").font(.system(size: 26)).foregroundStyle(.secondary)
+                Text("Pillbox needs access to your reminders").foregroundStyle(.secondary)
+                Button("Allow") { PermissionsCenter.shared.request(.reminders) }.controlSize(.small)
+            }
+        } else {
+            VStack(spacing: 8) {
+                TextField("Add a reminder, e.g. call mum tomorrow at 9am", text: $rem.draft).textFieldStyle(.roundedBorder).focused($focused)
+                    .onSubmit { rem.add() }
+                    .onChange(of: focused) { model.pinnedOpen = $0 }
+                ScrollView {
+                    VStack(spacing: 4) {
+                        if rem.items.isEmpty { Text("Nothing to do").font(.system(size: 11)).foregroundStyle(.tertiary) }
+                        ForEach(rem.items) { r in
+                            HStack(spacing: 8) {
+                                Button { rem.complete(r) } label: { Image(systemName: "circle") }.buttonStyle(.plain)
+                                Text(r.title).lineLimit(1)
+                                Spacer()
+                                if let d = r.due { Text(d, format: .dateTime.day().month(.abbreviated).hour().minute()).foregroundStyle(r.overdue ? .red : .secondary) }
+                            }
+                            .font(.system(size: 12)).padding(.horizontal, 8).padding(.vertical, 5)
+                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

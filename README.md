@@ -22,7 +22,7 @@
 ### 🏝️ Island
 
 - **Hover to open**, auto-close when the pointer leaves, adjustable delay. A flick to the top edge counts.
-- **Tabs**: Home, Music, Timer, Stocks, AI usage, Notes, Clipboard, Shelf, Launcher, Terminal. Switch with ⌘1–9 or a two-finger swipe.
+- **Tabs**: Home, Music, Timer, Stocks, AI usage, Reminders, Notes, Clipboard, Shelf, Launcher, Terminal. Switch with ⌘1–9 or a two-finger swipe.
 - **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown, microphone and camera dots, a pinned stock.
 - **Activity islands**: short messages in place of the pill, with an optional action button.
 - **Any Mac**: virtual pill with an adjustable width when there is no hardware notch.
@@ -45,6 +45,10 @@
 - **OCR** (Vision) of copied images, so search finds words inside screenshots.
 - **Double-click to paste** into the front app. Concealed items from password managers are skipped.
 - **Snippets**: reusable text, pasted from the Snippets view or by name from the command palette.
+
+### ✅ Reminders
+
+- **Apple Reminders** tab: open reminders sorted by due date (overdue in red), tick to complete, and add one from a single line: `call mum tomorrow at 9am` becomes the title *call mum* with a due date and an alert. It syncs through iCloud like the Reminders app.
 
 ### 🗂️ Shelf and apps
 
@@ -130,6 +134,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | --- | --- | --- |
 | Automation (Spotify, Music) | Music | Read the current track and send transport commands. |
 | Calendars | Home | Show the next event. |
+| Reminders | Reminders tab | List, add and complete reminders. |
 | Location | Home | Local weather. |
 | Camera | Camera mirror | Show the preview. |
 | Input Monitoring | Keystroke display | Observe key presses system-wide. |

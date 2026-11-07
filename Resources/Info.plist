@@ -21,6 +21,8 @@
     <key>NSLocationWhenInUseUsageDescription</key><string>Pillbox uses your location for the local weather on the Home tab.</string>
     <key>NSLocationUsageDescription</key><string>Pillbox uses your location for the local weather on the Home tab.</string>
     <key>NSCameraUsageDescription</key><string>Pillbox shows a camera preview so you can check yourself before a call.</string>
+    <key>NSRemindersFullAccessUsageDescription</key><string>Pillbox shows your open reminders and adds new ones from the Reminders tab.</string>
+    <key>NSRemindersUsageDescription</key><string>Pillbox shows your open reminders and adds new ones from the Reminders tab.</string>
     <key>NSDownloadsFolderUsageDescription</key><string>Pillbox shows an island when a download finishes.</string>
     <key>NSDesktopFolderUsageDescription</key><string>Pillbox can stage files from your Desktop on the shelf.</string>
 </dict>

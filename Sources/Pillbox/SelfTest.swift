@@ -15,7 +15,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -309,6 +309,18 @@ enum SelfTest {
             check("convert: WAV to M4A keeps the duration", abs(secs - 1) < 0.2, "\(secs)s")
         case .failure(let e): check("convert: WAV to M4A keeps the duration", false, "\(e)")
         }
+    }
+
+    private static func reminders() {
+        let now = Date()
+        let a = RemindersService.parse("call mum tomorrow at 9am", now: now)
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: now)!
+        check("reminder: title without the date words", a.title == "call mum", a.title)
+        check("reminder: due tomorrow at 9", a.due.map { Calendar.current.isDate($0, inSameDayAs: tomorrow) && Calendar.current.component(.hour, from: $0) == 9 } == true, "\(String(describing: a.due))")
+        let b = RemindersService.parse("buy milk")
+        check("reminder: no date keeps the whole text", b.title == "buy milk" && b.due == nil)
+        let c = RemindersService.parse("  tomorrow  ")
+        check("reminder: only a date keeps the text as title", c.title == "tomorrow" && c.due != nil, c.title)
     }
 }
 

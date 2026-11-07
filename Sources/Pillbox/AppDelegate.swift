@@ -26,6 +26,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if PermissionsCenter.shared.state(of: .location) == .granted { WeatherService.shared.start() }
         StocksService.shared.start()
         AIUsageService.shared.start()
+        RemindersService.shared.start()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
         if CommandLine.arguments.contains("--open-palette") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { PaletteController.shared.show() } }

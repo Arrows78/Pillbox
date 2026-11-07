@@ -239,3 +239,11 @@
 "Hide from screenshots and screen sharing" = "Masquer des captures et du partage d'écran";
 "Stage new screenshots on the shelf" = "Placer les nouvelles captures sur l'étagère";
 "Drive connected island with Eject" = "Îlot de disque connecté avec Éjecter";
+
+/* Rappels */
+"Reminders" = "Rappels";
+"Reminders tab." = "Onglet Rappels.";
+"Pillbox needs access to your reminders" = "Pillbox a besoin d'accéder à tes rappels";
+"Add a reminder, e.g. call mum tomorrow at 9am" = "Ajouter un rappel, ex. appeler maman demain à 9 h";
+"Nothing to do" = "Rien à faire";
+"Could not save the reminder" = "Impossible d'enregistrer le rappel";

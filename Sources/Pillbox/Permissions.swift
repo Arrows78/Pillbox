@@ -5,7 +5,7 @@ import CoreLocation
 import EventKit
 
 enum PermissionKind: String, CaseIterable, Identifiable {
-    case accessibility, inputMonitoring, calendar, location, camera, spotify, music
+    case accessibility, inputMonitoring, calendar, reminders, location, camera, spotify, music
     var id: String { rawValue }
 
     var title: String {
@@ -13,6 +13,7 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         case .accessibility: L("Accessibility")
         case .inputMonitoring: L("Input Monitoring")
         case .calendar: L("Calendars")
+        case .reminders: L("Reminders")
         case .location: L("Location")
         case .camera: L("Camera")
         case .spotify: L("Automation: Spotify")
@@ -25,6 +26,7 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         case .accessibility: L("Keyboard lock, window snapping and paste from the clipboard.")
         case .inputMonitoring: L("Keystroke display.")
         case .calendar: L("Next event on Home.")
+        case .reminders: L("Reminders tab.")
         case .location: L("Local weather.")
         case .camera: L("Camera mirror.")
         case .spotify: L("Now playing and controls (open Spotify first).")
@@ -37,6 +39,7 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         case .accessibility: "Privacy_Accessibility"
         case .inputMonitoring: "Privacy_ListenEvent"
         case .calendar: "Privacy_Calendars"
+        case .reminders: "Privacy_Reminders"
         case .location: "Privacy_LocationServices"
         case .camera: "Privacy_Camera"
         case .spotify, .music: "Privacy_Automation"
@@ -59,6 +62,12 @@ final class PermissionsCenter: ObservableObject {
         case .inputMonitoring: return CGPreflightListenEventAccess() ? .granted : .notDetermined
         case .calendar:
             switch EKEventStore.authorizationStatus(for: .event) {
+            case .fullAccess: return .granted
+            case .notDetermined: return .notDetermined
+            default: return .denied
+            }
+        case .reminders:
+            switch EKEventStore.authorizationStatus(for: .reminder) {
             case .fullAccess: return .granted
             case .notDetermined: return .notDetermined
             default: return .denied
@@ -89,6 +98,7 @@ final class PermissionsCenter: ObservableObject {
             _ = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary)
         case .inputMonitoring: _ = CGRequestListenEventAccess()
         case .calendar: CalendarService.shared.start()
+        case .reminders: RemindersService.shared.requestAccess()
         case .location: WeatherService.shared.requestAuthorization()
         case .camera: AVCaptureDevice.requestAccess(for: .video) { _ in }
         case .spotify: _ = automation(.spotify, ask: true)

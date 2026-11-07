@@ -173,6 +173,7 @@ struct ExpandedView: View {
                 case .timer: TimerTab()
                 case .stocks: StocksTab()
                 case .ai: AIUsageTab()
+                case .reminders: RemindersTab()
                 case .notes: NotesTab()
                 case .clipboard: ClipboardTab()
                 case .shelf: ShelfTab()
