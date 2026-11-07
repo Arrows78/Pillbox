@@ -29,8 +29,7 @@ struct NotchRootView: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            UnevenRoundedRectangle(bottomLeadingRadius: model.expanded ? 28 : 12, bottomTrailingRadius: model.expanded ? 28 : 12)
-                .fill(.black)
+            IslandBackground(expanded: model.expanded)
             Group {
                 if let a = model.approval { ApprovalView(approval: a) }
                 else if model.expanded { ExpandedView() }
@@ -41,6 +40,7 @@ struct NotchRootView: View {
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28))
         }
         .frame(width: size.width, height: size.height)
+        .overlay { if !model.expanded && model.activity == nil && model.approval == nil { PillGestures() } }
         .overlay(alignment: .bottom) {
             if model.dropTargeted && model.expanded {
                 RoundedRectangle(cornerRadius: 22).strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [6]))
@@ -137,7 +137,7 @@ struct Equalizer: View {
                     let h = spectrum.running ? 3 + 13 * CGFloat(spectrum.bands[min(i + 1, spectrum.bands.count - 1)]) : 5 + 11 * abs(sin(t * 4 + Double(i) * 1.3))
                     Capsule().fill(.white).frame(width: 3, height: h)
                 }
-            }.frame(height: 16)
+            }.frame(height: 16).accessibilityHidden(true)
         }
     }
 }
@@ -210,7 +210,7 @@ struct ExpandedView: View {
                             .frame(width: 34, height: 24)
                             .background(model.tab == tab ? Color.white.opacity(0.18) : .clear, in: Capsule())
                             .foregroundStyle(model.tab == tab ? .white : .white.opacity(0.5))
-                    }.buttonStyle(.plain).help(tab.title)
+                    }.buttonStyle(.plain).help(tab.title).accessibilityLabel(tab.title).accessibilityAddTraits(model.tab == tab ? .isSelected : [])
                 }
                 Spacer()
                 Menu {
@@ -219,8 +219,8 @@ struct ExpandedView: View {
                         Button { AudioControl.shared.selectOutput(d) } label: { Text(verbatim: (d.id == current ? "✓ " : "") + d.name) }
                     }
                 } label: { Image(systemName: "hifispeaker.fill").foregroundStyle(.white.opacity(0.5)) }
-                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help("Sound output")
-                Button { SettingsWindow.show() } label: { Image(systemName: "gearshape.fill").foregroundStyle(.white.opacity(0.5)) }
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help("Sound output").accessibilityLabel("Sound output")
+                Button { SettingsWindow.show() } label: { Image(systemName: "gearshape.fill").foregroundStyle(.white.opacity(0.5)) }.accessibilityLabel("Settings")
                     .buttonStyle(.plain)
             }
             .padding(.horizontal, 22)

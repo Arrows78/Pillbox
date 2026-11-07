@@ -122,12 +122,21 @@ final class NotchModel: ObservableObject {
 
     func toggle() { expanded ? collapse() : expand() }
 
+    private var queue = ActivityQueue()
+
     func show(_ activity: Activity) {
+        guard queue.push(activity) else { return }
+        present()
+    }
+
+    /// Shows `queue.current` and arms the timer that moves on to the next one.
+    private func present() {
         activityTask?.cancel()
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { self.activity = activity }
+        guard let a = queue.current else { return }
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { self.activity = a }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
         activityTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(activity.duration * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64(a.duration * 1_000_000_000))
             guard !Task.isCancelled else { return }
             self?.dismissActivity()
         }
@@ -158,6 +167,9 @@ final class NotchModel: ObservableObject {
     }
 
     func dismissActivity() {
+        queue.advance()
+        if queue.current != nil { present(); return }
+        activityTask?.cancel()
         withAnimation(.spring(response: 0.34, dampingFraction: 0.85)) { activity = nil }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
     }
