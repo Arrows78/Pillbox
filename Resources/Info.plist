@@ -23,6 +23,7 @@
     <key>NSCameraUsageDescription</key><string>Pillbox shows a camera preview so you can check yourself before a call.</string>
     <key>NSRemindersFullAccessUsageDescription</key><string>Pillbox shows your open reminders and adds new ones from the Reminders tab.</string>
     <key>NSRemindersUsageDescription</key><string>Pillbox shows your open reminders and adds new ones from the Reminders tab.</string>
+    <key>NSAudioCaptureUsageDescription</key><string>Pillbox listens to system audio levels to animate the equalizer. Nothing is recorded or stored.</string>
     <key>NSDownloadsFolderUsageDescription</key><string>Pillbox shows an island when a download finishes.</string>
     <key>NSDesktopFolderUsageDescription</key><string>Pillbox can stage files from your Desktop on the shelf.</string>
 </dict>

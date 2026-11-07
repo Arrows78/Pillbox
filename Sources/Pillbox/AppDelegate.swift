@@ -21,6 +21,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DriveWatcher.shared.start()
         Tools.startCapsLockHUD()
         KeystrokeHUD.shared.start()
+        BrightnessHUD.shared.start()
+        FocusMonitor.shared.start()
+        CallMonitor.shared.start()
+        HyperKey.shared.apply()
+        MenuBarHider.shared.apply()
+        MenuBarDetach.shared.apply()
+        MenuBarCalendar.shared.apply()
+        AudioSpectrum.shared.apply()
+        DoubleTapKey.shared.apply()
+        DesktopWidgets.shared.apply()
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated {
+                HyperKey.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
+                AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
+            }
+        }
         DevAPI.shared.apply()
         PrivacyService.shared.start()
         if PermissionsCenter.shared.state(of: .location) == .granted { WeatherService.shared.start() }
@@ -66,6 +82,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private var swipeCooldown = Date.distantPast
 
+    /// Caps Lock must never stay remapped after Pillbox quits.
+    func applicationWillTerminate(_ notification: Notification) { HyperKey.shared.disable(); AudioSpectrum.shared.stop() }
+
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "capsule.fill", accessibilityDescription: "Pillbox")
@@ -107,7 +126,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     defer { self?.hoverTask = nil }
                     guard !Task.isCancelled, let self, self.controller.shapeRectOnScreen.insetBy(dx: -4, dy: 0).contains(NSEvent.mouseLocation) || NSEvent.mouseLocation.y >= rect.maxY - 1 && (rect.minX...rect.maxX).contains(NSEvent.mouseLocation.x) else { return }
-                    model.expand()
+                    let peek = UserDefaults.standard.bool(forKey: "peekOnHover") && MusicService.shared.isPlaying
+                    model.expand(peek ? .music : nil)
                 }
             } else { hoverTask?.cancel(); hoverTask = nil }
         } else {
@@ -125,22 +145,42 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    /// Dragging a file toward the notch opens the shelf.
+    private var dragPasteboardCount = 0
+
+    /// A real drag-and-drop session changes the drag pasteboard; dragging a window does not (its contents are stale).
+    private var isDataDrag: Bool { NSPasteboard(name: .drag).changeCount != dragPasteboardCount }
+
+    /// Dragging a file toward the notch opens the shelf; dragging a window toward it shows snap zones.
     private func setupDragToShelf() {
+        monitors.append(NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { _ in
+            DispatchQueue.main.async { MainActor.assumeIsolated { self.dragPasteboardCount = NSPasteboard(name: .drag).changeCount } }
+        } as Any)
         monitors.append(NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDragged) { _ in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    let model = NotchModel.shared
-                    guard !model.expanded else { return }
-                    let pb = NSPasteboard(name: .drag)
-                    guard pb.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) else { return }
-                    if self.controller.shapeRectOnScreen.insetBy(dx: -30, dy: -30).contains(NSEvent.mouseLocation) {
-                        model.pinnedOpen = true; model.expand(.shelf)
+                    let model = NotchModel.shared, p = NSEvent.mouseLocation
+                    if self.isDataDrag {
+                        guard !model.expanded else { return }
+                        let pb = NSPasteboard(name: .drag)
+                        guard pb.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) else { return }
+                        if self.controller.shapeRectOnScreen.insetBy(dx: -30, dy: -30).contains(p) { model.pinnedOpen = true; model.expand(.shelf) }
+                    } else if UserDefaults.standard.bool(forKey: "snapZones"), !model.expanded {
+                        let r = self.controller.shapeRectOnScreen
+                        if SnapZones.shared.visible { SnapZones.shared.update(mouse: p) }
+                        else if p.y >= r.maxY - 36, abs(p.x - r.midX) < 260 { SnapZones.shared.show() }
+                        if SnapZones.shared.visible, p.y < r.maxY - 220 { _ = SnapZones.shared.finish() }
                     }
                 }
             }
         } as Any)
         monitors.append(NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { _ in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    if SnapZones.shared.visible, let zone = SnapZones.shared.finish() {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { MainActor.assumeIsolated { WindowSnap.snap(zone) } }
+                    }
+                }
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { MainActor.assumeIsolated { NotchModel.shared.pinnedOpen = false } }
         } as Any)
     }

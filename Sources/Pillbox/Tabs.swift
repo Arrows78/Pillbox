@@ -161,6 +161,7 @@ struct TimerTab: View {
                 Circle().trim(from: 0, to: t.progress).stroke(Color.orange, style: StrokeStyle(lineWidth: 7, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                 VStack(spacing: 0) {
+                    if let e = Mascot.emoji(for: Mascot.current, progress: t.progress) { Text(e).font(.system(size: 20)).scaleEffect(t.running ? 1.08 : 1).animation(t.running ? .easeInOut(duration: 0.8).repeatForever() : .default, value: t.running) }
                     Text(t.display).font(.system(size: 22, weight: .semibold, design: .monospaced))
                     Text(LocalizedStringKey(t.mode.rawValue)).font(.system(size: 10)).foregroundStyle(.secondary)
                 }
@@ -650,5 +651,40 @@ struct RemindersTab: View {
                 }
             }
         }
+    }
+}
+
+struct NotificationsTab: View {
+    @ObservedObject var mirror = NotificationMirror.shared
+
+    var body: some View {
+        Group {
+            if let items = mirror.items {
+                ScrollView {
+                    VStack(spacing: 4) {
+                        if items.isEmpty { Text("No notifications").font(.system(size: 11)).foregroundStyle(.tertiary) }
+                        ForEach(items) { n in
+                            VStack(alignment: .leading, spacing: 1) {
+                                HStack {
+                                    Text(verbatim: n.title.isEmpty ? n.app : n.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                                    Spacer()
+                                    Text(n.date, style: .relative).font(.system(size: 9)).foregroundStyle(.secondary)
+                                }
+                                if !n.body.isEmpty { Text(verbatim: n.body).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2) }
+                            }
+                            .padding(.horizontal, 8).padding(.vertical, 5).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "bell.badge").font(.system(size: 26)).foregroundStyle(.secondary)
+                    Text("Reading notifications needs Full Disk Access").foregroundStyle(.secondary)
+                    Button("Open Settings") { PermissionsCenter.shared.openSettings(.fullDisk) }.controlSize(.small)
+                }
+            }
+        }
+        .onAppear { mirror.refresh() }
     }
 }

@@ -4,9 +4,12 @@ import SwiftUI
 @MainActor
 final class LiveState {
     static let shared = LiveState()
+    static var lottiePath: String? { UserDefaults.standard.string(forKey: "lottiePath").flatMap { FileManager.default.fileExists(atPath: $0) ? $0 : nil } }
+    var lottiePath: String? { Self.lottiePath }
     var hasWings: Bool {
         let t = TimerService.shared, m = MusicService.shared
         return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
+            || CallMonitor.shared.call != nil || lottiePath != nil
     }
 }
 
@@ -17,8 +20,9 @@ struct NotchRootView: View {
     @ObservedObject var caffeine = CaffeineService.shared
     @ObservedObject var privacy = PrivacyService.shared
     @ObservedObject var cleaning = CleaningLock.shared
+    @ObservedObject var calls = CallMonitor.shared
 
-    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active }
+    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil }
     private var size: CGSize { model.size(hasWings: wings) }
 
     var body: some View {
@@ -50,6 +54,7 @@ struct NotchRootView: View {
 }
 
 struct CollapsedWings: View {
+    @ObservedObject var calls = CallMonitor.shared
     @ObservedObject var cleaning = CleaningLock.shared
     @ObservedObject var privacy = PrivacyService.shared
     @ObservedObject var model = NotchModel.shared
@@ -69,6 +74,8 @@ struct CollapsedWings: View {
     @ViewBuilder private var left: some View {
         if CleaningLock.shared.active {
             Image(systemName: "lock.fill").foregroundStyle(.yellow)
+        } else if calls.call != nil {
+            Image(systemName: "phone.fill").font(.system(size: 12)).foregroundStyle(.green)
         } else if privacy.live {
             HStack(spacing: 4) {
                 if privacy.micLive { Image(systemName: "mic.fill").foregroundStyle(.orange) }
@@ -77,16 +84,20 @@ struct CollapsedWings: View {
         } else if music.hasTrack && music.isPlaying, let art = music.artwork {
             Image(nsImage: art).resizable().frame(width: 20, height: 20).clipShape(RoundedRectangle(cornerRadius: 5))
         } else if timer.isActive {
-            Image(systemName: "timer").font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
+            if let e = Mascot.emoji(for: Mascot.current, progress: timer.progress) { Text(e).font(.system(size: 14)) }
+            else { Image(systemName: "timer").font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange) }
         } else if caffeine.active {
             Image(systemName: "cup.and.saucer.fill").font(.system(size: 13)).foregroundStyle(.orange)
         } else if music.hasTrack && music.isPlaying {
             Image(systemName: "music.note").foregroundStyle(.white)
         }
+
     }
 
     @ViewBuilder private var right: some View {
-        if CleaningLock.shared.active {
+        if let c = calls.call {
+            Text(c.since, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.green).frame(width: 52)
+        } else if CleaningLock.shared.active {
             Text("\(CleaningLock.shared.remaining)s").font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.yellow)
         } else if timer.isActive {
             Text(timer.display).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.orange)
@@ -97,17 +108,22 @@ struct CollapsedWings: View {
                 .font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(q.change >= 0 ? .green : .red)
         } else if caffeine.active, let u = caffeine.until {
             Text(u, style: .timer).font(.system(size: 10, design: .monospaced)).foregroundStyle(.orange)
+        } else if let path = LiveState.lottiePath {
+            LottieIdle(path: path).frame(width: 28, height: 24).clipped()
         }
     }
 }
 
 struct Equalizer: View {
+    @ObservedObject var spectrum = AudioSpectrum.shared
     var body: some View {
         TimelineView(.animation(minimumInterval: 0.12)) { ctx in
             let t = ctx.date.timeIntervalSinceReferenceDate
             HStack(alignment: .bottom, spacing: 2) {
                 ForEach(0..<4, id: \.self) { i in
-                    Capsule().fill(.white).frame(width: 3, height: 5 + 11 * abs(sin(t * 4 + Double(i) * 1.3)))
+                    // Real levels when the live spectrum is on, a gentle wave otherwise.
+                    let h = spectrum.running ? 3 + 13 * CGFloat(spectrum.bands[min(i + 1, spectrum.bands.count - 1)]) : 5 + 11 * abs(sin(t * 4 + Double(i) * 1.3))
+                    Capsule().fill(.white).frame(width: 3, height: h)
                 }
             }.frame(height: 16)
         }
@@ -126,7 +142,13 @@ struct ActivityView: View {
                 if let s = activity.subtitle { Text(LocalizedStringKey(s)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1) }
             }
             Spacer(minLength: 0)
-            if let p = activity.progress {
+            if let p = activity.progress, UserDefaults.standard.string(forKey: "hudStyle") == "circle" {
+                ZStack {
+                    Circle().stroke(.white.opacity(0.2), lineWidth: 4)
+                    Circle().trim(from: 0, to: min(max(p, 0), 1)).stroke(activity.tint, style: StrokeStyle(lineWidth: 4, lineCap: .round)).rotationEffect(.degrees(-90))
+                    Text("\(Int(min(max(p, 0), 1) * 100))").font(.system(size: 9, weight: .semibold, design: .rounded))
+                }.frame(width: 34, height: 34)
+            } else if let p = activity.progress {
                 Capsule().fill(.white.opacity(0.2)).frame(width: 90, height: 5)
                     .overlay(alignment: .leading) { Capsule().fill(activity.tint).frame(width: 90 * min(max(p, 0), 1)) }
             }
@@ -140,6 +162,26 @@ struct ActivityView: View {
         .padding(.bottom, 4)
         .foregroundStyle(.white)
         .onTapGesture { model.dismissActivity() }
+    }
+}
+
+struct TabContent: View {
+    let tab: Tab
+    var body: some View {
+        switch tab {
+        case .home: HomeTab()
+        case .music: MusicTab()
+        case .timer: TimerTab()
+        case .stocks: StocksTab()
+        case .ai: AIUsageTab()
+        case .reminders: RemindersTab()
+        case .notifications: NotificationsTab()
+        case .notes: NotesTab()
+        case .clipboard: ClipboardTab()
+        case .shelf: ShelfTab()
+        case .launcher: LauncherTab()
+        case .terminal: TerminalTab().clipShape(RoundedRectangle(cornerRadius: 8))
+        }
     }
 }
 
@@ -173,21 +215,7 @@ struct ExpandedView: View {
             .padding(.top, max(model.geometry.height - 6, 8))
             .padding(.bottom, 6)
 
-            Group {
-                switch model.tab {
-                case .home: HomeTab()
-                case .music: MusicTab()
-                case .timer: TimerTab()
-                case .stocks: StocksTab()
-                case .ai: AIUsageTab()
-                case .reminders: RemindersTab()
-                case .notes: NotesTab()
-                case .clipboard: ClipboardTab()
-                case .shelf: ShelfTab()
-                case .launcher: LauncherTab()
-                case .terminal: TerminalTab().clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-            }
+            TabContent(tab: model.tab)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 22)
             .padding(.bottom, 16)

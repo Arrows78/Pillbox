@@ -22,7 +22,7 @@
 ### 🏝️ Island
 
 - **Hover to open**, auto-close when the pointer leaves, adjustable delay. A flick to the top edge counts.
-- **Tabs**: Home, Music, Timer, Stocks, AI usage, Reminders, Notes, Clipboard, Shelf, Launcher, Terminal. Switch with ⌘1–9 or a two-finger swipe.
+- **Tabs**: Home, Music, Timer, Stocks, AI usage, Reminders, Notifications, Notes, Clipboard, Shelf, Launcher, Terminal. Switch with ⌘1–9 or a two-finger swipe.
 - **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown, microphone and camera dots, a pinned stock.
 - **Activity islands**: short messages in place of the pill, with an optional action button.
 - **Any Mac**: virtual pill with an adjustable width when there is no hardware notch.
@@ -45,6 +45,23 @@
 - **OCR** (Vision) of copied images, so search finds words inside screenshots.
 - **Double-click to paste** into the front app. Concealed items from password managers are skipped.
 - **Snippets**: reusable text, pasted from the Snippets view or by name from the command palette.
+
+### 🧩 More from the island
+
+- **Mini player on hover** (opt-in): hovering the pill during playback opens the Music tab.
+- **Double-press Control** (opt-in) opens the notch on any Mac.
+- **Snap zones** (opt-in): drag a window to the notch and four zones appear (left half, right half, full screen, centre); release over one to snap. A real file drag is told apart from a window drag through the drag pasteboard's change count.
+- **Volume and brightness style**: bar or circle. **Brightness island** for the built-in display (private DisplayServices API: silently absent where unavailable).
+- **Live audio spectrum** (opt-in): the pill's equalizer follows real system audio through a Core Audio process tap (macOS 14.4+, asks for audio capture).
+- **Focus mode island** and **notification mirror** tab: both read system files and need **Full Disk Access**. Everything stays on the Mac.
+- **Call island**: while Zoom, Teams, FaceTime, WhatsApp, Slack, Discord or Skype is open and the microphone is live, the pill shows the call and its duration.
+- **Timer mascots**: pick an emoji companion for the timer (the plant grows as the session goes on).
+- **Idle animation**: choose your own Lottie JSON for the pill (Settings › Island).
+- **Hyper key** (opt-in): Caps Lock becomes ⌃⌥⇧⌘, and a quick press sends Escape. It remaps Caps Lock to F18 with `hidutil` and an event tap adds the modifiers; the remap is undone when Pillbox quits and never survives a reboot.
+- **Menu bar**: hide icons behind a divider (⌘-drag them to its left), show the next calendar event with a countdown, and pop Timer, Stocks, AI usage, Reminders, Notes or Clipboard out as their own menu bar icons with a popover.
+- **Desktop widgets** (opt-in): clock, world clocks, weather and now playing, draggable, sitting under your windows.
+- **Window watch**: watch a part of the screen (a percentage, a build status, a price) and get an island when its text changes. Needs Screen Recording.
+- **Ask about screen**: pick an area, read its text on device (Vision), then copy it, search it, translate it, open its links, or ask a question with your own Anthropic API key stored in the Keychain. Only the recognised text is sent, never the picture.
 
 ### ✅ Reminders
 
@@ -144,8 +161,10 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Reminders | Reminders tab | List, add and complete reminders. |
 | Location | Home | Local weather. |
 | Camera | Camera mirror | Show the preview. |
-| Input Monitoring | Keystroke display | Observe key presses system-wide. |
-| Accessibility | Keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
+| Input Monitoring | Keystroke display, double-press Control | Observe key presses system-wide. |
+| Screen Recording | Window watch, Ask about screen | Read the pixels of an area you pick. |
+| Full Disk Access | Notification mirror, Focus island | Read Notification Center and Do Not Disturb files. |
+| Accessibility | Hyper key, keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
 | Downloads and Desktop folders | Download and screenshot alerts | Notice new files. |
 
 ## 🧱 Technology stack
@@ -153,7 +172,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Area | Technologies |
 | --- | --- |
 | Language | Swift (Swift Package, no Xcode project) |
-| Dependencies | [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) (MIT) for the terminal tab |
+| Dependencies | [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) (MIT) for the terminal tab, [lottie-ios](https://github.com/airbnb/lottie-ios) (Apache 2.0) for the idle animation |
 | User interface | SwiftUI (island, tabs, settings), AppKit (borderless panel, hover and drag monitors) |
 | Media | AppleScript for Spotify and Music, LRCLIB for lyrics, AVFoundation (camera mirror) |
 | Web data | Open-Meteo (weather), Yahoo Finance (quotes) |
@@ -175,7 +194,7 @@ open build/Pillbox.app
 ```
 
 > [!TIP]
-> `build.sh` signs ad hoc by default, so macOS asks for the permissions again after each rebuild. Set `PILLBOX_SIGN_IDENTITY` to a self-signed code-signing certificate to keep them.
+> `build.sh` uses SwiftPM's native build system so packages are linked statically (the default one would produce a `Lottie.framework` that is not in the app bundle). `build.sh` signs ad hoc by default, so macOS asks for the permissions again after each rebuild. Set `PILLBOX_SIGN_IDENTITY` to a self-signed code-signing certificate to keep them.
 
 ## 📂 Project structure
 
@@ -198,6 +217,8 @@ Pillbox/
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
     ├── Overlays.swift                   # Hidden notch, teleprompter
+    ├── Hyper, MenuBar, SystemWatch      # Hyper key, menu bar items, brightness, Focus, notifications, calls
+    ├── Screen, Spectrum, Gestures       # Region picker, window watch, Ask about screen, audio spectrum, snap zones, Lottie, widgets
     ├── Permissions.swift                # Permissions center
     ├── L10n.swift                       # L() helper for text built in code
     ├── SelfTest.swift                   # Behind --selftest
@@ -213,7 +234,7 @@ Pillbox/
 
 ## 🗺️ Roadmap
 
-Brightness and keyboard backlight HUDs, call and message islands, notification mirror, Cursor and Copilot usage, per-app sound mixer and audio spectrum, drag-to-notch snap zones, menu bar icon hiding, Hyper key, knock to control, Face Unlock, desktop and lock-screen widgets, Lottie idle animation, automatic updates, more languages.
+Answering calls from the island, message replies, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, more languages. Face Unlock is deliberately left out.
 
 ## 🙌 Contributing
 

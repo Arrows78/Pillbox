@@ -13,6 +13,23 @@ struct SettingsView: View {
     @AppStorage("hideFromCapture") private var hideFromCapture = false
     @AppStorage("hideNotch") private var hideNotch = false
     @AppStorage("searchEngine") private var searchEngine = "google"
+    @AppStorage("hyperKey") private var hyperKey = false
+    @AppStorage("hyperEscape") private var hyperEscape = true
+    @AppStorage("hideMenuBarIcons") private var hideMenuBarIcons = false
+    @AppStorage("menuBarCalendar") private var menuBarCalendar = false
+    @AppStorage("liveSpectrum") private var liveSpectrum = false
+    @AppStorage("doubleTapOpen") private var doubleTapOpen = false
+    @AppStorage("snapZones") private var snapZones = false
+    @AppStorage("peekOnHover") private var peekOnHover = false
+    @AppStorage("desktopWidgets") private var desktopWidgets = false
+    @AppStorage("brightnessHUD") private var brightnessHUD = true
+    @AppStorage("focusIsland") private var focusIsland = true
+    @AppStorage("callIsland") private var callIsland = true
+    @AppStorage("hudStyle") private var hudStyle = "notch"
+    @AppStorage("mascot") private var mascot = "none"
+    @AppStorage("lottiePath") private var lottiePath = ""
+    @State private var apiKey = ""
+    @State private var keySaved = Keychain.get(AskModel.keyService) != nil
     @AppStorage("screenshotShelf") private var screenshotShelf = true
     @AppStorage("driveEject") private var driveEject = true
     @AppStorage("shortcutsOnly") private var shortcutsOnly = true
@@ -47,6 +64,45 @@ struct SettingsView: View {
                 Toggle("Show keystrokes (for presentations)", isOn: $keystrokeHUD)
                 if keystrokeHUD { Toggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }
                 Stepper("Charged island at \(fullCharge)%", value: $fullCharge, in: 80...100, step: 5)
+            }
+            Section("Island") {
+                Toggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
+                Toggle("Double-press Control to open the notch", isOn: $doubleTapOpen)
+                Toggle("Snap zones when dragging a window to the notch", isOn: $snapZones)
+                Picker("Volume and brightness style", selection: $hudStyle) { Text("Bar").tag("notch"); Text("Circle").tag("circle") }
+                Picker("Timer mascot", selection: $mascot) { ForEach(Mascot.allCases) { m in Text(verbatim: (m.emoji ?? "") + " " + m.title).tag(m.rawValue) } }
+                HStack {
+                    Text(verbatim: lottiePath.isEmpty ? L("Idle animation: none") : (lottiePath as NSString).lastPathComponent).lineLimit(1)
+                    Spacer()
+                    Button("Choose Lottie file…") {
+                        let p = NSOpenPanel(); p.allowedContentTypes = [.json]
+                        if p.runModal() == .OK, let u = p.url { lottiePath = u.path }
+                    }.controlSize(.small)
+                    if !lottiePath.isEmpty { Button("Remove") { lottiePath = "" }.controlSize(.small) }
+                }
+            }
+            Section("Menu bar and desktop") {
+                Toggle("Hide menu bar icons (⌘-drag them left of the divider)", isOn: $hideMenuBarIcons)
+                Toggle("Next calendar event in the menu bar", isOn: $menuBarCalendar)
+                ForEach(MenuBarDetach.detachable) { tab in DetachToggle(tab: tab) }
+                Toggle("Desktop widgets (clock, world clock, weather, music)", isOn: $desktopWidgets)
+                Toggle("Hyper key: Caps Lock becomes ⌃⌥⇧⌘", isOn: $hyperKey)
+                if hyperKey { Toggle("A quick press sends Escape", isOn: $hyperEscape) }
+            }
+            Section("More alerts") {
+                Toggle("Brightness island", isOn: $brightnessHUD)
+                Toggle("Focus mode island", isOn: $focusIsland)
+                Toggle("Call in progress island", isOn: $callIsland)
+                Toggle("Live audio spectrum (asks for audio capture)", isOn: $liveSpectrum)
+            }
+            Section("Ask about screen") {
+                SecureField("Anthropic API key", text: $apiKey).onSubmit { Keychain.set(apiKey, AskModel.keyService); keySaved = !apiKey.isEmpty; apiKey = "" }
+                HStack {
+                    Text(keySaved ? "A key is saved in your Keychain" : "No key saved").font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Save key") { Keychain.set(apiKey, AskModel.keyService); keySaved = !apiKey.isEmpty; apiKey = "" }.controlSize(.small).disabled(apiKey.isEmpty)
+                    if keySaved { Button("Remove key") { Keychain.delete(AskModel.keyService); keySaved = false }.controlSize(.small) }
+                }
             }
             Section("Developer API") {
                 Text(verbatim: "127.0.0.1:\(DevAPI.defaultPort)").font(.caption).foregroundStyle(.secondary)
@@ -92,5 +148,19 @@ enum SettingsWindow {
         }
         NSApp.activate(ignoringOtherApps: true)
         window?.center(); window?.makeKeyAndOrderFront(nil)
+    }
+}
+
+struct DetachToggle: View {
+    let tab: Tab
+    @State private var on: Bool
+    init(tab: Tab) { self.tab = tab; _on = State(initialValue: MenuBarDetach.wanted.contains(tab)) }
+    var body: some View {
+        Toggle(isOn: $on) { Text("Show \(tab.title) in the menu bar") }
+            .onChange(of: on) { v in
+                var set = MenuBarDetach.wanted
+                if v { set.insert(tab) } else { set.remove(tab) }
+                UserDefaults.standard.set(set.map(\.rawValue).sorted(), forKey: "detachedTabs")
+            }
     }
 }

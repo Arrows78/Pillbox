@@ -38,6 +38,8 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Camera mirror", symbol: "video.fill") { CameraMirror.shared.toggle() },
             PaletteCommand(title: "Lock keyboard to clean it (60 s, ⌘⎋ unlocks)", symbol: "keyboard") { CleaningLock.shared.startKeyboardLock() },
             PaletteCommand(title: "Black out screens to clean them", symbol: "display") { CleaningLock.shared.startScreenBlackout() },
+            PaletteCommand(title: "Ask about screen", symbol: "text.viewfinder") { AskAboutScreen.start() },
+            PaletteCommand(title: WindowWatch.shared.watching ? "Stop watching the screen area" : "Watch a screen area", symbol: "eye") { WindowWatch.shared.watching ? WindowWatch.shared.stop() : WindowWatch.shared.choose() },
             PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]

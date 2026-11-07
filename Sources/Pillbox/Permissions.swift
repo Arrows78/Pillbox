@@ -5,13 +5,15 @@ import CoreLocation
 import EventKit
 
 enum PermissionKind: String, CaseIterable, Identifiable {
-    case accessibility, inputMonitoring, calendar, reminders, location, camera, spotify, music
+    case accessibility, inputMonitoring, screenRecording, fullDisk, calendar, reminders, location, camera, spotify, music
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .accessibility: L("Accessibility")
         case .inputMonitoring: L("Input Monitoring")
+        case .screenRecording: L("Screen Recording")
+        case .fullDisk: L("Full Disk Access")
         case .calendar: L("Calendars")
         case .reminders: L("Reminders")
         case .location: L("Location")
@@ -25,6 +27,8 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         switch self {
         case .accessibility: L("Keyboard lock, window snapping and paste from the clipboard.")
         case .inputMonitoring: L("Keystroke display.")
+        case .screenRecording: L("Window watch and Ask about screen.")
+        case .fullDisk: L("Notification mirror and Focus island.")
         case .calendar: L("Next event on Home.")
         case .reminders: L("Reminders tab.")
         case .location: L("Local weather.")
@@ -38,6 +42,8 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         switch self {
         case .accessibility: "Privacy_Accessibility"
         case .inputMonitoring: "Privacy_ListenEvent"
+        case .screenRecording: "Privacy_ScreenCapture"
+        case .fullDisk: "Privacy_AllFiles"
         case .calendar: "Privacy_Calendars"
         case .reminders: "Privacy_Reminders"
         case .location: "Privacy_LocationServices"
@@ -60,6 +66,10 @@ final class PermissionsCenter: ObservableObject {
         switch k {
         case .accessibility: return AXIsProcessTrusted() ? .granted : .notDetermined
         case .inputMonitoring: return CGPreflightListenEventAccess() ? .granted : .notDetermined
+        case .screenRecording: return CGPreflightScreenCaptureAccess() ? .granted : .notDetermined
+        case .fullDisk:
+            let fd = open(FocusMonitor.path, O_RDONLY); if fd >= 0 { close(fd); return .granted }
+            return errno == EPERM || errno == EACCES ? .denied : .unavailable
         case .calendar:
             switch EKEventStore.authorizationStatus(for: .event) {
             case .fullAccess: return .granted
@@ -98,6 +108,8 @@ final class PermissionsCenter: ObservableObject {
             _ = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary)
         case .inputMonitoring: _ = CGRequestListenEventAccess()
         case .calendar: CalendarService.shared.start()
+        case .screenRecording: _ = CGRequestScreenCaptureAccess()
+        case .fullDisk: openSettings(.fullDisk)
         case .reminders: RemindersService.shared.requestAccess()
         case .location: WeatherService.shared.requestAuthorization()
         case .camera: AVCaptureDevice.requestAccess(for: .video) { _ in }
