@@ -4,6 +4,14 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.3.0] - 2026-11-07
+
+### Added
+
+- **ui**: Add a shared design kit and restyle the tab bar
+- **ui**: Restyle the home, music and timer tabs
+- **ui**: Rebuild settings around a sidebar and enrich the menu-bar menu
+
 ## [0.2.0] - 2026-11-07
 
 ### Added
@@ -38,5 +46,6 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.3.0]: https://github.com/Arrows78/Pillbox/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Arrows78/Pillbox/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Arrows78/Pillbox/releases/tag/v0.1.0
