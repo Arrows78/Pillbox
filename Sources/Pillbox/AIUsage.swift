@@ -41,12 +41,14 @@ final class AIUsageService: ObservableObject {
 
     // MARK: Shared helpers
 
-    private nonisolated static func jsonlFiles(in root: URL, since: Date) -> [URL] {
-        var out: [URL] = []
-        let en = FileManager.default.enumerator(at: root, includingPropertiesForKeys: [.contentModificationDateKey], options: [.skipsHiddenFiles])
+    private nonisolated static func jsonlFiles(in root: URL, since: Date) -> [(url: URL, mtime: Date, size: Int)] {
+        var out: [(URL, Date, Int)] = []
+        let keys: Set<URLResourceKey> = [.contentModificationDateKey, .fileSizeKey]
+        let en = FileManager.default.enumerator(at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles])
         while let url = en?.nextObject() as? URL {
-            guard url.pathExtension == "jsonl" else { continue }
-            if let m = try? url.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate, m > since { out.append(url) }
+            guard url.pathExtension == "jsonl", let v = try? url.resourceValues(forKeys: keys),
+                  let m = v.contentModificationDate, m > since else { continue }
+            out.append((url, m, v.fileSize ?? 0))
         }
         return out
     }
@@ -54,6 +56,52 @@ final class AIUsageService: ObservableObject {
     private nonisolated static func parseDate(_ s: String) -> Date? {
         let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+    }
+
+    /// Calls `body` with the bytes of every line containing `needle`, without decoding the other lines.
+    /// Session logs are hundreds of megabytes: decoding them as strings is far too slow.
+    private nonisolated static func forEachLine(of data: Data, containing needle: String, _ body: (UnsafeRawBufferPointer) -> Void) {
+        let n = Array(needle.utf8)
+        data.withUnsafeBytes { raw in
+            guard let base = raw.baseAddress else { return }
+            var pos = 0
+            while pos < raw.count {
+                let rest = raw.count - pos
+                let nl = memchr(base + pos, 0x0A, rest)
+                let len = nl.map { base.distance(to: UnsafeRawPointer($0)) - pos } ?? rest
+                if len >= n.count, memmem(base + pos, len, n, n.count) != nil {
+                    body(UnsafeRawBufferPointer(start: base + pos, count: len))
+                }
+                pos += len + 1
+            }
+        }
+    }
+
+    /// Value following `"key":` as a string (quoted) or an integer, scanned straight from the bytes.
+    private nonisolated static func field(_ line: UnsafeRawBufferPointer, _ prefix: String) -> Substring? {
+        let p = Array(prefix.utf8)
+        guard let base = line.baseAddress, let hit = memmem(base, line.count, p, p.count) else { return nil }
+        let start = base.distance(to: UnsafeRawPointer(hit)) + p.count
+        var end = start
+        while end < line.count, line[end] != 0x22, line[end] != 0x2C, line[end] != 0x7D { end += 1 }
+        return String(decoding: UnsafeRawBufferPointer(rebasing: line[start..<end]), as: UTF8.self)[...]
+    }
+
+    private nonisolated static func int(_ line: UnsafeRawBufferPointer, _ key: String) -> Int {
+        field(line, "\"\(key)\":").flatMap { Int($0) } ?? 0
+    }
+
+    private final class Cache<Entry>: @unchecked Sendable {
+        private var items: [String: (mtime: Date, size: Int, entries: Entry)] = [:]
+        private let lock = NSLock()
+        func get(_ path: String, _ mtime: Date, _ size: Int) -> Entry? {
+            lock.lock(); defer { lock.unlock() }
+            guard let i = items[path], i.mtime == mtime, i.size == size else { return nil }
+            return i.entries
+        }
+        func set(_ path: String, _ mtime: Date, _ size: Int, _ e: Entry) {
+            lock.lock(); items[path] = (mtime, size, e); lock.unlock()
+        }
     }
 
     private nonisolated static func finish(_ u: inout ProviderUsage, perDay: [String: Int], now: Date) {
@@ -74,24 +122,37 @@ final class AIUsageService: ObservableObject {
 
     // MARK: Claude Code
 
-    nonisolated static func scanClaude(now: Date = Date()) -> ProviderUsage {
-        let root = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude/projects")
+    private struct ClaudeEntry { var key: String; var date: Date; var tokens: Int; var cacheRead: Int }
+    private nonisolated static let claudeCache = Cache<[ClaudeEntry]>()
+
+    nonisolated static func scanClaude(now: Date = Date(),
+                                       root: URL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".claude/projects")) -> ProviderUsage {
         let weekAgo = now.addingTimeInterval(-7 * 86400)
         var u = ProviderUsage(name: "Claude Code")
         var perDay: [String: Int] = [:]
         var seen = Set<String>()
-        for url in jsonlFiles(in: root, since: weekAgo) {
-            guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
-            for line in text.split(separator: "\n") where line.contains("\"usage\"") {
-                guard let obj = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
-                      let msg = obj["message"] as? [String: Any], let usage = msg["usage"] as? [String: Any],
-                      let ts = obj["timestamp"] as? String, let date = parseDate(ts), date > weekAgo else { continue }
-                // One API response is logged once per content block: count each id a single time.
-                let key = (msg["id"] as? String ?? "") + ((obj["requestId"] as? String) ?? "")
-                if !key.isEmpty, !seen.insert(key).inserted { continue }
-                let tokens = (usage["input_tokens"] as? Int ?? 0) + (usage["output_tokens"] as? Int ?? 0) + (usage["cache_creation_input_tokens"] as? Int ?? 0)
-                u.cacheRead += usage["cache_read_input_tokens"] as? Int ?? 0
-                add(&u, &perDay, tokens: tokens, at: date, now: now)
+        for f in jsonlFiles(in: root, since: weekAgo) {
+            let entries: [ClaudeEntry]
+            if let cached = claudeCache.get(f.url.path, f.mtime, f.size) { entries = cached }
+            else {
+                var parsed: [ClaudeEntry] = []
+                if let data = try? Data(contentsOf: f.url, options: .mappedIfSafe) {
+                    forEachLine(of: data, containing: "\"usage\"") { line in
+                        guard let ts = field(line, "\"timestamp\":\""), let date = parseDate(String(ts)) else { return }
+                        let key = (field(line, "\"message\":{\"id\":\"").map(String.init) ?? "") + (field(line, "\"requestId\":\"").map(String.init) ?? "")
+                        // Output of a response is logged once per content block: the id is what makes it unique.
+                        parsed.append(ClaudeEntry(key: key, date: date,
+                                                  tokens: int(line, "input_tokens") + int(line, "output_tokens") + int(line, "cache_creation_input_tokens"),
+                                                  cacheRead: int(line, "cache_read_input_tokens")))
+                    }
+                }
+                claudeCache.set(f.url.path, f.mtime, f.size, parsed)
+                entries = parsed
+            }
+            for e in entries where e.date > weekAgo {
+                if !e.key.isEmpty, !seen.insert(e.key).inserted { continue }
+                u.cacheRead += e.cacheRead
+                add(&u, &perDay, tokens: e.tokens, at: e.date, now: now)
             }
         }
         finish(&u, perDay: perDay, now: now)
@@ -100,39 +161,54 @@ final class AIUsageService: ObservableObject {
 
     // MARK: Codex
 
-    nonisolated static func scanCodex(now: Date = Date()) -> ProviderUsage {
-        let root = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex/sessions")
+    private struct CodexFile {
+        var entries: [(date: Date, tokens: Int, cached: Int)] = []
+        var limit: (date: Date, percent: Double, window: Int?, resets: Date?)?
+    }
+    private nonisolated static let codexCache = Cache<CodexFile>()
+
+    nonisolated static func scanCodex(now: Date = Date(),
+                                      root: URL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".codex/sessions")) -> ProviderUsage {
         let weekAgo = now.addingTimeInterval(-7 * 86400)
         var u = ProviderUsage(name: "Codex", symbol: "chevron.left.forwardslash.chevron.right")
         var perDay: [String: Int] = [:]
-        var newestLimit: Date?
-        for url in jsonlFiles(in: root, since: weekAgo) {
-            guard let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
-            var lastTotal = -1
-            for line in text.split(separator: "\n") where line.contains("\"token_count\"") {
-                guard let obj = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any],
-                      let payload = obj["payload"] as? [String: Any], payload["type"] as? String == "token_count",
-                      let ts = obj["timestamp"] as? String, let date = parseDate(ts), date > weekAgo else { continue }
-                if let info = payload["info"] as? [String: Any],
-                   let total = (info["total_token_usage"] as? [String: Any])?["total_tokens"] as? Int,
-                   let last = info["last_token_usage"] as? [String: Any], total != lastTotal {
-                    // The same cumulative total repeats when nothing new happened: count it once.
-                    lastTotal = total
-                    let input = last["input_tokens"] as? Int ?? 0, cached = last["cached_input_tokens"] as? Int ?? 0
-                    u.cacheRead += cached
-                    add(&u, &perDay, tokens: max(input - cached, 0) + (last["output_tokens"] as? Int ?? 0), at: date, now: now)
+        var newest: (date: Date, percent: Double, window: Int?, resets: Date?)?
+        for f in jsonlFiles(in: root, since: weekAgo) {
+            let file: CodexFile
+            if let cached = codexCache.get(f.url.path, f.mtime, f.size) { file = cached }
+            else {
+                var parsed = CodexFile()
+                var lastTotal = -1
+                if let data = try? Data(contentsOf: f.url, options: .mappedIfSafe) {
+                    forEachLine(of: data, containing: "\"token_count\"") { line in
+                        guard let obj = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any],
+                              let payload = obj["payload"] as? [String: Any], payload["type"] as? String == "token_count",
+                              let ts = obj["timestamp"] as? String, let date = parseDate(ts) else { return }
+                        if let info = payload["info"] as? [String: Any],
+                           let total = (info["total_token_usage"] as? [String: Any])?["total_tokens"] as? Int,
+                           let last = info["last_token_usage"] as? [String: Any], total != lastTotal {
+                            // The same cumulative total repeats when nothing new happened: count it once.
+                            lastTotal = total
+                            let input = last["input_tokens"] as? Int ?? 0, cached = last["cached_input_tokens"] as? Int ?? 0
+                            parsed.entries.append((date, max(input - cached, 0) + (last["output_tokens"] as? Int ?? 0), cached))
+                        }
+                        if let p = (payload["rate_limits"] as? [String: Any])?["primary"] as? [String: Any],
+                           let pct = p["used_percent"] as? Double, parsed.limit.map({ date >= $0.date }) ?? true {
+                            parsed.limit = (date, pct, p["window_minutes"] as? Int, (p["resets_at"] as? Double).map { Date(timeIntervalSince1970: $0) })
+                        }
+                    }
                 }
-                if let p = (payload["rate_limits"] as? [String: Any])?["primary"] as? [String: Any],
-                   let pct = p["used_percent"] as? Double, newestLimit.map({ date >= $0 }) ?? true {
-                    newestLimit = date
-                    u.limitPercent = pct
-                    u.limitWindowMinutes = p["window_minutes"] as? Int
-                    u.limitResetsAt = (p["resets_at"] as? Double).map { Date(timeIntervalSince1970: $0) }
-                }
+                codexCache.set(f.url.path, f.mtime, f.size, parsed)
+                file = parsed
             }
+            for e in file.entries where e.date > weekAgo {
+                u.cacheRead += e.cached
+                add(&u, &perDay, tokens: e.tokens, at: e.date, now: now)
+            }
+            if let l = file.limit, newest.map({ l.date >= $0.date }) ?? true { newest = l }
         }
         // A limit window that already reset says nothing about the present.
-        if let r = u.limitResetsAt, r < now { u.limitPercent = nil; u.limitResetsAt = nil }
+        if let l = newest, let r = l.resets, r > now { u.limitPercent = l.percent; u.limitWindowMinutes = l.window; u.limitResetsAt = r }
         finish(&u, perDay: perDay, now: now)
         return u
     }
