@@ -100,6 +100,8 @@ curl -X POST http://127.0.0.1:9998/notify \
 
 ## 🔐 Permissions
 
+Pillbox asks for nothing at launch. **Settings › Permissions** (opened on first launch) shows the state of each one with an **Allow** button that triggers the system prompt, or **Open Settings** once macOS has refused.
+
 | Permission | Used by | Why |
 | --- | --- | --- |
 | Automation (Spotify, Music) | Music | Read the current track and send transport commands. |
