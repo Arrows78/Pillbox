@@ -38,19 +38,44 @@ final class DevAPI {
 
     // MARK: HTTP
 
+    static let maxRequest = 256 * 1024
+
+    /// Whether `buffer` holds a whole request, and where its body starts. Headers and body may arrive in
+    /// separate TCP segments, so the caller keeps reading until `Content-Length` bytes of body are there.
+    nonisolated static func completeness(_ buffer: Data) -> (complete: Bool, bodyStart: Int?) {
+        guard let r = buffer.range(of: Data("\r\n\r\n".utf8)) else { return (false, nil) }
+        let head = String(decoding: buffer[..<r.lowerBound], as: UTF8.self).lowercased()
+        let length = head.components(separatedBy: "\r\n").compactMap { $0.hasPrefix("content-length:") ? Int($0.dropFirst(15).trimmingCharacters(in: .whitespaces)) : nil }.first ?? 0
+        return (buffer.count - r.upperBound >= length, r.upperBound)
+    }
+
     private nonisolated static func handle(_ c: NWConnection) {
         c.start(queue: .global(qos: .utility))
-        c.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { data, _, _, _ in
-            guard let text = String(data: data ?? Data(), encoding: .utf8), let split = text.range(of: "\r\n\r\n") else {
-                return reply(c, 400, "bad request")
+        read(c, Data())
+    }
+
+    private nonisolated static func read(_ c: NWConnection, _ buffer: Data) {
+        c.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { data, _, isComplete, error in
+            var buf = buffer; buf.append(data ?? Data())
+            if buf.count > maxRequest { return reply(c, 413, "request too large") }
+            let state = completeness(buf)
+            if !state.complete {
+                if error != nil || isComplete { return reply(c, 400, "incomplete request") }
+                return read(c, buf)
             }
-            let head = text[..<split.lowerBound], body = Data(text[split.upperBound...].utf8)
-            guard head.contains("Authorization: Bearer \(tokenCache)"), !tokenCache.isEmpty else { return reply(c, 401, "unauthorized") }
-            let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
-            if head.hasPrefix("POST /notify") { notify(c, json) }
-            else if head.hasPrefix("POST /approve") { approve(c, json) }
-            else { reply(c, 404, "not found") }
+            route(c, buf, bodyStart: state.bodyStart!)
         }
+    }
+
+    private nonisolated static func route(_ c: NWConnection, _ buf: Data, bodyStart: Int) {
+        let head = String(decoding: buf[..<(bodyStart - 4)], as: UTF8.self), body = buf[bodyStart...]
+        guard head.contains("Authorization: Bearer \(tokenCache)"), !tokenCache.isEmpty else { return reply(c, 401, "unauthorized") }
+        let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
+        if head.hasPrefix("POST /notify") { notify(c, json) }
+        else if head.hasPrefix("POST /approve") { approve(c, json) }
+        else if head.hasPrefix("POST /action") { action(c, json) }
+        else if head.hasPrefix("POST /turn") { turn(c, json) }
+        else { reply(c, 404, "not found") }
     }
 
     private nonisolated static func reply(_ c: NWConnection, _ status: Int, _ body: String, json: Bool = false) {
@@ -67,6 +92,24 @@ final class DevAPI {
             MainActor.assumeIsolated { NotchModel.shared.show(Activity(symbol: symbol, title: title, subtitle: message, duration: dur)) }
         }
         reply(c, 200, "ok")
+    }
+
+    private nonisolated static func action(_ c: NWConnection, _ obj: [String: Any]) {
+        let name = obj["tool"] as? String ?? "", args = obj["arguments"] as? [String: Any] ?? [:]
+        DispatchQueue.main.async { MainActor.assumeIsolated { let r = AgentActions.run(name, args); reply(c, r.ok ? 200 : 400, r.message) } }
+    }
+
+    /// Claude Code `Stop` hook: shows how many tokens the turn that just ended used.
+    private nonisolated static func turn(_ c: NWConnection, _ obj: [String: Any]) {
+        guard let path = obj["transcript_path"] as? String, AgentTurn.isAllowed(path) else { return reply(c, 400, "transcript_path must be a .jsonl under ~/.claude") }
+        DispatchQueue.global(qos: .utility).async {
+            guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { return reply(c, 400, "unreadable") }
+            let n = AgentTurn.tokens(in: text)
+            DispatchQueue.main.async { MainActor.assumeIsolated {
+                NotchModel.shared.show(Activity(symbol: "sparkles", title: "Agent turn finished", subtitle: L("%@ tokens", AIUsageService.short(n)), tint: .orange, duration: 5))
+                reply(c, 200, "\(n)")
+            } }
+        }
     }
 
     private nonisolated static func approve(_ c: NWConnection, _ obj: [String: Any]) {
