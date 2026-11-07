@@ -2,7 +2,7 @@ import AppKit
 import Carbon.HIToolbox
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchWindowController!
     private var statusItem: NSStatusItem!
     private var hotKeys: [HotKey] = []
@@ -57,6 +57,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if CommandLine.arguments.contains("--open-teleprompter") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { Teleprompter.shared.show() } }
         if CommandLine.arguments.contains("--open-player") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { FloatingPlayer.shared.show() } }
         if CommandLine.arguments.contains("--open-lyrics") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { LyricsScreen.shared.show() } }
+        // Debug aid: `Pillbox --open-menu` pops the menu-bar menu up in the middle of the screen (the icon may be hidden).
+        if CommandLine.arguments.contains("--open-menu") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                self?.statusItem.menu?.popUp(positioning: nil, at: NSPoint(x: 400, y: 900), in: nil)
+            }
+        }
+        // Debug aid: `Pillbox --open-settings ask` opens the settings window on a pane.
+        if let i = CommandLine.arguments.firstIndex(of: "--open-settings") {
+            let pane = CommandLine.arguments.indices.contains(i + 1) ? SettingsPane(rawValue: CommandLine.arguments[i + 1]) : nil
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SettingsWindow.show(pane: pane ?? .general) }
+        }
         if CommandLine.arguments.contains("--open-palette") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { PaletteController.shared.show() } }
         // Debug aid: `Pillbox --open-tab ai` opens the notch on a tab and keeps it open (used to screenshot each tab).
         if let i = CommandLine.arguments.firstIndex(of: "--open-tab"), CommandLine.arguments.indices.contains(i + 1),
@@ -102,17 +113,60 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "capsule.fill", accessibilityDescription: "Pillbox")
         let menu = NSMenu()
-        menu.addItem(withTitle: "Toggle Notch", action: #selector(toggleNotch), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "Command Palette", action: #selector(palette), keyEquivalent: "").target = self
-        menu.addItem(withTitle: "Settings…", action: #selector(settings), keyEquivalent: ",").target = self
-        menu.addItem(.separator())
-        menu.addItem(withTitle: "Quit Pillbox", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        menu.delegate = self
         statusItem.menu = menu
+        rebuildMenu(menu)
+    }
+
+    /// Rebuilt every time the menu opens, so the checkmarks and the running timer are current.
+    func menuNeedsUpdate(_ menu: NSMenu) { rebuildMenu(menu) }
+
+    private func rebuildMenu(_ menu: NSMenu) {
+        menu.removeAllItems()
+        func icon(_ symbol: String) -> NSImage? {
+            let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?.withSymbolConfiguration(.init(pointSize: 13, weight: .regular))
+            image?.isTemplate = true
+            return image
+        }
+        func add(_ title: String, _ symbol: String, _ action: Selector, key: String = "", mods: NSEvent.ModifierFlags = [.control, .option], target: AnyObject? = nil) -> NSMenuItem {
+            let item = NSMenuItem(title: L(title), action: action, keyEquivalent: key)
+            item.keyEquivalentModifierMask = mods
+            item.image = icon(symbol)
+            item.target = target ?? self
+            menu.addItem(item)
+            return item
+        }
+        _ = add("Toggle Notch", "capsule.portrait.bottomhalf.filled", #selector(toggleNotch), key: "n")
+        _ = add("Command Palette", "command", #selector(palette), key: "k")
+
+        menu.addItem(.separator())
+        let tabs = NSMenu()
+        for tab in Tab.allCases {
+            let item = NSMenuItem(title: tab.title, action: #selector(openTab(_:)), keyEquivalent: "")
+            item.target = self; item.representedObject = tab.rawValue
+            item.image = icon(tab.symbol)
+            tabs.addItem(item)
+        }
+        let open = NSMenuItem(title: L("Open Tab"), action: nil, keyEquivalent: "")
+        open.image = icon("square.grid.2x2")
+        open.submenu = tabs
+        menu.addItem(open)
+        let awake = add("Keep Awake", "cup.and.saucer.fill", #selector(toggleAwake), mods: [])
+        awake.state = CaffeineService.shared.active ? .on : .off
+
+        menu.addItem(.separator())
+        _ = add("Settings…", "gearshape", #selector(settings), key: ",", mods: .command)
+        _ = add("Quit Pillbox", "power", #selector(NSApplication.terminate(_:)), key: "q", mods: .command, target: NSApp)
     }
 
     @objc private func toggleNotch() { NotchModel.shared.toggle() }
     @objc private func palette() { PaletteController.shared.toggle() }
     @objc private func settings() { SettingsWindow.show() }
+    @objc private func toggleAwake() { CaffeineService.shared.toggle() }
+    @objc private func openTab(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String, let tab = Tab(rawValue: raw) else { return }
+        NotchModel.shared.expand(tab)
+    }
 
     // MARK: Hover open / auto close
 

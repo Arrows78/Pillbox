@@ -20,3 +20,17 @@
 "%@ tokens" = "%@ tokens";
 "Fewer minutes" = "Fewer minutes";
 "More minutes" = "More minutes";
+"About" = "About";
+"Appearance" = "Appearance";
+"Pill gestures" = "Pill gestures";
+"Keep Awake" = "Keep Awake";
+"Open Tab" = "Open Tab";
+"Version %@" = "Version %@";
+"Open on GitHub" = "Open on GitHub";
+"Source code and releases" = "Source code and releases";
+"Command Palette" = "Command Palette";
+"Toggle Notch" = "Toggle Notch";
+"Settings…" = "Settings…";
+"Pillbox stays out of screenshots, recordings and screen sharing." = "Pillbox stays out of screenshots, recordings and screen sharing.";
+"Paints the menu bar black so the notch disappears." = "Paints the menu bar black so the notch disappears.";
+"Menu bar" = "Menu bar";

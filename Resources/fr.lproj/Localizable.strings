@@ -421,3 +421,17 @@
 "Clear the copy stack" = "Vider la pile de copies";
 "Fewer minutes" = "Moins de minutes";
 "More minutes" = "Plus de minutes";
+"About" = "À propos";
+"Appearance" = "Apparence";
+"Pill gestures" = "Gestes sur la pastille";
+"Keep Awake" = "Garder éveillé";
+"Open Tab" = "Ouvrir un onglet";
+"Version %@" = "Version %@";
+"Open on GitHub" = "Ouvrir sur GitHub";
+"Source code and releases" = "Code source et versions";
+"Command Palette" = "Palette de commandes";
+"Toggle Notch" = "Afficher ou masquer le notch";
+"Settings…" = "Réglages…";
+"Pillbox stays out of screenshots, recordings and screen sharing." = "Pillbox n’apparaît ni dans les captures, ni dans les enregistrements, ni dans le partage d’écran.";
+"Paints the menu bar black so the notch disappears." = "Peint la barre des menus en noir pour que le notch disparaisse.";
+"Menu bar" = "Barre des menus";

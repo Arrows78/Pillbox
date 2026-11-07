@@ -141,31 +141,27 @@ final class PermissionsCenter: ObservableObject {
     }
 }
 
-struct PermissionsSection: View {
+struct PermissionsCard: View {
     @ObservedObject var center = PermissionsCenter.shared
     private let tick = Timer.publish(every: 2, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        Section("Permissions") {
+        SettingsCard(title: "Permissions") {
             ForEach(PermissionKind.allCases) { k in
                 let st = center.states[k] ?? .notDetermined
-                HStack(spacing: 10) {
-                    Image(systemName: st == .granted ? "checkmark.circle.fill" : st == .denied ? "xmark.circle.fill" : "circle.dashed")
-                        .foregroundStyle(st == .granted ? .green : st == .denied ? .red : .secondary)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(k.title)
-                        Text(k.reason).font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    if st != .granted {
-                        Button(LocalizedStringKey(st == .denied || st == .unavailable ? "Open Settings" : "Allow")) { center.request(k) }
-                            .controlSize(.small)
+                SettingsRow(title: LocalizedStringKey(k.title), subtitle: LocalizedStringKey(k.reason)) {
+                    HStack(spacing: 8) {
+                        Image(systemName: st == .granted ? "checkmark.circle.fill" : st == .denied ? "xmark.circle.fill" : "circle.dashed")
+                            .foregroundStyle(st == .granted ? Color.green : st == .denied ? Color.red : Color.secondary)
+                        if st != .granted {
+                            Button(LocalizedStringKey(st == .denied || st == .unavailable ? "Open Settings" : "Allow")) { center.request(k) }.controlSize(.small)
+                        }
                     }
                 }
             }
-            Button("Allow everything that is pending") { center.requestAll() }
         }
-        .onAppear { center.refresh() }
-        .onReceive(tick) { _ in center.refresh() }
+        Button("Allow everything that is pending") { center.requestAll() }.controlSize(.small)
+            .onAppear { center.refresh() }
+            .onReceive(tick) { _ in center.refresh() }
     }
 }

@@ -372,3 +372,17 @@
 "Clear the copy stack" = "Vaciar la pila de copias";
 "Fewer minutes" = "Menos minutos";
 "More minutes" = "Más minutos";
+"About" = "Acerca de";
+"Appearance" = "Apariencia";
+"Pill gestures" = "Gestos en la píldora";
+"Keep Awake" = "Mantener activo";
+"Open Tab" = "Abrir pestaña";
+"Version %@" = "Versión %@";
+"Open on GitHub" = "Abrir en GitHub";
+"Source code and releases" = "Código fuente y versiones";
+"Command Palette" = "Paleta de comandos";
+"Toggle Notch" = "Mostrar u ocultar el notch";
+"Settings…" = "Ajustes…";
+"Pillbox stays out of screenshots, recordings and screen sharing." = "Pillbox no aparece en capturas, grabaciones ni al compartir pantalla.";
+"Paints the menu bar black so the notch disappears." = "Pinta la barra de menús de negro para que el notch desaparezca.";
+"Menu bar" = "Barra de menús";
