@@ -81,6 +81,7 @@ struct HomeTab: View {
             }.frame(width: 46, height: 46)
             Text(name).font(.system(size: 10)).foregroundStyle(.secondary)
         }.frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore).accessibilityLabel(Text(name)).accessibilityValue("\(Int(v * 100))%")
     }
 
     private func quick(_ symbol: String, _ title: LocalizedStringKey, active: Bool = false, action: @escaping () -> Void) -> some View {
@@ -128,13 +129,13 @@ struct MusicTab: View {
                     }.font(.system(size: 9, design: .monospaced)).foregroundStyle(.secondary)
                     HStack(spacing: 26) {
                         Spacer()
-                        Button { music.previous() } label: { Image(systemName: "backward.fill") }
-                        Button { music.playPause() } label: { Image(systemName: music.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 20)) }
-                        Button { music.next() } label: { Image(systemName: "forward.fill") }
+                        Button { music.previous() } label: { Image(systemName: "backward.fill") }.accessibilityLabel("Previous track")
+                        Button { music.playPause() } label: { Image(systemName: music.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 20)) }.accessibilityLabel(LocalizedStringKey(music.isPlaying ? "Pause" : "Play"))
+                        Button { music.next() } label: { Image(systemName: "forward.fill") }.accessibilityLabel("Next track")
                         Spacer()
-                        Button { music.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(music.shuffling ? Color.accentColor : .white.opacity(0.6)) }
-                        Button { music.toggleRepeat() } label: { Image(systemName: "repeat").foregroundStyle(music.repeating ? Color.accentColor : .white.opacity(0.6)) }
-                        if music.player == .music { Button { music.favorite() } label: { Image(systemName: "heart").foregroundStyle(.white.opacity(0.6)) } }
+                        Button { music.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(music.shuffling ? Color.accentColor : .white.opacity(0.6)) }.accessibilityLabel("Shuffle").accessibilityAddTraits(music.shuffling ? .isSelected : [])
+                        Button { music.toggleRepeat() } label: { Image(systemName: "repeat").foregroundStyle(music.repeating ? Color.accentColor : .white.opacity(0.6)) }.accessibilityLabel("Repeat").accessibilityAddTraits(music.repeating ? .isSelected : [])
+                        if music.player == .music { Button { music.favorite() } label: { Image(systemName: "heart").foregroundStyle(.white.opacity(0.6)) }.accessibilityLabel("Favorite") }
                     }.buttonStyle(.plain).font(.system(size: 16))
                 }
             }
@@ -231,10 +232,10 @@ struct NotesTab: View {
                 VStack(spacing: 4) {
                     ForEach(store.notes) { n in
                         HStack(spacing: 8) {
-                            Button { store.toggle(n) } label: { Image(systemName: n.done ? "checkmark.circle.fill" : "circle") }.buttonStyle(.plain)
+                            Button { store.toggle(n) } label: { Image(systemName: n.done ? "checkmark.circle.fill" : "circle") }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey(n.done ? "Mark as not done" : "Mark as done"))
                             Text(n.text).strikethrough(n.done).foregroundStyle(n.done ? .secondary : .primary).lineLimit(2)
                             Spacer()
-                            Button { store.remove(n) } label: { Image(systemName: "trash").foregroundStyle(.secondary) }.buttonStyle(.plain)
+                            Button { store.remove(n) } label: { Image(systemName: "trash").foregroundStyle(.secondary) }.buttonStyle(.plain).accessibilityLabel("Delete")
                         }
                         .font(.system(size: 12)).padding(.horizontal, 8).padding(.vertical, 5)
                         .background(card, in: RoundedRectangle(cornerRadius: 8))
@@ -313,7 +314,7 @@ struct SnippetsView: View {
                                 Text(sn.text).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
                             }
                             Spacer()
-                            Button { store.remove(sn) } label: { Image(systemName: "trash").foregroundStyle(.secondary) }.buttonStyle(.plain)
+                            Button { store.remove(sn) } label: { Image(systemName: "trash").foregroundStyle(.secondary) }.buttonStyle(.plain).accessibilityLabel("Delete")
                         }
                         .padding(.horizontal, 8).padding(.vertical, 5).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                         .contentShape(Rectangle()).onTapGesture { store.paste(sn) }
@@ -336,10 +337,10 @@ struct ClipCard: View {
                 Text(item.date, style: .relative).foregroundStyle(.secondary)
                 Spacer()
                 if let t = item.text, case .url(let u) = ClipboardService.kind(of: t) {
-                    Button { NSWorkspace.shared.open(u) } label: { Image(systemName: "safari") }.buttonStyle(.plain)
+                    Button { NSWorkspace.shared.open(u) } label: { Image(systemName: "safari") }.buttonStyle(.plain).accessibilityLabel("Open link")
                 }
                 if let t = item.text, case .email(let e) = ClipboardService.kind(of: t), let u = URL(string: "mailto:\(e)") {
-                    Button { NSWorkspace.shared.open(u) } label: { Image(systemName: "envelope") }.buttonStyle(.plain)
+                    Button { NSWorkspace.shared.open(u) } label: { Image(systemName: "envelope") }.buttonStyle(.plain).accessibilityLabel("Send email")
                 }
             }.font(.system(size: 9))
         }
@@ -429,9 +430,9 @@ struct LauncherTab: View {
     @State private var mode = 0
     var body: some View {
         VStack(spacing: 6) {
-            Picker("", selection: $mode) { Text("Apps").tag(0); Text("Shortcuts").tag(1) }
-                .pickerStyle(.segmented).labelsHidden().controlSize(.small).frame(width: 170)
-            if mode == 0 { AppsGrid() } else { ShortcutsGrid() }
+            Picker("", selection: $mode) { Text("Apps").tag(0); Text("Shortcuts").tag(1); Text("Actions").tag(2) }
+                .pickerStyle(.segmented).labelsHidden().controlSize(.small).frame(width: 250)
+            if mode == 0 { AppsGrid() } else if mode == 1 { ShortcutsGrid() } else { ActionsGrid() }
         }
     }
 }
@@ -502,7 +503,7 @@ struct StocksTab: View {
             HStack {
                 TextField("Add a symbol (AAPL, ^GSPC, BTC-USD…)", text: $symbol).textFieldStyle(.roundedBorder).focused($focused)
                     .onSubmit { stocks.add(symbol); symbol = "" }
-                Button { stocks.refresh() } label: { Image(systemName: "arrow.clockwise") }.controlSize(.small)
+                Button { stocks.refresh() } label: { Image(systemName: "arrow.clockwise") }.controlSize(.small).accessibilityLabel("Refresh")
             }
             .onChange(of: focused) { model.pinnedOpen = $0 }
             ScrollView {
@@ -645,7 +646,7 @@ struct RemindersTab: View {
                         if rem.items.isEmpty { Text("Nothing to do").font(.system(size: 11)).foregroundStyle(.tertiary) }
                         ForEach(rem.items) { r in
                             HStack(spacing: 8) {
-                                Button { rem.complete(r) } label: { Image(systemName: "circle") }.buttonStyle(.plain)
+                                Button { rem.complete(r) } label: { Image(systemName: "circle") }.buttonStyle(.plain).accessibilityLabel("Complete")
                                 Text(r.title).lineLimit(1)
                                 Spacer()
                                 if let d = r.due { Text(d, format: .dateTime.day().month(.abbreviated).hour().minute()).foregroundStyle(r.overdue ? .red : .secondary) }

@@ -28,6 +28,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         KeystrokeHUD.shared.start()
         BrightnessHUD.shared.start()
         BreakReminder.shared.start()
+        NotificationFeed.shared.start()
         DownloadProgress.shared.start()
         BuildWatcher.shared.start()
         FocusMonitor.shared.start()

@@ -43,6 +43,7 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
+        list += QuickActionsStore.shared.actions.map { a in PaletteCommand(localized: L("Action: %@", a.name), symbol: "bolt.circle") { QuickActionsStore.shared.run(a) } }
         list += AudioControl.outputDevices().map { d in PaletteCommand(localized: L("Sound output: %@", d.name), symbol: "hifispeaker.fill") { AudioControl.shared.selectOutput(d) } }
         list += ShortcutsService.shared.names.map { n in PaletteCommand(localized: L("Shortcut: %@", n), symbol: "bolt.fill") { ShortcutsService.shared.run(n) } }
         list += SnapZone.allCases.map { z in PaletteCommand(localized: L("Snap window: %@", L(z.rawValue)), symbol: "rectangle.split.2x1") { WindowSnap.snap(z) } }

@@ -26,6 +26,10 @@ struct SettingsView: View {
     @AppStorage("focusIsland") private var focusIsland = true
     @AppStorage("callIsland") private var callIsland = true
     @AppStorage("hudStyle") private var hudStyle = "notch"
+    @AppStorage("islandTheme") private var islandTheme = "black"
+    @AppStorage("doubleClickAction") private var doubleClickAction = "none"
+    @AppStorage("tripleClickAction") private var tripleClickAction = "none"
+    @AppStorage("notificationIsland") private var notificationIsland = false
     @AppStorage("shakeToOpen") private var shakeToOpen = true
     @AppStorage("breakReminder") private var breakReminder = 0
     @AppStorage("buildIsland") private var buildIsland = true
@@ -80,6 +84,9 @@ struct SettingsView: View {
                     Text("Automatic").tag("")
                     ForEach(NSScreen.screens, id: \.localizedName) { Text(verbatim: $0.localizedName).tag($0.localizedName) }
                 }
+                Picker("Island theme", selection: $islandTheme) { ForEach(IslandTheme.allCases) { Text(LocalizedStringKey($0.title)).tag($0.rawValue) } }
+                Picker("Double-click the pill", selection: $doubleClickAction) { ForEach(PillAction.allCases) { Text(verbatim: $0.title).tag($0.rawValue) } }
+                Picker("Triple-click the pill", selection: $tripleClickAction) { ForEach(PillAction.allCases) { Text(verbatim: $0.title).tag($0.rawValue) } }
                 Picker("Volume and brightness style", selection: $hudStyle) { Text("Bar").tag("notch"); Text("Circle").tag("circle") }
                 Picker("Timer mascot", selection: $mascot) { ForEach(Mascot.allCases) { m in Text(verbatim: (m.emoji ?? "") + " " + m.title).tag(m.rawValue) } }
                 HStack {
@@ -103,6 +110,7 @@ struct SettingsView: View {
             Section("More alerts") {
                 Toggle("Brightness island", isOn: $brightnessHUD)
                 Toggle("Focus mode island", isOn: $focusIsland)
+                Toggle("Show new notifications as islands (Full Disk Access)", isOn: $notificationIsland)
                 Toggle("Call in progress island", isOn: $callIsland)
                 Toggle("Build island (Xcode and swift build)", isOn: $buildIsland)
                 Picker("Break reminder", selection: $breakReminder) {
@@ -110,6 +118,7 @@ struct SettingsView: View {
                 }
                 Toggle("Live audio spectrum (asks for audio capture)", isOn: $liveSpectrum)
             }
+            Section("Quick actions") { QuickActionsEditor() }
             Section("Ask about screen") {
                 SecureField("Anthropic API key", text: $apiKey).onSubmit { Keychain.set(apiKey, AskModel.keyService); keySaved = !apiKey.isEmpty; apiKey = "" }
                 HStack {
