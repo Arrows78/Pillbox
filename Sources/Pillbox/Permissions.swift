@@ -5,12 +5,13 @@ import CoreLocation
 import EventKit
 
 enum PermissionKind: String, CaseIterable, Identifiable {
-    case accessibility, calendar, location, camera, spotify, music
+    case accessibility, inputMonitoring, calendar, location, camera, spotify, music
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .accessibility: "Accessibility"
+        case .inputMonitoring: "Input Monitoring"
         case .calendar: "Calendars"
         case .location: "Location"
         case .camera: "Camera"
@@ -22,6 +23,7 @@ enum PermissionKind: String, CaseIterable, Identifiable {
     var reason: String {
         switch self {
         case .accessibility: "Keyboard lock, window snapping and paste from the clipboard."
+        case .inputMonitoring: "Keystroke display."
         case .calendar: "Next event on Home."
         case .location: "Local weather."
         case .camera: "Camera mirror."
@@ -33,6 +35,7 @@ enum PermissionKind: String, CaseIterable, Identifiable {
     var settingsURL: String {
         switch self {
         case .accessibility: "Privacy_Accessibility"
+        case .inputMonitoring: "Privacy_ListenEvent"
         case .calendar: "Privacy_Calendars"
         case .location: "Privacy_LocationServices"
         case .camera: "Privacy_Camera"
@@ -53,6 +56,7 @@ final class PermissionsCenter: ObservableObject {
     func state(of k: PermissionKind) -> PermissionState {
         switch k {
         case .accessibility: return AXIsProcessTrusted() ? .granted : .notDetermined
+        case .inputMonitoring: return CGPreflightListenEventAccess() ? .granted : .notDetermined
         case .calendar:
             switch EKEventStore.authorizationStatus(for: .event) {
             case .fullAccess: return .granted
@@ -83,6 +87,7 @@ final class PermissionsCenter: ObservableObject {
         switch k {
         case .accessibility:
             _ = AXIsProcessTrustedWithOptions([kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary)
+        case .inputMonitoring: _ = CGRequestListenEventAccess()
         case .calendar: CalendarService.shared.start()
         case .location: WeatherService.shared.requestAuthorization()
         case .camera: AVCaptureDevice.requestAccess(for: .video) { _ in }

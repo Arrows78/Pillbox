@@ -9,6 +9,8 @@ struct SettingsView: View {
     @AppStorage("downloadAlerts") private var downloadAlerts = true
     @AppStorage("privacyIndicator") private var privacyIndicator = true
     @AppStorage("volumeHUD") private var volumeHUD = true
+    @AppStorage("keystrokeHUD") private var keystrokeHUD = false
+    @AppStorage("shortcutsOnly") private var shortcutsOnly = true
     @AppStorage("fullChargeLevel") private var fullCharge = 100
     @AppStorage("pillWidth") private var pillWidth = 170.0
     @AppStorage("devAPIEnabled") private var devAPI = false
@@ -32,6 +34,8 @@ struct SettingsView: View {
                 Toggle("Download finished island", isOn: $downloadAlerts)
                 Toggle("Microphone and camera indicator", isOn: $privacyIndicator)
                 Toggle("Volume island", isOn: $volumeHUD)
+                Toggle("Show keystrokes (for presentations)", isOn: $keystrokeHUD)
+                if keystrokeHUD { Toggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }
                 Stepper("Charged island at \(fullCharge)%", value: $fullCharge, in: 80...100, step: 5)
             }
             Section("Developer API (127.0.0.1:\(DevAPI.defaultPort))") {
@@ -41,6 +45,16 @@ struct SettingsView: View {
                         let path = Bundle.main.path(forResource: "claude-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-hook.sh"
                         let cfg = "{\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash|Write|Edit\",\"hooks\":[{\"type\":\"command\",\"command\":\"\(path)\",\"timeout\":130}]}]}}"
                         NSPasteboard.general.clearContents(); NSPasteboard.general.setString(cfg, forType: .string)
+                    }
+                    Button("Copy zsh hook for long-running commands") {
+                        let hook = """
+                        # Pillbox: show an island when a command runs longer than 15 s
+                        autoload -Uz add-zsh-hook
+                        _pillbox_pre() { _pb_cmd="$1"; _pb_t=$SECONDS }
+                        _pillbox_post() { local s=$? d=$((SECONDS-${_pb_t:-$SECONDS})); [ -n "$_pb_cmd" ] && [ $d -ge 15 ] && curl -s -m 2 -X POST http://127.0.0.1:\(DevAPI.defaultPort)/notify -H "Authorization: Bearer $(defaults read dev.labs.pillbox devAPIToken)" -d "{\\"title\\":\\"Command finished (${d}s)\\",\\"message\\":\\"${_pb_cmd:0:80}\\",\\"symbol\\":\\"terminal.fill\\",\\"duration\\":5}" >/dev/null 2>&1 &!; _pb_cmd= }
+                        add-zsh-hook preexec _pillbox_pre; add-zsh-hook precmd _pillbox_post
+                        """
+                        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(hook, forType: .string)
                     }
                     Button(copied ? "Copied" : "Copy example request") {
                         let cmd = "curl -X POST http://127.0.0.1:\(DevAPI.defaultPort)/notify -H 'Authorization: Bearer \(DevAPI.token)' -d '{\"title\":\"Build done\",\"symbol\":\"hammer.fill\"}'"

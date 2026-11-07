@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if PermissionsCenter.shared.state(of: .calendar) == .granted { CalendarService.shared.start() }
         DownloadsWatcher.shared.start()
         Tools.startCapsLockHUD()
+        KeystrokeHUD.shared.start()
         DevAPI.shared.apply()
         PrivacyService.shared.start()
         if PermissionsCenter.shared.state(of: .location) == .granted { WeatherService.shared.start() }
