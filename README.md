@@ -22,7 +22,7 @@
 ### 🏝️ Island
 
 - **Hover to open**, auto-close when the pointer leaves, adjustable delay. A flick to the top edge counts.
-- **Tabs**: Home, Music, Timer, Stocks, AI usage, Notes, Clipboard, Shelf, Launcher. Switch with ⌘1–9 or a two-finger swipe.
+- **Tabs**: Home, Music, Timer, Stocks, AI usage, Notes, Clipboard, Shelf, Launcher, Terminal. Switch with ⌘1–9 or a two-finger swipe.
 - **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown, microphone and camera dots, a pinned stock.
 - **Activity islands**: short messages in place of the pill, with an optional action button.
 - **Any Mac**: virtual pill with an adjustable width when there is no hardware notch.
@@ -59,7 +59,9 @@
 
 ### 🤖 AI tools
 
-- **AI usage**: Claude Code tokens for the last 5 hours, today and 7 days, read from the local session logs in `~/.claude/projects`. Nothing leaves the Mac. Cache reads are shown separately.
+- **AI usage**: tokens for the last 5 hours, today and 7 days, for **Claude Code** (`~/.claude/projects`) and **Codex** (`~/.codex/sessions`), read from the local logs. For Codex the limit window the CLI reports (percent used, reset time) is shown too. Nothing leaves the Mac, and cache reads are not counted.
+- **Terminal**: a real xterm-compatible login shell in its own tab ([SwiftTerm](https://github.com/migueldeicaza/SwiftTerm)). It keeps running when you switch tabs and restarts if you exit it.
+- **Long commands**: **Settings › Developer API › Copy zsh hook** gives an opt-in `preexec` / `precmd` snippet that shows an island when a command ran for 15 seconds or more.
 - **Agent approvals**: when Claude Code is about to run a tool, an Allow / Deny island appears and your answer goes back through a `PreToolUse` hook. *Ask in terminal*, or two minutes without an answer, hands the decision back to Claude Code's normal prompt. Enable the local API, then **Settings › Developer API › Copy Claude Code approval hook** and paste the result into `~/.claude/settings.json`.
 
 ### 🔔 Alerts and tools
@@ -68,6 +70,7 @@
 - **Downloads**: an island with a Reveal button when a file lands in Downloads, whatever the browser.
 - **Privacy indicator**: dots on the pill while any app uses the microphone or the camera.
 - **Volume** island with a level bar, **Caps Lock** island.
+- **Keystrokes** (off by default): shows the shortcuts you press, or everything you type if you turn *Shortcuts only* off. Never shown while macOS secure input is on (password fields), never stored.
 - **Mic mute**: one switch mutes the input device itself, so every call app goes silent.
 - **Camera mirror**: a local preview under the notch. Nothing is recorded.
 - **Cleaning**: lock the keyboard for 60 s (⌘⎋ unlocks) or black out the displays.
@@ -117,6 +120,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Calendars | Home | Show the next event. |
 | Location | Home | Local weather. |
 | Camera | Camera mirror | Show the preview. |
+| Input Monitoring | Keystroke display | Observe key presses system-wide. |
 | Accessibility | Keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
 | Downloads folder | Download alerts | Notice finished downloads. |
 
@@ -125,6 +129,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Area | Technologies |
 | --- | --- |
 | Language | Swift (Swift Package, no Xcode project) |
+| Dependencies | [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) (MIT) for the terminal tab |
 | User interface | SwiftUI (island, tabs, settings), AppKit (borderless panel, hover and drag monitors) |
 | Media | AppleScript for Spotify and Music, LRCLIB for lyrics, AVFoundation (camera mirror) |
 | Web data | Open-Meteo (weather), Yahoo Finance (quotes) |
@@ -164,7 +169,9 @@ Pillbox/
     ├── System.swift                     # Keep awake, battery, stats, downloads, tools, calendar
     ├── Stores.swift                     # Notes and launcher
     ├── Audio, Mirror, Cleaning, WindowSnap  # Volume, mic, privacy, camera, locks, snapping
-    ├── Weather, Stocks, AIUsage         # Weather, watchlist, Claude Code usage
+    ├── Weather, Stocks, AIUsage         # Weather, watchlist, Claude Code and Codex usage
+    ├── Terminal, Keystrokes             # Shell tab, keystroke display
+    ├── Permissions.swift                # Permissions center
     ├── Palette, Settings, DevAPI        # Command palette, hotkeys, settings, local API
 ```
 
@@ -177,7 +184,7 @@ Pillbox/
 
 ## 🗺️ Roadmap
 
-Notch terminal, brightness HUD, call and message islands, keystroke HUD, Codex and Cursor usage, drag-to-notch snap zones, desktop and lock-screen widgets, localisation.
+Brightness HUD, call and message islands, Cursor and Copilot usage, drag-to-notch snap zones, desktop and lock-screen widgets, localisation.
 
 ## 🙌 Contributing
 
