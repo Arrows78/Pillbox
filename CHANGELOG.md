@@ -4,10 +4,37 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.2.0] - 2026-11-07
+
+### Added
+
+- **music**: Add shuffle, repeat and an Apple Music favourite button
+- **island**: Show download progress and builds, shake to open the shelf, add break reminders
+- **palette**: Add calendar events and Apple Notes capture, show Bluetooth batteries
+- **settings**: Choose the display, hide in full screen, add French strings, tests and docs
+- **island**: Queue islands, add themes and click gestures on the pill
+- **actions**: Add quick actions, web mini-apps and a notification island
+- **a11y**: Label icon-only controls for VoiceOver and expose toggle state
+- **l10n**: Add Spanish and German from a single checked table
+- **settings**: Add theme, gesture and quick action settings, tests and docs
+- **ai**: Warn before an AI usage limit is reached
+- **github**: Add a pull requests tab through the gh CLI
+- **hud**: Add an edge bar style for volume and brightness
+- **l10n**: Translate the new texts in four languages and document them
+- **mcp**: Add an MCP server and a Claude Code turn summary
+- **player**: Add a floating player, full-screen lyrics, a copy stack and calculation history
+- **island**: Resize the open panel and keep the terminal out of inherited directories
+- **l10n**: Translate the new texts in four languages, add tests and docs
+
+### Fixed
+
+- **api**: Read the whole request body before routing
+
 ## [0.1.0] - 2026-11-07
 
 ### Added
 
 - Initial release.
 
+[0.2.0]: https://github.com/Arrows78/Pillbox/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Arrows78/Pillbox/releases/tag/v0.1.0
