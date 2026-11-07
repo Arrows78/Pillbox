@@ -1,0 +1,74 @@
+import AppKit
+import SwiftUI
+
+/// Hosting view that lets clicks fall through everywhere outside the visible shape.
+final class PassthroughHostingView<Content: View>: NSHostingView<Content> {
+    var activeRect: NSRect = .zero
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        let local = convert(point, from: superview)
+        return activeRect.contains(local) ? super.hitTest(point) : nil
+    }
+}
+
+final class NotchPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
+}
+
+@MainActor
+final class NotchWindowController {
+    let panel: NotchPanel
+    private let hosting: PassthroughHostingView<NotchRootView>
+    private let model = NotchModel.shared
+    private var observers: [NSObjectProtocol] = []
+
+    init() {
+        let size = NotchModel.windowSize
+        panel = NotchPanel(contentRect: NSRect(origin: .zero, size: size),
+                           styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.level = .mainMenu + 3
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        panel.isMovable = false
+        hosting = PassthroughHostingView(rootView: NotchRootView())
+        hosting.frame = NSRect(origin: .zero, size: size)
+        panel.contentView = hosting
+        reposition()
+        panel.orderFrontRegardless()
+
+        observers.append(NotificationCenter.default.addObserver(forName: .notchStateChanged, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.updateActiveRect() }
+        })
+        observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.model.geometry = NotchGeometry.detect()
+                self?.reposition()
+            }
+        })
+    }
+
+    /// Visible shape rect in screen coordinates (used for hover tests).
+    var shapeRectOnScreen: NSRect {
+        let f = panel.frame
+        let s = model.size(hasWings: LiveState.shared.hasWings)
+        return NSRect(x: f.midX - s.width / 2, y: f.maxY - s.height, width: s.width, height: s.height)
+    }
+
+    func reposition() {
+        guard let screen = model.geometry.screen ?? NSScreen.main else { return }
+        let size = NotchModel.windowSize
+        panel.setFrame(NSRect(x: screen.frame.midX - size.width / 2, y: screen.frame.maxY - size.height,
+                              width: size.width, height: size.height), display: true)
+        updateActiveRect()
+    }
+
+    func updateActiveRect() {
+        let s = model.size(hasWings: LiveState.shared.hasWings)
+        let b = hosting.bounds
+        hosting.activeRect = NSRect(x: b.midX - s.width / 2, y: b.maxY - s.height, width: s.width, height: s.height)
+    }
+
+    func makeKey() { panel.makeKey() }
+}
