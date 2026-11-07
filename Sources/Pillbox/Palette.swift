@@ -23,6 +23,7 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: CaffeineService.shared.active ? "Turn keep awake off" : "Turn keep awake on", symbol: "cup.and.saucer.fill") { CaffeineService.shared.toggle() },
             PaletteCommand(title: "Start focus session", symbol: "timer") { t.mode = .focus; t.start() },
             PaletteCommand(title: "Start stopwatch", symbol: "stopwatch") { t.mode = .stopwatch; t.start() },
+            PaletteCommand(title: AudioControl.shared.micMuted ? "Unmute microphone" : "Mute microphone", symbol: "mic.slash.fill") { AudioControl.shared.toggleMic() },
             PaletteCommand(title: "Pick a color", symbol: "eyedropper") { Tools.pickColor() },
             PaletteCommand(title: "Capture an area", symbol: "camera.viewfinder") { Tools.captureArea() },
             PaletteCommand(title: "Play / pause music", symbol: "playpause.fill") { MusicService.shared.playPause() },

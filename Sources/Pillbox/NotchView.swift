@@ -6,7 +6,7 @@ final class LiveState {
     static let shared = LiveState()
     var hasWings: Bool {
         let t = TimerService.shared, m = MusicService.shared
-        return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying)
+        return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live
     }
 }
 
@@ -15,8 +15,9 @@ struct NotchRootView: View {
     @ObservedObject var timer = TimerService.shared
     @ObservedObject var music = MusicService.shared
     @ObservedObject var caffeine = CaffeineService.shared
+    @ObservedObject var privacy = PrivacyService.shared
 
-    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) }
+    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live }
     private var size: CGSize { model.size(hasWings: wings) }
 
     var body: some View {
@@ -47,6 +48,7 @@ struct NotchRootView: View {
 }
 
 struct CollapsedWings: View {
+    @ObservedObject var privacy = PrivacyService.shared
     @ObservedObject var model = NotchModel.shared
     @ObservedObject var timer = TimerService.shared
     @ObservedObject var music = MusicService.shared
@@ -62,7 +64,12 @@ struct CollapsedWings: View {
     }
 
     @ViewBuilder private var left: some View {
-        if music.hasTrack && music.isPlaying, let art = music.artwork {
+        if privacy.live {
+            HStack(spacing: 4) {
+                if privacy.micLive { Image(systemName: "mic.fill").foregroundStyle(.orange) }
+                if privacy.cameraLive { Image(systemName: "video.fill").foregroundStyle(.green) }
+            }.font(.system(size: 11))
+        } else if music.hasTrack && music.isPlaying, let art = music.artwork {
             Image(nsImage: art).resizable().frame(width: 20, height: 20).clipShape(RoundedRectangle(cornerRadius: 5))
         } else if timer.isActive {
             Image(systemName: "timer").font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange)
@@ -109,6 +116,10 @@ struct ActivityView: View {
                 if let s = activity.subtitle { Text(s).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1) }
             }
             Spacer(minLength: 0)
+            if let p = activity.progress {
+                Capsule().fill(.white.opacity(0.2)).frame(width: 90, height: 5)
+                    .overlay(alignment: .leading) { Capsule().fill(activity.tint).frame(width: 90 * min(max(p, 0), 1)) }
+            }
             if let t = activity.actionTitle {
                 Button(t) { activity.action?(); model.dismissActivity() }
                     .buttonStyle(.borderedProminent).controlSize(.small)

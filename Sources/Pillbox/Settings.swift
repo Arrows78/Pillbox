@@ -7,6 +7,8 @@ struct SettingsView: View {
     @AppStorage("hoverDelay") private var hoverDelay = 0.12
     @AppStorage("capsHUD") private var capsHUD = true
     @AppStorage("downloadAlerts") private var downloadAlerts = true
+    @AppStorage("privacyIndicator") private var privacyIndicator = true
+    @AppStorage("volumeHUD") private var volumeHUD = true
     @AppStorage("fullChargeLevel") private var fullCharge = 100
     @AppStorage("pillWidth") private var pillWidth = 170.0
     @AppStorage("devAPIEnabled") private var devAPI = false
@@ -27,6 +29,8 @@ struct SettingsView: View {
             Section("Alerts") {
                 Toggle("Caps Lock island", isOn: $capsHUD)
                 Toggle("Download finished island", isOn: $downloadAlerts)
+                Toggle("Microphone and camera indicator", isOn: $privacyIndicator)
+                Toggle("Volume island", isOn: $volumeHUD)
                 Stepper("Charged island at \(fullCharge)%", value: $fullCharge, in: 80...100, step: 5)
             }
             Section("Developer API (127.0.0.1:\(DevAPI.defaultPort))") {

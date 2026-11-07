@@ -34,6 +34,7 @@ struct Activity: Identifiable {
     var title: String
     var subtitle: String? = nil
     var tint: Color = .white
+    var progress: Double? = nil
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
     var duration: TimeInterval = 3

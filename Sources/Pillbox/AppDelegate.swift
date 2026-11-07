@@ -19,6 +19,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DownloadsWatcher.shared.start()
         Tools.startCapsLockHUD()
         DevAPI.shared.apply()
+        PrivacyService.shared.start()
+        AudioControl.shared.startVolumeHUD()
         setupStatusItem()
         setupHover()
         setupDragToShelf()
