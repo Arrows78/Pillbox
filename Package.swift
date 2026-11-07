@@ -5,7 +5,7 @@ let package = Package(
     name: "Pillbox",
     platforms: [.macOS(.v14)],
     dependencies: [
-        .package(url: "https://github.com/migueldeicaza/SwiftTerm", from: "1.2.0"),
+        .package(url: "https://github.com/migueldeicaza/SwiftTerm", exact: "1.99.1"),
         .package(url: "https://github.com/airbnb/lottie-ios.git", from: "4.5.0")
     ],
     targets: [
