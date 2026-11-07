@@ -7,11 +7,17 @@ cd "$(dirname "$0")"
 
 # The native build system links package products (Lottie) statically; the default one makes a Lottie.framework
 # whose classes are also linked in, and that framework is not in the app bundle.
-build_arch() {  # $1 = arm64 | x86_64 (empty = host)
+build_arch() {  # $1 = arm64 | x86_64 (empty = host); prints only the bin path on stdout
   local flags=(-c release --build-system native)
   [ -n "${1:-}" ] && flags+=(--triple "$1-apple-macosx")
-  swift build "${flags[@]}" 2>&1 | grep -v -E "deprecated|repeated" || true
-  echo "$(swift build "${flags[@]}" --show-bin-path 2>/dev/null)"
+  local log; log="$(mktemp)"
+  if ! swift build "${flags[@]}" > "$log" 2>&1; then
+    cat "$log" >&2; rm -f "$log"
+    echo "error: swift build failed" >&2; exit 1   # a failed build must stop the script, never be hidden
+  fi
+  grep -E "warning:|error:" "$log" | grep -v -E "deprecated|repeated" >&2 || true
+  rm -f "$log"
+  swift build "${flags[@]}" --show-bin-path 2>/dev/null
 }
 
 APP=build/Pillbox.app
