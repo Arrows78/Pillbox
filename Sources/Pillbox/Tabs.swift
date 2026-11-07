@@ -446,37 +446,58 @@ struct Sparkline: View {
 
 struct AIUsageTab: View {
     @ObservedObject var usage = AIUsageService.shared
+    @State private var selected = 0
 
     var body: some View {
-        let s = usage.snapshot
-        HStack(alignment: .top, spacing: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Label("Claude Code", systemImage: "sparkles").font(.system(size: 13, weight: .semibold))
-                stat("Last 5 hours", s.fiveHour)
-                stat("Today", s.today)
-                stat("7 days", s.week)
-                Text("Cache reads \(AIUsageService.short(s.cacheRead)) (not counted)").font(.system(size: 9)).foregroundStyle(.tertiary)
-                if let d = s.lastActivity { Text("Last activity \(d, style: .relative) ago").font(.system(size: 9)).foregroundStyle(.secondary) }
-            }.frame(width: 190, alignment: .leading)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Tokens per day").font(.system(size: 10)).foregroundStyle(.secondary)
-                let peak = max(s.days.map(\.tokens).max() ?? 1, 1)
-                HStack(alignment: .bottom, spacing: 8) {
-                    ForEach(Array(s.days.enumerated()), id: \.offset) { _, d in
-                        VStack(spacing: 3) {
-                            Capsule().fill(Color.orange.opacity(d.tokens > 0 ? 1 : 0.15)).frame(width: 18, height: 6 + 74 * CGFloat(d.tokens) / CGFloat(peak))
-                            Text(d.label).font(.system(size: 9)).foregroundStyle(.secondary)
-                        }
+        if usage.providers.isEmpty {
+            VStack(spacing: 6) {
+                Image(systemName: "sparkles").font(.system(size: 26)).foregroundStyle(.secondary)
+                Text(usage.loading ? "Reading local logs…" : "No Claude Code or Codex activity in the last 7 days").foregroundStyle(.secondary)
+            }.onAppear { usage.refresh() }
+        } else {
+            let p = usage.providers[min(selected, usage.providers.count - 1)]
+            HStack(alignment: .top, spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    if usage.providers.count > 1 {
+                        Picker("", selection: $selected) {
+                            ForEach(Array(usage.providers.enumerated()), id: \.offset) { i, v in Text(v.name).tag(i) }
+                        }.pickerStyle(.segmented).labelsHidden().controlSize(.small)
+                    } else { Label(p.name, systemImage: p.symbol).font(.system(size: 13, weight: .semibold)) }
+                    if let pct = p.limitPercent {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text("\((p.limitWindowMinutes ?? 300) / 60)h limit").foregroundStyle(.secondary); Spacer()
+                                Text(String(format: "%.0f%%", pct)).font(.system(size: 12, weight: .semibold, design: .rounded))
+                            }.font(.system(size: 11))
+                            ProgressBar(value: pct, total: 100) { _ in }.tint(.orange)
+                            if let r = p.limitResetsAt { Text("Resets \(r, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
+                        }.padding(8).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                     }
-                }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                    stat("Last 5 hours", p.fiveHour)
+                    stat("Today", p.today)
+                    stat("7 days", p.week)
+                    if let d = p.lastActivity { Text("Last activity \(d, style: .relative) ago").font(.system(size: 9)).foregroundStyle(.secondary) }
+                }.frame(width: 210, alignment: .leading)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Tokens per day (cache reads excluded)").font(.system(size: 10)).foregroundStyle(.secondary)
+                    let peak = max(p.days.map(\.tokens).max() ?? 1, 1)
+                    HStack(alignment: .bottom, spacing: 8) {
+                        ForEach(Array(p.days.enumerated()), id: \.offset) { _, d in
+                            VStack(spacing: 3) {
+                                Capsule().fill(Color.orange.opacity(d.tokens > 0 ? 1 : 0.15)).frame(width: 18, height: 6 + 60 * CGFloat(d.tokens) / CGFloat(peak))
+                                Text(d.label).font(.system(size: 9)).foregroundStyle(.secondary)
+                            }
+                        }
+                    }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+                }
             }
+            .onAppear { usage.refresh() }
         }
-        .onAppear { usage.refresh() }
     }
 
     private func stat(_ name: String, _ n: Int) -> some View {
         HStack { Text(name).foregroundStyle(.secondary); Spacer(); Text(AIUsageService.short(n)).font(.system(size: 14, weight: .semibold, design: .rounded)) }
-            .font(.system(size: 11)).padding(.horizontal, 8).padding(.vertical, 4)
+            .font(.system(size: 11)).padding(.horizontal, 8).padding(.vertical, 3)
             .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
     }
 }
