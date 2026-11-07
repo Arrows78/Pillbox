@@ -26,6 +26,7 @@ struct SettingsView: View {
     @AppStorage("focusIsland") private var focusIsland = true
     @AppStorage("callIsland") private var callIsland = true
     @AppStorage("hudStyle") private var hudStyle = "notch"
+    @AppStorage("usageAlert") private var usageAlert = 0
     @AppStorage("islandTheme") private var islandTheme = "black"
     @AppStorage("doubleClickAction") private var doubleClickAction = "none"
     @AppStorage("tripleClickAction") private var tripleClickAction = "none"
@@ -87,7 +88,7 @@ struct SettingsView: View {
                 Picker("Island theme", selection: $islandTheme) { ForEach(IslandTheme.allCases) { Text(LocalizedStringKey($0.title)).tag($0.rawValue) } }
                 Picker("Double-click the pill", selection: $doubleClickAction) { ForEach(PillAction.allCases) { Text(verbatim: $0.title).tag($0.rawValue) } }
                 Picker("Triple-click the pill", selection: $tripleClickAction) { ForEach(PillAction.allCases) { Text(verbatim: $0.title).tag($0.rawValue) } }
-                Picker("Volume and brightness style", selection: $hudStyle) { Text("Bar").tag("notch"); Text("Circle").tag("circle") }
+                Picker("Volume and brightness style", selection: $hudStyle) { Text("Bar").tag("notch"); Text("Edge bar").tag("edge"); Text("Circle").tag("circle") }
                 Picker("Timer mascot", selection: $mascot) { ForEach(Mascot.allCases) { m in Text(verbatim: (m.emoji ?? "") + " " + m.title).tag(m.rawValue) } }
                 HStack {
                     Text(verbatim: lottiePath.isEmpty ? L("Idle animation: none") : (lottiePath as NSString).lastPathComponent).lineLimit(1)
@@ -109,6 +110,7 @@ struct SettingsView: View {
             }
             Section("More alerts") {
                 Toggle("Brightness island", isOn: $brightnessHUD)
+                Picker("Warn when an AI limit reaches", selection: $usageAlert) { Text("Never").tag(0); Text("70%").tag(70); Text("80%").tag(80); Text("90%").tag(90) }
                 Toggle("Focus mode island", isOn: $focusIsland)
                 Toggle("Show new notifications as islands (Full Disk Access)", isOn: $notificationIsland)
                 Toggle("Call in progress island", isOn: $callIsland)

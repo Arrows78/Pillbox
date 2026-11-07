@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -536,6 +536,30 @@ enum SelfTest {
         check("pill: unknown or missing settings mean no action", { UserDefaults.standard.set("bogus", forKey: "doubleClickAction"); defer { UserDefaults.standard.removeObject(forKey: "doubleClickAction") }; return PillAction.configured("doubleClickAction") == .none && PillAction.configured("neverSet") == .none }())
         check("pill: every action has a distinct title", Set(PillAction.allCases.map(\.title)).count == PillAction.allCases.count)
         check("theme: four themes, black by default", IslandTheme.allCases.count == 4 && IslandTheme.current == .black)
+    }
+
+    private static func batch6() {
+        var st = UsageAlertState()
+        check("usage alert: silent below the threshold", !st.shouldAlert(percent: 79, threshold: 80, windowKey: "Codex|1"))
+        check("usage alert: fires when the threshold is crossed", st.shouldAlert(percent: 81, threshold: 80, windowKey: "Codex|1"))
+        check("usage alert: only once per window", !st.shouldAlert(percent: 95, threshold: 80, windowKey: "Codex|1"))
+        check("usage alert: a new window can alert again, and so can another provider", st.shouldAlert(percent: 85, threshold: 80, windowKey: "Codex|2") && st.shouldAlert(percent: 85, threshold: 80, windowKey: "Other|2"))
+
+        let json = #"[{"title":"Fix the thing","url":"https://github.com/o/r/pull/7","number":7,"repository":{"nameWithOwner":"o/r"},"isDraft":true},{"title":"No url","number":1,"repository":{"nameWithOwner":"o/r"}},{"title":"Unsafe","url":"javascript:alert(1)","number":2,"repository":{"nameWithOwner":"o/r"}}]"#
+        let prs = GitHubPRs.parse(Data(json.utf8))
+        check("github: parses a PR and drops entries without an https link", prs == [PullRequest(title: "Fix the thing", repo: "o/r", number: 7, url: "https://github.com/o/r/pull/7", draft: true)], "\(prs)")
+        check("github: garbage gives nothing", GitHubPRs.parse(Data("x".utf8)).isEmpty && GitHubPRs.parse(Data("{}".utf8)).isEmpty)
+        // The real gh call: when gh is installed and logged in, both queries must answer with a list (possibly empty), not fail.
+        if GitHubPRs.tool != nil, ActionRunner.runShell("\(GitHubPRs.tool!) auth status").status == 0 {
+            check("github: the real gh queries answer", GitHubPRs.fetch("--author") != nil && GitHubPRs.fetch("--review-requested") != nil)
+        }
+
+        check("edge bar: fill follows the level and is clamped", EdgeHUD.fill(for: 0.5, trackHeight: 100) == 50 && EdgeHUD.fill(for: 2, trackHeight: 100) == 100 && EdgeHUD.fill(for: -1, trackHeight: 100) == 0)
+        UserDefaults.standard.set("edge", forKey: "hudStyle"); defer { UserDefaults.standard.removeObject(forKey: "hudStyle") }
+        let m = NotchModel(); m.show(Activity(symbol: "speaker.wave.2.fill", title: "Volume", progress: 0.5))
+        check("edge bar: with the edge style a volume change does not take over the island", m.activity == nil)
+        m.show(Activity(symbol: "bell", title: "Hello"))
+        check("edge bar: other islands still show", m.activity?.title == "Hello")
     }
 }
 
