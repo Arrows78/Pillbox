@@ -44,11 +44,14 @@
 - **Smart cards** for links, hex colours and emails, with character and word counts for long text.
 - **OCR** (Vision) of copied images, so search finds words inside screenshots.
 - **Double-click to paste** into the front app. Concealed items from password managers are skipped.
+- **Snippets**: reusable text, pasted from the Snippets view or by name from the command palette.
 
 ### 🗂️ Shelf and apps
 
 - **File shelf**: drop files on the notch, or drag a file toward it and it opens. Drag items back out later. Items survive relaunches.
-- **Shelf actions**: AirDrop, zip and unzip (native `ditto`), reveal in Finder.
+- **Shelf actions**: AirDrop, zip and unzip (native `ditto`, archives expand into a new folder and nothing is overwritten), reveal in Finder.
+- **Convert** (offline, system frameworks): images between PNG, JPEG, HEIC, TIFF and PDF, background removal (Vision); video to MP4, HEVC or audio only; audio to AAC, WAV or AIFF.
+- **Screenshots**: a new screenshot (wherever macOS saves them) becomes an island and is staged on the shelf, ready to drag into any app.
 - **Launcher**: pin apps, reorder by dragging.
 - **Notes**: a quick checklist that stays in the pill.
 
@@ -76,7 +79,9 @@
 - **Camera mirror**: a local preview under the notch. Nothing is recorded.
 - **Cleaning**: lock the keyboard for 60 s (⌘⎋ unlocks) or black out the displays.
 - **Window snapping**: halves, thirds, centre and full screen from the command palette.
-- **Keep awake**: indefinite or for a set duration.
+- **Keep awake**: indefinite, 30 min, 1 h, 2 h or until 6 pm (right-click the Awake button on Home).
+- **Drives**: an island with a one-tap **Eject** when a removable drive is plugged in, then *Safe to disconnect*.
+- **Hide from capture**: asks screenshot and screen-sharing tools to leave the island out (some apps may still capture it).
 - **Colour eyedropper** (HEX copied), **area screenshot** to the clipboard.
 - **Home**: clock, next calendar event, CPU, memory and battery gauges.
 
@@ -129,7 +134,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Camera | Camera mirror | Show the preview. |
 | Input Monitoring | Keystroke display | Observe key presses system-wide. |
 | Accessibility | Keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
-| Downloads folder | Download alerts | Notice finished downloads. |
+| Downloads and Desktop folders | Download and screenshot alerts | Notice new files. |
 
 ## 🧱 Technology stack
 
