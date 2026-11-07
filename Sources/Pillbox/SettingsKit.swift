@@ -164,9 +164,30 @@ struct SettingsSidebar: View {
                 if p == .alerts || p == .developer { Spacer().frame(height: 8) }
             }
             Spacer()
+            SettingsSidebarFooter()
         }
         .padding(.horizontal, 10).padding(.top, 38)
         .frame(width: 190)
         .background(Color.black.opacity(0.18))
+    }
+}
+
+/// The app's icon, name and version at the foot of the sidebar.
+struct SettingsSidebarFooter: View {
+    private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "" }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider().overlay(Color.white.opacity(0.08)).padding(.horizontal, 2).padding(.bottom, 10)
+            HStack(spacing: 9) {
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 30, height: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(verbatim: "Pillbox").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.9))
+                    Text(verbatim: L("Version %@", version)).font(.system(size: 11)).foregroundStyle(SettingsStyle.dim)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 6).padding(.bottom, 12)
+        }
     }
 }
