@@ -202,6 +202,11 @@ struct NotesTab: View {
                 if store.notes.contains(where: \.done) { Button("Clear done") { store.clearDone() }.controlSize(.small) }
             }
             .onChange(of: focused) { model.pinnedOpen = $0 }
+            if store.notes.isEmpty {
+                Spacer()
+                Text("Quick notes and to-dos stay here until you check them off").font(.system(size: 11)).foregroundStyle(.tertiary)
+                Spacer()
+            }
             ScrollView {
                 VStack(spacing: 4) {
                     ForEach(store.notes) { n in
@@ -345,6 +350,10 @@ struct LauncherTab: View {
 
     var body: some View {
         ScrollView {
+            if store.paths.isEmpty {
+                Text("Pin the apps you open most with +, drag to reorder").font(.system(size: 11)).foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 6)
+            }
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(64), spacing: 10), count: 8), spacing: 10) {
                 ForEach(store.paths, id: \.self) { path in
                     VStack(spacing: 3) {
@@ -357,7 +366,7 @@ struct LauncherTab: View {
                     .onTapGesture { store.launch(path) }
                     .onDrag { dragging = path; return NSItemProvider(object: path as NSString) }
                     .onDrop(of: [.text], isTargeted: nil) { _ in
-                        if let d = dragging { store.move(d, before: path) }
+                        if let d = dragging { store.move(d, onto: path) }
                         return true
                     }
                     .contextMenu { Button("Remove") { store.remove(path) } }

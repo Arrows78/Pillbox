@@ -46,7 +46,8 @@ final class LauncherStore: ObservableObject {
         }
     }
     func remove(_ path: String) { paths.removeAll { $0 == path }; save() }
-    func move(_ path: String, before target: String) {
+    /// Dropping an icon onto another makes it take that icon's slot.
+    func move(_ path: String, onto target: String) {
         guard path != target, let from = paths.firstIndex(of: path), let to = paths.firstIndex(of: target) else { return }
         paths.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to); save()
     }

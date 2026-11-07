@@ -164,8 +164,9 @@ extension Notification.Name {
 
 enum Store {
     static let dir: URL = {
-        let u = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Pillbox", isDirectory: true)
+        // PILLBOX_DATA_DIR lets the self-test run against a throwaway folder.
+        let u = ProcessInfo.processInfo.environment["PILLBOX_DATA_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Pillbox", isDirectory: true)
         try? FileManager.default.createDirectory(at: u, withIntermediateDirectories: true)
         return u
     }()

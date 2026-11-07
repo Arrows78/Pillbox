@@ -67,7 +67,7 @@ final class ClipboardService: ObservableObject {
         trim(); save()
     }
 
-    private func trim() {
+    func trim() {
         let unpinned = items.filter { !$0.pinned }.sorted { $0.date > $1.date }
         for old in unpinned.dropFirst(Self.cap) {
             if let f = old.imageFile { try? FileManager.default.removeItem(at: imageDir.appendingPathComponent(f)) }
