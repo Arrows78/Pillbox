@@ -96,7 +96,7 @@ final class TimerService: ObservableObject {
 
     func repeatTimer() { reset(); start() }
 
-    static func dayKey(_ d: Date) -> String {
+    nonisolated static func dayKey(_ d: Date) -> String {
         let c = Calendar.current.dateComponents([.year, .month, .day], from: d)
         return String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
     }

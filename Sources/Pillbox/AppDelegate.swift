@@ -22,6 +22,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PrivacyService.shared.start()
         WeatherService.shared.start()
         StocksService.shared.start()
+        AIUsageService.shared.start()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
         setupHover()

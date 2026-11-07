@@ -443,3 +443,40 @@ struct Sparkline: View {
         }
     }
 }
+
+struct AIUsageTab: View {
+    @ObservedObject var usage = AIUsageService.shared
+
+    var body: some View {
+        let s = usage.snapshot
+        HStack(alignment: .top, spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Claude Code", systemImage: "sparkles").font(.system(size: 13, weight: .semibold))
+                stat("Last 5 hours", s.fiveHour)
+                stat("Today", s.today)
+                stat("7 days", s.week)
+                Text("Cache reads \(AIUsageService.short(s.cacheRead)) (not counted)").font(.system(size: 9)).foregroundStyle(.tertiary)
+                if let d = s.lastActivity { Text("Last activity \(d, style: .relative) ago").font(.system(size: 9)).foregroundStyle(.secondary) }
+            }.frame(width: 190, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Tokens per day").font(.system(size: 10)).foregroundStyle(.secondary)
+                let peak = max(s.days.map(\.tokens).max() ?? 1, 1)
+                HStack(alignment: .bottom, spacing: 8) {
+                    ForEach(Array(s.days.enumerated()), id: \.offset) { _, d in
+                        VStack(spacing: 3) {
+                            Capsule().fill(Color.orange.opacity(d.tokens > 0 ? 1 : 0.15)).frame(width: 18, height: 6 + 74 * CGFloat(d.tokens) / CGFloat(peak))
+                            Text(d.label).font(.system(size: 9)).foregroundStyle(.secondary)
+                        }
+                    }
+                }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            }
+        }
+        .onAppear { usage.refresh() }
+    }
+
+    private func stat(_ name: String, _ n: Int) -> some View {
+        HStack { Text(name).foregroundStyle(.secondary); Spacer(); Text(AIUsageService.short(n)).font(.system(size: 14, weight: .semibold, design: .rounded)) }
+            .font(.system(size: 11)).padding(.horizontal, 8).padding(.vertical, 4)
+            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+    }
+}
