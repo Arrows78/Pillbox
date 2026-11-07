@@ -38,7 +38,7 @@ final class ShelfService: ObservableObject {
     func reveal(_ list: [ShelfItem]) { NSWorkspace.shared.activateFileViewerSelecting(list.map(\.url)) }
 
     /// A sibling URL that does not exist yet ("name", "name 2", "name 3"…), so nothing is ever overwritten.
-    static func uniqueURL(_ url: URL) -> URL {
+    nonisolated static func uniqueURL(_ url: URL) -> URL {
         let fm = FileManager.default
         guard fm.fileExists(atPath: url.path) else { return url }
         let base = url.deletingPathExtension(), ext = url.pathExtension
