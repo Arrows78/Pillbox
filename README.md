@@ -6,9 +6,15 @@
 
 **A notch island for macOS: music, timers, clipboard, files and system alerts, one hover away.**
 
+![GitHub last commit](https://img.shields.io/github/last-commit/Arrows78/Pillbox?style=for-the-badge&color=FD8494&logoColor=D9E0EE&logo=github)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/Arrows78/Pillbox?style=for-the-badge&color=FF6022&logoColor=D9E0EE&logo=git)
+![GitHub repo size](https://img.shields.io/github/repo-size/Arrows78/Pillbox?style=for-the-badge&color=FECB02&logoColor=D9E0EE&logo=databricks)
+![Github open issues](https://img.shields.io/github/issues/Arrows78/Pillbox?style=for-the-badge&color=D9E0EE&logoColor=D9E0EE&logo=jira)
+
 [![Swift](https://img.shields.io/badge/Swift-F05138?style=for-the-badge&logo=swift&logoColor=D9E0EE)](https://www.swift.org/)
 [![macOS](https://img.shields.io/badge/macOS-14%2B-000000?style=for-the-badge&logo=apple&logoColor=D9E0EE)](https://www.apple.com/macos/)
 [![SwiftUI](https://img.shields.io/badge/SwiftUI-AppKit-0D96F6?style=for-the-badge&logo=swift&logoColor=D9E0EE)](https://developer.apple.com/xcode/swiftui/)
+[![CI](https://img.shields.io/github/actions/workflow/status/Arrows78/Pillbox/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=D9E0EE)](https://github.com/Arrows78/Pillbox/actions/workflows/ci.yml)
 
 </div>
 
@@ -141,14 +147,21 @@ The palette also takes `yt`, `gh`, `w`, `ddg`, `b`, `br`, `e`, `map` search bang
 
 | Command | Description |
 | --- | --- |
-| `./build.sh` | Builds `build/Pillbox.app`. |
-| `./scripts/ci.sh` | Checks translations, builds, then runs the self-test in English and French: the same checks as CI. |
+| `./build.sh` | Builds `build/Pillbox.app`, then **installs it into `/Applications`** and relaunches it. `PILLBOX_NO_INSTALL=1` skips the install (CI does too), `PILLBOX_UNIVERSAL=1` builds for Apple Silicon and Intel. |
+| `./install.sh` | Builds, installs into `/Applications` and relaunches. `--no-launch` skips the relaunch. |
+| `./scripts/ci.sh` | Runs the release tool tests, the release files check, the translations check, the build and the self-test in English and French: the same checks as CI. |
 | `python3 scripts/check_l10n.py` | Fails when an English text has no French translation. |
-| `build/Pillbox.app/Contents/MacOS/Pillbox --selftest` | Non-interactive checks (parsers, maths, timers, stores, shelf zip, usage scan, island geometry, approvals) against a throwaway data folder. |
+| `build/Pillbox.app/Contents/MacOS/Pillbox --selftest` | Non-interactive checks (parsers, maths, timers, stores, shelf zip, conversions, usage scan, SQLite and Keychain access, island geometry, approvals) against a throwaway data folder. |
+| `build/Pillbox.app/Contents/MacOS/Pillbox --render <dir>` | Draws the island, activities, approval, snap zones and some tabs to PNG without a screen. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --usage` | Prints the Claude Code and Codex usage scan and how long it took. |
-| `build/Pillbox.app/Contents/MacOS/Pillbox --open-tab <tab>` | Opens the notch on a tab and keeps it open (`home`, `music`, `timer`, `stocks`, `ai`, `notes`, `clipboard`, `shelf`, `launcher`, `terminal`). |
-| `build/Pillbox.app/Contents/MacOS/Pillbox --render <dir>` | Draws the island, activities, approval and some tabs to PNG without a screen. |
+| `build/Pillbox.app/Contents/MacOS/Pillbox --open-tab <tab>` | Opens the notch on a tab and keeps it open (`home`, `music`, `timer`, `stocks`, `ai`, `reminders`, `notifications`, `notes`, `clipboard`, `shelf`, `launcher`, `terminal`). |
 | `swift Resources/make_icon.swift <out.png>` | Renders the 1024 px app icon. |
+| `python3 scripts/release.py prepare` | Next version, version bump and changelog from the commit messages ([`docs/RELEASING.md`](docs/RELEASING.md)). |
+
+To publish a release (details in [`docs/RELEASING.md`](docs/RELEASING.md)):
+
+1. `python3 scripts/release.py prepare` picks the next version from the commit messages (Conventional Commits), bumps `Resources/Info.plist` and rewrites `CHANGELOG.md`. Add `--dry-run` to preview it.
+2. Commit it (`chore(release): X.Y.Z`) and push the matching tag: the [release workflow](.github/workflows/release.yml) builds a universal app and publishes it as a GitHub release (pre-release for `0.x`), with `docs/releases/<version>.md` as notes when that file exists.
 
 ## 🔐 Permissions
 
@@ -182,29 +195,44 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 
 ## 📦 Installation
 
+### Download
+
+Grab `Pillbox-<version>.zip` from the [latest release](https://github.com/Arrows78/Pillbox/releases/latest), unzip it and move **Pillbox.app** to `/Applications`. Releases are universal (Apple Silicon and Intel) and need macOS 14 or later.
+
+> [!WARNING]
+> Releases are signed ad hoc, not notarised, so macOS blocks the first launch. Open **System Settings › Privacy & Security** and click **Open Anyway**, or run `xattr -dr com.apple.quarantine /Applications/Pillbox.app`.
+
+On first launch, **Settings › Permissions** opens: grant what you want to use.
+
 ### Build from source
 
 You need macOS 14 or later and [Xcode](https://developer.apple.com/xcode/) with its command-line tools.
 
 ```bash
-git clone <repository-url>
+git clone git@github.com:Arrows78/Pillbox.git
 cd Pillbox
-./build.sh        # -> build/Pillbox.app
-open build/Pillbox.app
+./build.sh        # builds build/Pillbox.app, installs it into /Applications and launches it
 ```
 
+A local build always ends with the app in `/Applications`, replacing the previous copy (the running one is quit first, and Caps Lock is restored if the Hyper key was on). Use `PILLBOX_NO_INSTALL=1 ./build.sh` to only build `build/Pillbox.app`.
+
 > [!TIP]
-> `build.sh` uses SwiftPM's native build system so packages are linked statically (the default one would produce a `Lottie.framework` that is not in the app bundle). `build.sh` signs ad hoc by default, so macOS asks for the permissions again after each rebuild. Set `PILLBOX_SIGN_IDENTITY` to a self-signed code-signing certificate to keep them.
+> `build.sh` signs with a local identity named `Pillbox Local Signing` when your keychain has one, and falls back to an ad-hoc signature otherwise. An ad-hoc signature changes on every build, so macOS asks for the permissions again after each rebuild. Create a self-signed code-signing certificate with that name, or set `PILLBOX_SIGN_IDENTITY` to one you already have, to keep them.
+
+> [!NOTE]
+> `build.sh` uses SwiftPM's native build system so packages are linked statically: the default one would produce a `Lottie.framework` that is not in the app bundle and the packaged app would crash at launch.
 
 ## 📂 Project structure
 
 ```text
 Pillbox/
 ├── Package.swift          # Swift Package, one executable target
-├── build.sh               # Builds and signs build/Pillbox.app
+├── build.sh               # Builds and signs build/Pillbox.app, installs it into /Applications
+├── install.sh             # Builds, installs into /Applications, relaunches
 ├── Resources/             # Info.plist, app icon and its generator, en.lproj and fr.lproj
-├── scripts/               # ci.sh, check_l10n.py, claude-hook.sh (Claude Code approval hook)
-├── .github/workflows/     # CI
+├── scripts/               # ci.sh, release.py and its tests, check_l10n.py, claude-hook.sh
+├── docs/                  # Releasing guide, app icon
+├── .github/workflows/     # CI and release
 └── Sources/Pillbox/
     ├── main.swift, AppDelegate.swift    # Entry point, menu bar, hover and drag monitors
     ├── NotchModel, NotchPanel           # State, geometry, click-through panel
@@ -238,4 +266,17 @@ Answering calls from the island, message replies, keyboard backlight and externa
 
 ## 🙌 Contributing
 
-Issues and pull requests are welcome. Run `./scripts/ci.sh` first, and extend `Sources/Pillbox/SelfTest.swift` for anything testable without a screen. Commit with [Conventional Commits](https://www.conventionalcommits.org/) and keep pull requests focused.
+Issues and pull requests are welcome.
+
+1. Fork the repository and create a branch.
+2. Make your change; extend the self-test in `Sources/Pillbox/SelfTest.swift` for anything testable without a screen, and add French strings for new texts.
+3. Run the checks:
+
+   ```bash
+   ./scripts/ci.sh
+   ```
+
+4. Commit using [Conventional Commits](https://www.conventionalcommits.org/): the type decides the version bump and the changelog entry ([`docs/RELEASING.md`](docs/RELEASING.md)), and CI checks it on pull requests.
+5. Push the branch and open a pull request. Keep pull requests focused and describe user-facing behaviour changes.
+
+See the [changelog](CHANGELOG.md) for what changed in each version.
