@@ -179,6 +179,7 @@ The palette also takes `yt`, `gh`, `w`, `ddg`, `b`, `br`, `e`, `map` search bang
 | `build/Pillbox.app/Contents/MacOS/Pillbox --usage` | Prints the Claude Code and Codex usage scan and how long it took. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --open-tab <tab>` | Opens the notch on a tab and keeps it open (`home`, `music`, `timer`, `stocks`, `ai`, `reminders`, `notifications`, `notes`, `clipboard`, `shelf`, `launcher`, `terminal`). |
 | `swift Resources/make_icon.swift <out.png>` | Renders the 1024 px app icon. |
+| `scripts/render_cask.sh VERSION SHA256` | Prints the Homebrew cask of a release (used by the release workflow). |
 | `python3 scripts/release.py prepare` | Next version, version bump and changelog from the commit messages ([`docs/RELEASING.md`](docs/RELEASING.md)). |
 
 To publish a release (details in [`docs/RELEASING.md`](docs/RELEASING.md)):
@@ -220,6 +221,14 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 
 ## 📦 Installation
 
+### Homebrew
+
+```bash
+brew install arrows78/pillbox/pillbox
+```
+
+Use the full name: Homebrew 7 only loads casks from third-party taps you trust, and naming the tap in the command trusts that cask. If you ran `brew tap arrows78/pillbox` first, run `brew trust --tap arrows78/pillbox` before installing. Update with `brew upgrade --cask pillbox`; `brew uninstall --zap --cask pillbox` also removes its settings. The tap is [`Arrows78/homebrew-pillbox`](https://github.com/Arrows78/homebrew-pillbox).
+
 ### Download
 
 Grab `Pillbox-<version>.zip` from the [latest release](https://github.com/Arrows78/Pillbox/releases/latest), unzip it and move **Pillbox.app** to `/Applications`. Releases are universal (Apple Silicon and Intel) and need macOS 14 or later.
@@ -256,6 +265,7 @@ Pillbox/
 ├── install.sh             # Builds, installs into /Applications, relaunches
 ├── Resources/             # Info.plist, app icon and its generator, en, fr, es and de .lproj
 ├── scripts/               # ci.sh, release.py and its tests, l10n tools and table, signing helper, claude-hook.sh
+├── packaging/homebrew/    # Cask template for the Homebrew tap
 ├── docs/                  # Releasing guide, app icon
 ├── .github/workflows/     # CI and release
 └── Sources/Pillbox/
