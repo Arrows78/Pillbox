@@ -108,6 +108,11 @@ final class StatsService: ObservableObject {
     static let shared = StatsService()
     @Published private(set) var cpu: Double = 0
     @Published private(set) var memory: Double = 0
+    @Published private(set) var down: Double = 0
+    @Published private(set) var up: Double = 0
+    @Published private(set) var devices: [DeviceBattery] = []
+    private var prevNet: [String: (rx: UInt32, tx: UInt32)] = [:]
+    private var prevNetDate = Date()
     private var prev: host_cpu_load_info?
     private var timer: Timer?
 
@@ -118,9 +123,13 @@ final class StatsService: ObservableObject {
             MainActor.assumeIsolated { self?.sample() }
         }
     }
-    func stop() { timer?.invalidate(); timer = nil; prev = nil }
+    func stop() { timer?.invalidate(); timer = nil; prev = nil; prevNet = [:] }
 
     private func sample() {
+        let net = NetworkRate.counters(), now = Date()
+        if !prevNet.isEmpty { let r = NetworkRate.rate(from: prevNet, to: net, seconds: now.timeIntervalSince(prevNetDate)); down = r.down; up = r.up }
+        prevNet = net; prevNetDate = now
+        devices = DeviceBatteries.scan()
         var info = host_cpu_load_info(); var count = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info>.size / MemoryLayout<integer_t>.size)
         let r = withUnsafeMutablePointer(to: &info) {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, $0, &count) }
