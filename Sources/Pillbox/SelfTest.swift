@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -489,6 +489,53 @@ enum SelfTest {
 
         // Display options
         check("display: an unknown display name falls back to automatic", { UserDefaults.standard.set("No Such Display", forKey: "targetDisplay"); defer { UserDefaults.standard.removeObject(forKey: "targetDisplay") }; return NotchGeometry.detect().screen != nil }())
+    }
+
+    private static func batch5() {
+        // Activity queue
+        func a(_ t: String, _ sym: String = "bell") -> Activity { Activity(symbol: sym, title: t) }
+        var q = ActivityQueue()
+        check("queue: the first island shows at once", q.push(a("A")) && q.current?.title == "A")
+        check("queue: a different island waits its turn", !q.push(a("B")) && q.current?.title == "A" && q.pending.count == 1)
+        var update = a("A"); update.progress = 0.7
+        check("queue: an update of the visible island replaces it in place", q.push(update) && q.current?.progress == 0.7 && q.pending.count == 1)
+        var upB = a("B"); upB.progress = 0.2
+        _ = q.push(upB)
+        check("queue: an update of a waiting island replaces it", q.pending.count == 1 && q.pending[0].progress == 0.2)
+        for n in 0..<8 { _ = q.push(a("X\(n)")) }
+        check("queue: the backlog is capped, keeping the newest", q.pending.count == ActivityQueue.cap && q.pending.last?.title == "X7", "\(q.pending.map(\.title))")
+        let oldest = q.pending.first?.title; q.advance()
+        check("queue: advancing shows the oldest waiting island", q.current?.title == oldest && q.pending.count == ActivityQueue.cap - 1, "\(String(describing: q.current?.title)) vs \(String(describing: oldest))")
+        var e = ActivityQueue(); _ = e.push(a("Z")); e.advance()
+        check("queue: advancing the last island empties it", e.current == nil)
+        let m = NotchModel(); m.show(a("One")); m.show(a("Two"))
+        check("model: a second island is queued, not shown over the first", m.activity?.title == "One")
+        m.dismissActivity()
+        check("model: dismissing shows the next one, then nothing", m.activity?.title == "Two")
+        m.dismissActivity(); check("model: ... and then nothing", m.activity == nil)
+
+        // Shell actions
+        let ok = ActionRunner.runShell("echo hello; echo oops 1>&2")
+        check("actions: runs a command and returns its output", ok.status == 0 && ok.output.contains("hello") && ok.output.contains("oops"), "\(ok)")
+        check("actions: exit status is reported", ActionRunner.runShell("exit 3").status == 3)
+        let t0 = Date(); let slow = ActionRunner.runShell("sleep 20", timeout: 1)
+        check("actions: a hung command is killed after the timeout", slow.status == 124 && Date().timeIntervalSince(t0) < 5, "\(slow.status) \(Date().timeIntervalSince(t0))s")
+        check("actions: only web and mail links", ActionRunner.url("https://example.com/a")?.host == "example.com" && ActionRunner.url("example.com")?.scheme == "https" && ActionRunner.url("mailto:a@b.co") != nil
+              && ActionRunner.url("file:///etc/passwd") == nil && ActionRunner.url("javascript:alert(1)") == nil && ActionRunner.url("ftp://x.y") == nil)
+        let st = QuickActionsStore.shared; st.actions = []
+        check("actions: valid entries are saved", st.add(name: "Hi", kind: .shell, value: "echo hi") && st.add(name: "Site", kind: .web, value: "example.com") && st.actions.count == 2)
+        check("actions: blank or unsafe entries are refused", !st.add(name: " ", kind: .shell, value: "x") && !st.add(name: "Bad", kind: .web, value: "file:///etc/passwd") && !st.add(name: "Empty", kind: .url, value: "") && st.actions.count == 2)
+        check("actions: persisted to disk", Store.load("actions.json", as: [QuickAction].self)?.map(\.name) == ["Hi", "Site"])
+        st.actions = []
+
+        // Notification island
+        let items = [NotificationItem(id: 5, app: "a", title: "old", body: "", date: Date()), NotificationItem(id: 9, app: "a", title: "new2", body: "", date: Date()), NotificationItem(id: 7, app: "a", title: "new1", body: "", date: Date())]
+        check("notifications: only entries newer than the last seen, oldest first", NotificationFeed.fresh(items, after: 5).map(\.title) == ["new1", "new2"] && NotificationFeed.fresh(items, after: 9).isEmpty)
+
+        // Pill gestures and theme
+        check("pill: unknown or missing settings mean no action", { UserDefaults.standard.set("bogus", forKey: "doubleClickAction"); defer { UserDefaults.standard.removeObject(forKey: "doubleClickAction") }; return PillAction.configured("doubleClickAction") == .none && PillAction.configured("neverSet") == .none }())
+        check("pill: every action has a distinct title", Set(PillAction.allCases.map(\.title)).count == PillAction.allCases.count)
+        check("theme: four themes, black by default", IslandTheme.allCases.count == 4 && IslandTheme.current == .black)
     }
 }
 

@@ -32,7 +32,11 @@
 - **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown, microphone and camera dots, a pinned stock.
 - **Activity islands**: short messages in place of the pill, with an optional action button.
 - **Any Mac**: virtual pill with an adjustable width when there is no hardware notch.
-- **English and French**, following the macOS language. Dates, weekdays and relative times follow it too.
+- **English, French, Spanish and German**, following the macOS language. Dates, weekdays and relative times follow it too. The Spanish and German texts are machine translations that no native speaker has reviewed yet.
+- **Several islands in a row**: when events pile up (a download, a build, a notification…) they wait their turn instead of replacing each other, an update of the island on screen (a volume bar) replaces it in place, and the backlog is capped.
+- **Themes**: black, graphite, translucent glass or accent for the open panel. The collapsed pill stays black so it melts into the notch.
+- **Gestures on the pill**: double and triple clicks run an action you choose (play / pause, keep awake, palette, clipboard, shelf, settings), and a right click opens a menu with **Quit Pillbox**, which also works without a menu bar icon.
+- **VoiceOver**: icon-only controls carry labels and the toggles announce their state.
 
 ### 🎵 Music
 
@@ -60,7 +64,7 @@
 - **Snap zones** (opt-in): drag a window to the notch and four zones appear (left half, right half, full screen, centre); release over one to snap. A real file drag is told apart from a window drag through the drag pasteboard's change count.
 - **Volume and brightness style**: bar or circle. **Brightness island** for the built-in display (private DisplayServices API: silently absent where unavailable).
 - **Live audio spectrum** (opt-in): the pill's equalizer follows real system audio through a Core Audio process tap (macOS 14.4+, asks for audio capture).
-- **Focus mode island** and **notification mirror** tab: both read system files and need **Full Disk Access**. Everything stays on the Mac.
+- **Focus mode island** and **notification mirror** tab: both read system files and need **Full Disk Access**. Everything stays on the Mac. An opt-in setting also shows each new notification as an island.
 - **Call island**: while Zoom, Teams, FaceTime, WhatsApp, Slack, Discord or Skype is open and the microphone is live, the pill shows the call and its duration.
 - **Timer mascots**: pick an emoji companion for the timer (the plant grows as the session goes on).
 - **Idle animation**: choose your own Lottie JSON for the pill (Settings › Island).
@@ -80,6 +84,7 @@
 - **Shelf actions**: AirDrop, zip and unzip (native `ditto`, archives expand into a new folder and nothing is overwritten), reveal in Finder.
 - **Convert** (offline, system frameworks): images between PNG, JPEG, HEIC, TIFF and PDF, background removal (Vision); video to MP4, HEVC or audio only; audio to AAC, WAV or AIFF.
 - **Screenshots**: a new screenshot (wherever macOS saves them) becomes an island and is staged on the shelf, ready to drag into any app.
+- **Quick actions and web mini-apps**: in **Settings › Quick actions**, add a shell command (run with a 15 s limit and a result island), a link (web and mail only) or a web mini-app that opens in its own small window. They live in the Launcher's **Actions** view and in the palette.
 - **Launcher**: pin apps and reorder by dragging, or switch to **Shortcuts** for a one-tap grid of your Apple Shortcuts (run through the system `shortcuts` command, with a result island).
 - **Notes**: a quick checklist that stays in the pill.
 
@@ -154,7 +159,9 @@ The palette also takes `yt`, `gh`, `w`, `ddg`, `b`, `br`, `e`, `map` search bang
 | `./build.sh` | Builds `build/Pillbox.app`, then **installs it into `/Applications`** and relaunches it. `PILLBOX_NO_INSTALL=1` skips the install (CI does too), `PILLBOX_UNIVERSAL=1` builds for Apple Silicon and Intel. |
 | `./install.sh` | Builds, installs into `/Applications` and relaunches. `--no-launch` skips the relaunch. |
 | `./scripts/ci.sh` | Runs the release tool tests, the release files check, the translations check, the build and the self-test in English and French: the same checks as CI. |
-| `python3 scripts/check_l10n.py` | Fails when an English text has no French translation. |
+| `python3 scripts/check_l10n.py` | Fails when an English text has no French, Spanish or German translation. |
+| `python3 scripts/gen_lproj.py` | Rebuilds the Spanish and German strings from `scripts/data/translations.tsv`, refusing missing keys and changed placeholders. |
+| `scripts/make_signing_identity.sh` | Creates a self-signed `Pillbox Local Signing` certificate in your login keychain so rebuilds keep their permissions (asks for your password; not a Developer ID). |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --selftest` | Non-interactive checks (parsers, maths, timers, stores, shelf zip, conversions, usage scan, SQLite and Keychain access, island geometry, approvals) against a throwaway data folder. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --render <dir>` | Draws the island, activities, approval, snap zones and some tabs to PNG without a screen. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --usage` | Prints the Claude Code and Codex usage scan and how long it took. |
@@ -222,7 +229,7 @@ cd Pillbox
 A local build always ends with the app in `/Applications`, replacing the previous copy (the running one is quit first, and Caps Lock is restored if the Hyper key was on). Use `PILLBOX_NO_INSTALL=1 ./build.sh` to only build `build/Pillbox.app`.
 
 > [!TIP]
-> `build.sh` signs with a local identity named `Pillbox Local Signing` when your keychain has one, and falls back to an ad-hoc signature otherwise. An ad-hoc signature changes on every build, so macOS asks for the permissions again after each rebuild. Create a self-signed code-signing certificate with that name, or set `PILLBOX_SIGN_IDENTITY` to one you already have, to keep them.
+> `build.sh` signs with a local identity named `Pillbox Local Signing` when your keychain has one, and falls back to an ad-hoc signature otherwise. An ad-hoc signature changes on every build, so macOS asks for the permissions again after each rebuild. Run `scripts/make_signing_identity.sh` to create that certificate, or set `PILLBOX_SIGN_IDENTITY` to one you already have, to keep them. For distribution you would need an Apple Developer ID and notarisation, which this project does not do.
 
 > [!NOTE]
 > `build.sh` uses SwiftPM's native build system so packages are linked statically: the default one would produce a `Lottie.framework` that is not in the app bundle and the packaged app would crash at launch.
@@ -235,7 +242,7 @@ Pillbox/
 ├── build.sh               # Builds and signs build/Pillbox.app, installs it into /Applications
 ├── install.sh             # Builds, installs into /Applications, relaunches
 ├── Resources/             # Info.plist, app icon and its generator, en.lproj and fr.lproj
-├── scripts/               # ci.sh, release.py and its tests, check_l10n.py, claude-hook.sh
+├── scripts/               # ci.sh, release.py and its tests, l10n tools and table, signing helper, claude-hook.sh
 ├── docs/                  # Releasing guide, app icon
 ├── .github/workflows/     # CI and release
 └── Sources/Pillbox/
@@ -250,6 +257,7 @@ Pillbox/
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
     ├── Overlays.swift                   # Hidden notch, teleprompter
+    ├── Extras3.swift                    # Activity queue, themes, pill gestures, quick actions and web mini-apps, notification island
     ├── Features2.swift                  # Shake, break reminder, download and build islands, Bluetooth batteries, quick capture
     ├── Hyper, MenuBar, SystemWatch      # Hyper key, menu bar items, brightness, Focus, notifications, calls
     ├── Screen, Spectrum, Gestures       # Region picker, window watch, Ask about screen, audio spectrum, snap zones, Lottie, widgets
@@ -268,7 +276,7 @@ Pillbox/
 
 ## 🗺️ Roadmap
 
-Answering calls from the island, message replies, connecting AirPods from the island, browser video speed, clipboard stack and importing other managers' history, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, more languages. Face Unlock is deliberately left out.
+Answering calls from the island, message replies, connecting AirPods from the island, browser video speed, clipboard stack and importing other managers' history, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, notarised releases, native review of the Spanish and German texts. Face Unlock is deliberately left out.
 
 ## 🙌 Contributing
 
