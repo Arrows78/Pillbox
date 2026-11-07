@@ -85,6 +85,9 @@ struct CollapsedWings: View {
             Text(timer.display).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.orange)
         } else if music.hasTrack && music.isPlaying {
             Equalizer()
+        } else if let sym = StocksService.shared.pinned, let q = StocksService.shared.quotes[sym] {
+            Text(String(format: "%@%.1f%%", q.change >= 0 ? "+" : "", q.change * 100))
+                .font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(q.change >= 0 ? .green : .red)
         } else if caffeine.active, let u = caffeine.until {
             Text(u, style: .timer).font(.system(size: 10, design: .monospaced)).foregroundStyle(.orange)
         }
@@ -161,6 +164,7 @@ struct ExpandedView: View {
                 case .home: HomeTab()
                 case .music: MusicTab()
                 case .timer: TimerTab()
+                case .stocks: StocksTab()
                 case .notes: NotesTab()
                 case .clipboard: ClipboardTab()
                 case .shelf: ShelfTab()

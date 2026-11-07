@@ -16,6 +16,9 @@
     <key>NSAppleEventsUsageDescription</key><string>Pillbox controls Spotify and Apple Music to show and drive what is playing.</string>
     <key>NSCalendarsFullAccessUsageDescription</key><string>Pillbox shows your next calendar event on the Home tab.</string>
     <key>NSCalendarsUsageDescription</key><string>Pillbox shows your next calendar event on the Home tab.</string>
+    <key>NSLocationWhenInUseUsageDescription</key><string>Pillbox uses your location for the local weather on the Home tab.</string>
+    <key>NSLocationUsageDescription</key><string>Pillbox uses your location for the local weather on the Home tab.</string>
+    <key>NSCameraUsageDescription</key><string>Pillbox shows a camera preview so you can check yourself before a call.</string>
     <key>NSDownloadsFolderUsageDescription</key><string>Pillbox shows an island when a download finishes.</string>
     <key>NSDesktopFolderUsageDescription</key><string>Pillbox can stage files from your Desktop on the shelf.</string>
 </dict>

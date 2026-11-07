@@ -9,6 +9,7 @@ struct HomeTab: View {
     @ObservedObject var caffeine = CaffeineService.shared
     @ObservedObject var timer = TimerService.shared
     @ObservedObject var audio = AudioControl.shared
+    @ObservedObject var weather = WeatherService.shared
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -17,6 +18,10 @@ struct HomeTab: View {
                     Text(ctx.date, format: .dateTime.hour().minute()).font(.system(size: 34, weight: .semibold, design: .rounded))
                 }
                 Text(Date(), format: .dateTime.weekday(.wide).day().month(.wide)).font(.system(size: 12)).foregroundStyle(.secondary)
+                if let t = weather.temperature {
+                    Label("\(t)° \(weather.summary)\(weather.city.isEmpty ? "" : " · " + weather.city)", systemImage: weather.symbol)
+                        .font(.system(size: 11)).symbolRenderingMode(.multicolor).foregroundStyle(.secondary).lineLimit(1)
+                }
                 Spacer(minLength: 4)
                 if let e = calendar.next {
                     HStack(spacing: 8) {
@@ -359,6 +364,80 @@ struct LauncherTab: View {
                 Button { store.add() } label: {
                     Image(systemName: "plus").frame(width: 38, height: 38).background(card, in: RoundedRectangle(cornerRadius: 9))
                 }.buttonStyle(.plain).frame(width: 64, height: 60)
+            }
+        }
+    }
+}
+
+struct StocksTab: View {
+    @ObservedObject var stocks = StocksService.shared
+    @ObservedObject var model = NotchModel.shared
+    @State private var symbol = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                TextField("Add a symbol (AAPL, ^GSPC, BTC-USD…)", text: $symbol).textFieldStyle(.roundedBorder).focused($focused)
+                    .onSubmit { stocks.add(symbol); symbol = "" }
+                Button { stocks.refresh() } label: { Image(systemName: "arrow.clockwise") }.controlSize(.small)
+            }
+            .onChange(of: focused) { model.pinnedOpen = $0 }
+            ScrollView {
+                VStack(spacing: 4) {
+                    ForEach(stocks.watchlist, id: \.symbol) { w in row(w) }
+                }
+            }
+        }
+    }
+
+    private func row(_ w: Watch) -> some View {
+        let q = stocks.quotes[w.symbol]
+        let up = (q?.change ?? 0) >= 0
+        return HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 4) {
+                    Text(w.symbol).font(.system(size: 12, weight: .semibold))
+                    if stocks.pinned == w.symbol { Image(systemName: "pin.fill").font(.system(size: 8)).foregroundStyle(.orange) }
+                    if w.above != nil { Image(systemName: "bell.fill").font(.system(size: 8)).foregroundStyle(.yellow) }
+                }
+                Text(q?.state ?? "…").font(.system(size: 9)).foregroundStyle(.secondary)
+            }.frame(width: 90, alignment: .leading)
+            Sparkline(values: q?.series ?? [], color: up ? .green : .red).frame(height: 22)
+            if let q {
+                VStack(alignment: .trailing, spacing: 0) {
+                    Text(String(format: "%.2f", q.price)).font(.system(size: 12, design: .monospaced))
+                    Text(String(format: "%@%.2f%%", up ? "+" : "", q.change * 100)).font(.system(size: 10, design: .monospaced)).foregroundStyle(up ? .green : .red)
+                }.frame(width: 80, alignment: .trailing)
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+        .contentShape(Rectangle())
+        .onTapGesture { if let u = URL(string: "https://finance.yahoo.com/quote/\(w.symbol)") { NSWorkspace.shared.open(u) } }
+        .contextMenu {
+            Button(stocks.pinned == w.symbol ? "Unpin from pill" : "Pin to pill") { stocks.pinned = stocks.pinned == w.symbol ? nil : w.symbol }
+            Button("Alert at ±2%") { stocks.setAlert(w.symbol, percent: 2) }
+            Button("Alert at ±5%") { stocks.setAlert(w.symbol, percent: 5) }
+            Button("Clear alert") { stocks.setAlert(w.symbol, percent: nil) }
+            Button("Remove") { stocks.remove(w.symbol) }
+        }
+    }
+}
+
+struct Sparkline: View {
+    let values: [Double]
+    let color: Color
+    var body: some View {
+        GeometryReader { g in
+            if values.count > 1, let lo = values.min(), let hi = values.max() {
+                Path { p in
+                    for (i, v) in values.enumerated() {
+                        let x = g.size.width * CGFloat(i) / CGFloat(values.count - 1)
+                        let y = g.size.height * (1 - CGFloat(hi == lo ? 0.5 : (v - lo) / (hi - lo)))
+                        i == 0 ? p.move(to: CGPoint(x: x, y: y)) : p.addLine(to: CGPoint(x: x, y: y))
+                    }
+                }.stroke(color, lineWidth: 1.5)
             }
         }
     }

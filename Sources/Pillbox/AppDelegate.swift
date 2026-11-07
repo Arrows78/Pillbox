@@ -20,6 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Tools.startCapsLockHUD()
         DevAPI.shared.apply()
         PrivacyService.shared.start()
+        WeatherService.shared.start()
+        StocksService.shared.start()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
         setupHover()
