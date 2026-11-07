@@ -142,3 +142,39 @@ final class AudioControl: ObservableObject {
         NotchModel.shared.show(Activity(symbol: symbol, title: "Volume", tint: .white, progress: muted ? 0 : Double(v), duration: 1.4))
     }
 }
+
+// MARK: Output device switcher
+
+struct OutputDevice: Identifiable, Equatable {
+    let id: AudioDeviceID
+    let name: String
+}
+
+extension AudioControl {
+    static func outputDevices() -> [OutputDevice] {
+        var a = audioAddress(kAudioHardwarePropertyDevices)
+        var size: UInt32 = 0
+        let sys = AudioObjectID(kAudioObjectSystemObject)
+        guard AudioObjectGetPropertyDataSize(sys, &a, 0, nil, &size) == noErr, size > 0 else { return [] }
+        var ids = [AudioDeviceID](repeating: 0, count: Int(size) / MemoryLayout<AudioDeviceID>.size)
+        guard AudioObjectGetPropertyData(sys, &a, 0, nil, &size, &ids) == noErr else { return [] }
+        return ids.compactMap { id in
+            var sa = audioAddress(kAudioDevicePropertyStreams, scope: kAudioDevicePropertyScopeOutput)
+            var ssize: UInt32 = 0
+            guard AudioObjectGetPropertyDataSize(id, &sa, 0, nil, &ssize) == noErr, ssize > 0 else { return nil }
+            var na = audioAddress(kAudioObjectPropertyName)
+            var name: Unmanaged<CFString>?
+            var nsize = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+            guard AudioObjectGetPropertyData(id, &na, 0, nil, &nsize, &name) == noErr, let n = name?.takeRetainedValue() else { return nil }
+            return OutputDevice(id: id, name: n as String)
+        }
+    }
+
+    static func currentOutput() -> AudioDeviceID? { defaultDevice(input: false) }
+
+    func selectOutput(_ d: OutputDevice) {
+        let ok = writeValue(AudioObjectID(kAudioObjectSystemObject), audioAddress(kAudioHardwarePropertyDefaultOutputDevice), d.id)
+        NotchModel.shared.show(Activity(symbol: ok ? "hifispeaker.fill" : "exclamationmark.triangle", title: ok ? d.name : "Could not switch the output",
+                                        tint: ok ? .white : .orange, duration: 2))
+    }
+}
