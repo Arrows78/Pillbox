@@ -56,7 +56,7 @@ The tap is the public repository `Arrows78/homebrew-pillbox`. The release workfl
 from `packaging/homebrew/pillbox.rb.in` and the SHA-256 of the zip (`scripts/render_cask.sh`).
 
 - One-time setup: create a fine-grained personal access token limited to **only** `Arrows78/homebrew-pillbox` with the permission
-  **Contents: read and write**, then store it as the `HOMEBREW_TAP_TOKEN` secret of this repository
-  (`gh secret set HOMEBREW_TAP_TOKEN --repo Arrows78/Pillbox`).
+  **Contents: read and write**, then store it as the `HOMEBREW_TAP_PILLBOX_TOKEN` secret of this repository
+  (`gh secret set HOMEBREW_TAP_PILLBOX_TOKEN --repo Arrows78/Pillbox`).
 - Without that secret the release is still published and the tap is left alone (the workflow only prints a notice).
 - The cask is never edited by hand: fix the template and release again.
