@@ -29,6 +29,9 @@ extendedKeyUsage = critical,codeSigning
 CNF
 openssl req -x509 -newkey rsa:2048 -nodes -days 3650 -keyout "$DIR/key.pem" -out "$DIR/cert.pem" -config "$DIR/openssl.cnf" 2>/dev/null
 PASS=$(openssl rand -hex 12)
+# OpenSSL 3 writes PKCS#12 files with algorithms macOS cannot read ("MAC verification failed"): ask for the old ones.
+openssl pkcs12 -export -inkey "$DIR/key.pem" -in "$DIR/cert.pem" -out "$DIR/id.p12" -passout "pass:$PASS" \
+  -certpbe PBE-SHA1-3DES -keypbe PBE-SHA1-3DES -macalg sha1 2>/dev/null || \
 openssl pkcs12 -export -inkey "$DIR/key.pem" -in "$DIR/cert.pem" -out "$DIR/id.p12" -passout "pass:$PASS" 2>/dev/null
 KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
 security import "$DIR/id.p12" -k "$KEYCHAIN" -P "$PASS" -T /usr/bin/codesign >/dev/null
