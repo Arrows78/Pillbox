@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum Tab: String, CaseIterable, Identifiable {
-    case home, music, timer, stocks, ai, reminders, notifications, notes, clipboard, shelf, launcher, terminal
+    case home, music, timer, stocks, ai, pulls, reminders, notifications, notes, clipboard, shelf, launcher, terminal
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -10,6 +10,7 @@ enum Tab: String, CaseIterable, Identifiable {
         case .timer: L("Timer")
         case .stocks: L("Stocks")
         case .ai: L("AI usage")
+        case .pulls: L("Pull requests")
         case .reminders: L("Reminders")
         case .notifications: L("Notifications")
         case .notes: L("Notes")
@@ -26,6 +27,7 @@ enum Tab: String, CaseIterable, Identifiable {
         case .timer: "timer"
         case .stocks: "chart.line.uptrend.xyaxis"
         case .ai: "sparkles"
+        case .pulls: "arrow.triangle.pull"
         case .reminders: "checklist"
         case .notifications: "bell.badge.fill"
         case .notes: "note.text"
@@ -125,6 +127,8 @@ final class NotchModel: ObservableObject {
     private var queue = ActivityQueue()
 
     func show(_ activity: Activity) {
+        // Volume and brightness can go to a slim bar on the screen edge instead of the island.
+        if let p = activity.progress, UserDefaults.standard.string(forKey: "hudStyle") == "edge" { EdgeHUD.shared.show(symbol: activity.symbol, level: p); return }
         guard queue.push(activity) else { return }
         present()
     }

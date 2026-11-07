@@ -186,6 +186,7 @@ struct TabContent: View {
         case .timer: TimerTab()
         case .stocks: StocksTab()
         case .ai: AIUsageTab()
+        case .pulls: PullRequestsTab()
         case .reminders: RemindersTab()
         case .notifications: NotificationsTab()
         case .notes: NotesTab()
