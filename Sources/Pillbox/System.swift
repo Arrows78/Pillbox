@@ -39,6 +39,12 @@ final class CaffeineService: ObservableObject {
     }
 
     func toggle() { active ? stop() : start() }
+
+    /// Keeps the Mac awake until the next occurrence of a clock time (today, or tomorrow if already past).
+    func start(until hour: Int, minute: Int = 0, now: Date = Date()) {
+        guard let target = Calendar.current.nextDate(after: now, matching: DateComponents(hour: hour, minute: minute), matchingPolicy: .nextTime) else { return }
+        start(minutes: max(Int(target.timeIntervalSince(now) / 60), 1))
+    }
 }
 
 // MARK: Battery
@@ -140,12 +146,16 @@ final class StatsService: ObservableObject {
 
 // MARK: Downloads, caps lock, eyedropper, screenshots
 
+/// Watches a folder and reports each new entry once (macOS writes screenshots and downloads as temporary files first).
 @MainActor
-final class DownloadsWatcher {
-    static let shared = DownloadsWatcher()
+final class FolderWatcher {
     private var source: DispatchSourceFileSystemObject?
     private var known = Set<String>()
-    private let dir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+    let dir: URL
+    private let onNew: (URL) -> Void
+    static let temporarySuffixes: Set<String> = ["crdownload", "download", "part", "opdownload", "tmp"]
+
+    init(dir: URL, onNew: @escaping (URL) -> Void) { self.dir = dir; self.onNew = onNew }
 
     func start() {
         known = Set((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? [])
@@ -157,16 +167,98 @@ final class DownloadsWatcher {
         s.resume(); source = s
     }
 
-    private func changed() {
-        let temp = ["crdownload", "download", "part", "opdownload", "tmp"]
+    func stop() { source?.cancel(); source = nil }
+
+    /// Reports entries that appeared since the last call, skipping hidden and temporary files.
+    func changed() {
         let now = Set((try? FileManager.default.contentsOfDirectory(atPath: dir.path)) ?? [])
-        for name in now.subtracting(known) where !name.hasPrefix(".") && !temp.contains((name as NSString).pathExtension.lowercased()) {
-            let url = dir.appendingPathComponent(name)
-            guard UserDefaults.standard.object(forKey: "downloadAlerts") as? Bool ?? true else { continue }
-            NotchModel.shared.show(Activity(symbol: "arrow.down.circle.fill", title: "Download finished", subtitle: name, tint: .blue,
-                                            actionTitle: "Reveal", action: { NSWorkspace.shared.activateFileViewerSelecting([url]) }, duration: 5))
+        for name in now.subtracting(known).sorted() where !name.hasPrefix(".") && !Self.temporarySuffixes.contains((name as NSString).pathExtension.lowercased()) {
+            onNew(dir.appendingPathComponent(name))
         }
         known = now
+    }
+}
+
+@MainActor
+final class DownloadsWatcher {
+    static let shared = DownloadsWatcher()
+    private var watcher: FolderWatcher?
+
+    func start() {
+        let dir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
+        watcher = FolderWatcher(dir: dir) { url in
+            guard UserDefaults.standard.object(forKey: "downloadAlerts") as? Bool ?? true else { return }
+            NotchModel.shared.show(Activity(symbol: "arrow.down.circle.fill", title: "Download finished", subtitle: url.lastPathComponent, tint: .blue,
+                                            actionTitle: "Reveal", action: { NSWorkspace.shared.activateFileViewerSelecting([url]) }, duration: 5))
+        }
+        watcher?.start()
+    }
+}
+
+/// New screenshots become an island and are staged on the shelf, ready to drag into any app.
+@MainActor
+final class ScreenshotWatcher {
+    static let shared = ScreenshotWatcher()
+    private var watcher: FolderWatcher?
+
+    static var screenshotFolder: URL {
+        let configured = UserDefaults(suiteName: "com.apple.screencapture")?.string(forKey: "location")
+        return URL(fileURLWithPath: (configured as NSString?)?.expandingTildeInPath ?? NSHomeDirectory() + "/Desktop")
+    }
+
+    /// macOS tags real screenshots with this extended attribute, whatever the language of the file name.
+    static func isScreenshot(_ url: URL) -> Bool {
+        getxattr(url.path, "com.apple.metadata:kMDItemIsScreenCapture", nil, 0, 0, 0) >= 0
+    }
+
+    func start() {
+        watcher = FolderWatcher(dir: Self.screenshotFolder) { [weak self] url in
+            // The tag lands a moment after the file appears.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { MainActor.assumeIsolated { self?.handle(url) } }
+        }
+        watcher?.start()
+    }
+
+    func handle(_ url: URL) {
+        guard UserDefaults.standard.object(forKey: "screenshotShelf") as? Bool ?? true, Self.isScreenshot(url) else { return }
+        ShelfService.shared.add([url])
+        NotchModel.shared.show(Activity(symbol: "camera.viewfinder", title: "Screenshot ready", subtitle: "On the shelf, drag it anywhere", tint: .green,
+                                        actionTitle: "Copy", action: {
+            if let img = NSImage(contentsOf: url) { NSPasteboard.general.clearContents(); NSPasteboard.general.writeObjects([img]) }
+        }, duration: 5))
+    }
+}
+
+/// Offers a one-tap eject when a removable drive is plugged in.
+@MainActor
+final class DriveWatcher {
+    static let shared = DriveWatcher()
+    private var observers: [NSObjectProtocol] = []
+
+    func start() {
+        let ws = NSWorkspace.shared.notificationCenter
+        observers.append(ws.addObserver(forName: NSWorkspace.didMountNotification, object: nil, queue: .main) { n in
+            guard let url = n.userInfo?[NSWorkspace.volumeURLUserInfoKey] as? URL else { return }
+            MainActor.assumeIsolated { DriveWatcher.shared.mounted(url) }
+        })
+    }
+
+    static func isEjectable(_ url: URL) -> Bool {
+        let v = try? url.resourceValues(forKeys: [.volumeIsEjectableKey, .volumeIsRemovableKey, .volumeIsInternalKey])
+        return (v?.volumeIsEjectable == true || v?.volumeIsRemovable == true) && v?.volumeIsInternal != true
+    }
+
+    private func mounted(_ url: URL) {
+        guard UserDefaults.standard.object(forKey: "driveEject") as? Bool ?? true, Self.isEjectable(url) else { return }
+        NotchModel.shared.show(Activity(symbol: "externaldrive.fill", title: "Drive connected", subtitle: url.lastPathComponent, tint: .white,
+                                        actionTitle: "Eject", action: {
+            do {
+                try NSWorkspace.shared.unmountAndEjectDevice(at: url)
+                NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Safe to disconnect", subtitle: url.lastPathComponent, tint: .green))
+            } catch {
+                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: "Could not eject", subtitle: url.lastPathComponent, tint: .orange))
+            }
+        }, duration: 8))
     }
 }
 

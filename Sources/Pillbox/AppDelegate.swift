@@ -17,6 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         BatteryService.shared.start()
         if PermissionsCenter.shared.state(of: .calendar) == .granted { CalendarService.shared.start() }
         DownloadsWatcher.shared.start()
+        ScreenshotWatcher.shared.start()
+        DriveWatcher.shared.start()
         Tools.startCapsLockHUD()
         KeystrokeHUD.shared.start()
         DevAPI.shared.apply()
