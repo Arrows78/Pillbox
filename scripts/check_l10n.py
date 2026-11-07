@@ -12,9 +12,18 @@ fr_keys = re.findall(r'^"((?:[^"\\]|\\.)*)"\s*=', fr_text, re.M)
 errors = [f"duplicate key in fr.lproj: {k}" for k in sorted({k for k in fr_keys if fr_keys.count(k) > 1})]
 known = set(fr_keys)
 
+# Other languages are generated from scripts/data/translations.tsv: they must hold exactly the French keys.
+for lang in ("es", "de"):
+    f = root / f"Resources/{lang}.lproj/Localizable.strings"
+    if not f.exists():
+        errors.append(f"{lang}.lproj is missing (run scripts/gen_lproj.py)"); continue
+    keys = set(re.findall(r'^"((?:[^"\\]|\\.)*)"\s*=', f.read_text(), re.M))
+    for k in sorted(known - keys): errors.append(f"{lang}: no translation for \"{k}\" (add it to scripts/data/translations.tsv, run scripts/gen_lproj.py)")
+    for k in sorted(keys - known): errors.append(f"{lang}: unknown key \"{k}\"")
+
 # Literals that are not words to translate: symbols, units, code, brand names.
 ignore = {"", "CPU", "RAM", "Claude Code", "Codex", "AAPL", "x", "·", "…"}
-pat = re.compile(r'\b(?:L|Text|Button|Label|Toggle|Section|TextField|Stepper|Picker|Slider)\(\s*"((?:[^"\\]|\\.)*)"')
+pat = re.compile(r'\b(?:L|Text|Button|Label|Toggle|Section|TextField|Stepper|Picker|Slider|accessibilityLabel)\(\s*"((?:[^"\\]|\\.)*)"')
 used = set()
 for f in sorted((root / "Sources/Pillbox").glob("*.swift")):
     if f.name in ("SelfTest.swift",):

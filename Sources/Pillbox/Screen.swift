@@ -214,7 +214,7 @@ struct AskView: View {
                 Button("Translate") { if let r = WebSearch.resolve("tr " + String(m.text.prefix(500))) { NSWorkspace.shared.open(r.url) } }
                 ForEach(Array(AskModel.links(in: m.text).prefix(2)), id: \.self) { u in Button { NSWorkspace.shared.open(u) } label: { Label(u.host ?? "link", systemImage: "link") } }
                 Spacer()
-                Button { close() } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
+                Button { close() } label: { Image(systemName: "xmark") }.buttonStyle(.plain).accessibilityLabel("Close")
             }.controlSize(.small)
             if m.hasKey {
                 HStack {

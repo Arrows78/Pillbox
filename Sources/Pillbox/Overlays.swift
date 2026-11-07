@@ -90,16 +90,16 @@ struct TeleprompterView: View {
                 }
             }
             HStack(spacing: 14) {
-                Button { t.editing.toggle() } label: { Image(systemName: t.editing ? "checkmark" : "pencil") }
+                Button { t.editing.toggle() } label: { Image(systemName: t.editing ? "checkmark" : "pencil") }.accessibilityLabel(LocalizedStringKey(t.editing ? "Done editing" : "Edit script"))
                 if !t.editing {
-                    Button { t.restart() } label: { Image(systemName: "backward.end.fill") }
-                    Button { t.toggle() } label: { Image(systemName: t.running ? "pause.fill" : "play.fill") }
+                    Button { t.restart() } label: { Image(systemName: "backward.end.fill") }.accessibilityLabel("Restart")
+                    Button { t.toggle() } label: { Image(systemName: t.running ? "pause.fill" : "play.fill") }.accessibilityLabel(LocalizedStringKey(t.running ? "Pause" : "Play"))
                     Image(systemName: "tortoise.fill").font(.system(size: 10))
                     Slider(value: $t.speed, in: 10...120).frame(width: 110)
                     Image(systemName: "hare.fill").font(.system(size: 10))
                 }
                 Spacer()
-                Button { t.close() } label: { Image(systemName: "xmark") }
+                Button { t.close() } label: { Image(systemName: "xmark") }.accessibilityLabel("Close")
             }.buttonStyle(.plain).font(.system(size: 13))
         }
         .foregroundStyle(.white)

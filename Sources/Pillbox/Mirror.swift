@@ -54,7 +54,7 @@ final class CameraMirror {
         p.contentView = NSHostingView(rootView: CameraPreview(session: s)
             .clipShape(RoundedRectangle(cornerRadius: 18))
             .overlay(alignment: .topTrailing) {
-                Button { CameraMirror.shared.close() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18)) }
+                Button { CameraMirror.shared.close() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 18)) }.accessibilityLabel("Close")
                     .buttonStyle(.plain).foregroundStyle(.white.opacity(0.8)).padding(8)
             })
         if let sc = NotchModel.shared.geometry.screen ?? NSScreen.main {
