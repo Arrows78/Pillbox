@@ -37,7 +37,20 @@ final class ShelfService: ObservableObject {
 
     func reveal(_ list: [ShelfItem]) { NSWorkspace.shared.activateFileViewerSelecting(list.map(\.url)) }
 
-    /// Compresses files into a zip (or expands archives) with the system `ditto`.
+    /// A sibling URL that does not exist yet ("name", "name 2", "name 3"…), so nothing is ever overwritten.
+    static func uniqueURL(_ url: URL) -> URL {
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: url.path) else { return url }
+        let base = url.deletingPathExtension(), ext = url.pathExtension
+        var n = 2
+        while true {
+            let candidate = (ext.isEmpty ? URL(fileURLWithPath: base.path + " \(n)") : URL(fileURLWithPath: base.path + " \(n)").appendingPathExtension(ext))
+            if !fm.fileExists(atPath: candidate.path) { return candidate }
+            n += 1
+        }
+    }
+
+    /// Compresses files into a zip (or expands archives into a new folder) with the system `ditto`.
     func zipOrUnzip(_ list: [ShelfItem]) {
         for item in list {
             let u = item.url
@@ -45,11 +58,14 @@ final class ShelfService: ObservableObject {
             p.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
             let out: URL
             if u.pathExtension.lowercased() == "zip" {
-                out = u.deletingPathExtension()
+                out = Self.uniqueURL(u.deletingPathExtension())
                 p.arguments = ["-x", "-k", u.path, out.path]
             } else {
-                out = u.appendingPathExtension("zip")
-                p.arguments = ["-c", "-k", "--sequesterRsrc", "--keepParent", u.path, out.path]
+                out = Self.uniqueURL(u.appendingPathExtension("zip"))
+                var isDir: ObjCBool = false
+                FileManager.default.fileExists(atPath: u.path, isDirectory: &isDir)
+                // --keepParent embeds the parent folder name: wanted for a folder, wrong for a single file.
+                p.arguments = ["-c", "-k", "--sequesterRsrc"] + (isDir.boolValue ? ["--keepParent"] : []) + [u.path, out.path]
             }
             p.terminationHandler = { proc in
                 DispatchQueue.main.async {
@@ -63,7 +79,7 @@ final class ShelfService: ObservableObject {
                     }
                 }
             }
-            try? p.run()
+            do { try p.run() } catch { NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: "Archive failed", tint: .red)) }
         }
     }
 }
