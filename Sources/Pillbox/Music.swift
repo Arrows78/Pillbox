@@ -20,6 +20,8 @@ final class MusicService: ObservableObject {
     @Published var isPlaying = false
     @Published var artwork: NSImage?
     @Published var lyrics: [LyricLine] = []
+    @Published var shuffling = false
+    @Published var repeating = false
 
     private let queue = DispatchQueue(label: "pillbox.applescript")
     private var timer: Timer?
@@ -62,14 +64,14 @@ final class MusicService: ObservableObject {
             script = """
             tell application "Spotify"
               if player state is stopped then return {"stopped"}
-              return {player state as text, name of current track, artist of current track, album of current track, (duration of current track) / 1000, player position, artwork url of current track}
+              return {player state as text, name of current track, artist of current track, album of current track, (duration of current track) / 1000, player position, artwork url of current track, shuffling as text, repeating as text}
             end tell
             """
         } else {
             script = """
             tell application "Music"
               if player state is stopped then return {"stopped"}
-              return {player state as text, name of current track, artist of current track, album of current track, duration of current track, player position, ""}
+              return {player state as text, name of current track, artist of current track, album of current track, duration of current track, player position, "", shuffle enabled as text, ((song repeat as text) is not "off") as text}
             end tell
             """
         }
@@ -89,6 +91,7 @@ final class MusicService: ObservableObject {
         func str(_ i: Int) -> String { d.atIndex(i)?.stringValue ?? "" }
         func num(_ i: Int) -> Double { Double(str(i).replacingOccurrences(of: ",", with: ".")) ?? 0 }
         let playing = str(1) == "playing"
+        shuffling = str(8) == "true"; repeating = str(9) == "true"
         if !playing, let fallback, !isPlaying, player != fallback {
             // Prefer whichever app is actually playing.
             fetch(fallback, fallback: nil)
@@ -152,6 +155,25 @@ final class MusicService: ObservableObject {
     func playPause() { command("playpause") }
     func next() { command("next track") }
     func previous() { command("previous track") }
+    func toggleShuffle() {
+        guard let p = player else { return }
+        shuffling.toggle()
+        command(p == .spotify ? "set shuffling to \(shuffling)" : "set shuffle enabled to \(shuffling)")
+    }
+
+    func toggleRepeat() {
+        guard let p = player else { return }
+        repeating.toggle()
+        command(p == .spotify ? "set repeating to \(repeating)" : "set song repeat to \(repeating ? "all" : "off")")
+    }
+
+    /// Apple Music only: Spotify's scripting interface has no favourite.
+    func favorite() {
+        guard player == .music else { return }
+        command("set favorited of current track to true")
+        NotchModel.shared.show(Activity(symbol: "heart.fill", title: "Added to favorites", tint: .pink, duration: 1.5))
+    }
+
     func seek(to t: Double) { position = t; command("set player position to \(t)") }
 
     private func command(_ c: String) {
