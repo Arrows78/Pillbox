@@ -54,6 +54,10 @@ struct IslandBackground: View {
                 if expanded && theme == "accent" { shape.fill(Color.accentColor.opacity(0.30)) }
             }
         }
+        .overlay {
+            // A faint lit edge gives the open panel some depth against dark wallpapers.
+            if expanded { shape.strokeBorder(LinearGradient(colors: [.white.opacity(0.16), .white.opacity(0.03)], startPoint: .top, endPoint: .bottom), lineWidth: 0.5) }
+        }
     }
 }
 

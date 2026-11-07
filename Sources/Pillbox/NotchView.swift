@@ -221,13 +221,7 @@ struct ExpandedView: View {
         VStack(spacing: 0) {
             HStack(spacing: 4) {
                 ForEach(Tab.allCases) { tab in
-                    Button { withAnimation(.easeOut(duration: 0.15)) { model.tab = tab } } label: {
-                        Image(systemName: tab.symbol)
-                            .font(.system(size: 13, weight: .semibold))
-                            .frame(width: 34, height: 24)
-                            .background(model.tab == tab ? Color.white.opacity(0.18) : .clear, in: Capsule())
-                            .foregroundStyle(model.tab == tab ? .white : .white.opacity(0.5))
-                    }.buttonStyle(.plain).help(tab.title).accessibilityLabel(tab.title).accessibilityAddTraits(model.tab == tab ? .isSelected : [])
+                    TabBarButton(tab: tab, selected: model.tab == tab) { withAnimation(.easeOut(duration: 0.15)) { model.tab = tab } }
                 }
                 Spacer()
                 Menu {
@@ -242,11 +236,14 @@ struct ExpandedView: View {
             }
             .padding(.horizontal, 22)
             .padding(.top, max(model.geometry.height - 6, 8))
-            .padding(.bottom, 6)
+            .padding(.bottom, 8)
+
+            Rectangle().fill(DS.hairline).frame(height: 0.5).padding(.horizontal, 22)
 
             TabContent(tab: model.tab)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(.horizontal, 22)
+            .padding(.top, 10)
             .padding(.bottom, 16)
             .transition(.opacity)
         }
