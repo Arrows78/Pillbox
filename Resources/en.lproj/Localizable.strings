@@ -7,3 +7,6 @@
 "for %d min" = "for %d min";
 "%@ finished" = "%@ finished";
 "Snippet: %@" = "Snippet: %@";
+"Sound output: %@" = "Sound output: %@";
+"Shortcut: %@" = "Shortcut: %@";
+"Search %@: %@" = "Search %@: %@";

@@ -38,8 +38,11 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Camera mirror", symbol: "video.fill") { CameraMirror.shared.toggle() },
             PaletteCommand(title: "Lock keyboard to clean it (60 s, ⌘⎋ unlocks)", symbol: "keyboard") { CleaningLock.shared.startKeyboardLock() },
             PaletteCommand(title: "Black out screens to clean them", symbol: "display") { CleaningLock.shared.startScreenBlackout() },
+            PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
+        list += AudioControl.outputDevices().map { d in PaletteCommand(localized: L("Sound output: %@", d.name), symbol: "hifispeaker.fill") { AudioControl.shared.selectOutput(d) } }
+        list += ShortcutsService.shared.names.map { n in PaletteCommand(localized: L("Shortcut: %@", n), symbol: "bolt.fill") { ShortcutsService.shared.run(n) } }
         list += SnapZone.allCases.map { z in PaletteCommand(localized: L("Snap window: %@", L(z.rawValue)), symbol: "rectangle.split.2x1") { WindowSnap.snap(z) } }
         let q = query.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return list }
@@ -54,6 +57,11 @@ final class PaletteModel: ObservableObject {
             out.insert(PaletteCommand(localized: "= \(v)  (" + L("copy") + ")", symbol: "equal.circle") {
                 NSPasteboard.general.clearContents(); NSPasteboard.general.setString(v, forType: .string)
             }, at: 0)
+        }
+        if Self.evaluate(q) == nil, let r = WebSearch.resolve(q, defaultKey: UserDefaults.standard.string(forKey: "searchEngine") ?? "google") {
+            out.append(PaletteCommand(localized: L("Search %@: %@", L(r.label), q), symbol: r.label == "Translate" ? "character.bubble" : "magnifyingglass") {
+                NotchModel.shared.collapse(); NSWorkspace.shared.open(r.url)
+            })
         }
         return out
     }

@@ -56,7 +56,7 @@
 - **Shelf actions**: AirDrop, zip and unzip (native `ditto`, archives expand into a new folder and nothing is overwritten), reveal in Finder.
 - **Convert** (offline, system frameworks): images between PNG, JPEG, HEIC, TIFF and PDF, background removal (Vision); video to MP4, HEVC or audio only; audio to AAC, WAV or AIFF.
 - **Screenshots**: a new screenshot (wherever macOS saves them) becomes an island and is staged on the shelf, ready to drag into any app.
-- **Launcher**: pin apps, reorder by dragging.
+- **Launcher**: pin apps and reorder by dragging, or switch to **Shortcuts** for a one-tap grid of your Apple Shortcuts (run through the system `shortcuts` command, with a result island).
 - **Notes**: a quick checklist that stays in the pill.
 
 ### 📈 Stocks and weather
@@ -87,11 +87,16 @@
 - **Drives**: an island with a one-tap **Eject** when a removable drive is plugged in, then *Safe to disconnect*.
 - **Hide from capture**: asks screenshot and screen-sharing tools to leave the island out (some apps may still capture it).
 - **Colour eyedropper** (HEX copied), **area screenshot** to the clipboard.
-- **Home**: clock, next calendar event, CPU, memory and battery gauges.
+- **Home**: clock, weather, next calendar event, CPU, memory and battery gauges, live network speed, and the battery of your Magic Mouse, Keyboard and Trackpad.
+- **Sound output switcher**: the speaker menu in the island header (and the palette) changes the output device in one tap.
+- **Hide the notch**: an option that paints the top strip black behind the menu bar, so the notch blends into it.
+- **Teleprompter**: `Open teleprompter` in the palette shows a script that scrolls under the webcam, with speed, restart and an editor. The panel is excluded from screen sharing and recordings, so only you see it.
 
 ### ⌨️ Command palette
 
-`⌃⌥K` opens it from anywhere: jump to a tab, toggle keep awake, start a timer, pick a colour, search the clipboard and paste, or type a calculation.
+`⌃⌥K` opens it from anywhere: jump to a tab, toggle keep awake, start a timer, pick a colour, switch the sound output, run a Shortcut, search the clipboard and paste, or type a calculation.
+
+Anything else becomes a **web search** with your default engine (Google, DuckDuckGo, Bing, Brave, Ecosia, YouTube, Wikipedia, GitHub or Apple Maps, set in Settings). Start with a bang to pick one: `yt lofi`, `gh swiftterm`, `w notch`. `tr good morning` opens a translation in your language.
 
 ### 🔗 Developer API
 
@@ -112,6 +117,8 @@ curl -X POST http://127.0.0.1:9998/notify \
 | `⌃⌥K` | Command palette |
 | `⌃⌥N` | Toggle the notch |
 | `⌘1`–`⌘9` | Switch tab while the notch is open |
+
+The palette also takes `yt`, `gh`, `w`, `ddg`, `b`, `br`, `e`, `map` search bangs and `tr` to translate.
 
 ## 🛠️ Scripts
 
@@ -189,6 +196,8 @@ Pillbox/
     ├── Audio, Mirror, Cleaning, WindowSnap  # Volume, mic, privacy, camera, locks, snapping
     ├── Weather, Stocks, AIUsage         # Weather, watchlist, Claude Code and Codex usage
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
+    ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
+    ├── Overlays.swift                   # Hidden notch, teleprompter
     ├── Permissions.swift                # Permissions center
     ├── L10n.swift                       # L() helper for text built in code
     ├── SelfTest.swift                   # Behind --selftest
@@ -204,7 +213,7 @@ Pillbox/
 
 ## 🗺️ Roadmap
 
-Brightness HUD, call and message islands, Cursor and Copilot usage, drag-to-notch snap zones, desktop and lock-screen widgets, more languages.
+Brightness and keyboard backlight HUDs, call and message islands, notification mirror, Cursor and Copilot usage, per-app sound mixer and audio spectrum, drag-to-notch snap zones, menu bar icon hiding, Hyper key, knock to control, Face Unlock, desktop and lock-screen widgets, Lottie idle animation, automatic updates, more languages.
 
 ## 🙌 Contributing
 

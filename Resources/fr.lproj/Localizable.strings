@@ -247,3 +247,18 @@
 "Add a reminder, e.g. call mum tomorrow at 9am" = "Ajouter un rappel, ex. appeler maman demain à 9 h";
 "Nothing to do" = "Rien à faire";
 "Could not save the reminder" = "Impossible d'enregistrer le rappel";
+
+/* Sortie audio, Raccourcis, recherche, téléprompteur */
+"Sound output" = "Sortie audio";
+"Could not switch the output" = "Impossible de changer la sortie";
+"Sound output: %@" = "Sortie audio : %@";
+"Apps" = "Apps";
+"No shortcuts found. Create some in the Shortcuts app." = "Aucun raccourci trouvé. Crées-en dans l'app Raccourcis.";
+"Shortcut: %@" = "Raccourci : %@";
+"Shortcut finished" = "Raccourci terminé";
+"Shortcut failed" = "Échec du raccourci";
+"Search %@: %@" = "Rechercher sur %@ : %@";
+"Translate" = "Traduction";
+"Palette search engine" = "Moteur de recherche de la palette";
+"Hide the notch (black menu bar)" = "Masquer l'encoche (barre des menus noire)";
+"Open teleprompter" = "Ouvrir le téléprompteur";

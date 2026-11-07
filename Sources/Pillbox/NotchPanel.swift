@@ -81,6 +81,7 @@ final class NotchWindowController {
     /// Asks capture apps to leave the island out of screenshots, recordings and screen shares.
     func applyCapturePreference() {
         panel.sharingType = UserDefaults.standard.bool(forKey: "hideFromCapture") ? .none : .readOnly
+        NotchHider.shared.apply(screen: model.geometry.screen ?? NSScreen.main, height: model.geometry.height)
     }
 
     func makeKey() { panel.makeKey() }

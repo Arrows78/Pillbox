@@ -15,7 +15,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -208,7 +208,7 @@ enum SelfTest {
         m.query = "2+2*5"
         check("palette answers maths first", m.commands.first?.title.hasPrefix("= 12") == true, m.commands.first?.title ?? "none")
         m.query = "zzzz-no-such-command"
-        check("palette shows nothing for nonsense", m.commands.isEmpty)
+        check("palette offers only a web search for nonsense", m.commands.count == 1 && m.commands[0].title.contains("zzzz-no-such-command"), "\(m.commands.map(\.title))")
     }
 
     /// Runs an async operation to completion while keeping the main run loop alive.
@@ -321,6 +321,35 @@ enum SelfTest {
         check("reminder: no date keeps the whole text", b.title == "buy milk" && b.due == nil)
         let c = RemindersService.parse("  tomorrow  ")
         check("reminder: only a date keeps the text as title", c.title == "tomorrow" && c.due != nil, c.title)
+    }
+
+    private static func extras() {
+        check("shortcuts: list parsing", ShortcutsService.parseList("Morning\n  Send report \n\nWi-Fi off\n") == ["Morning", "Send report", "Wi-Fi off"])
+        let g = WebSearch.resolve("swift concurrency", defaultKey: "duckduckgo")
+        check("search: default engine", g?.label == "DuckDuckGo" && g?.url.absoluteString == "https://duckduckgo.com/?q=swift%20concurrency", g?.url.absoluteString ?? "nil")
+        check("search: bang picks the engine", WebSearch.resolve("yt lofi beats")?.url.absoluteString == "https://www.youtube.com/results?search_query=lofi%20beats")
+        check("search: reserved characters are escaped", WebSearch.resolve("a&b=c#d")?.url.absoluteString == "https://www.google.com/search?q=a%26b%3Dc%23d", WebSearch.resolve("a&b=c#d")?.url.absoluteString ?? "nil")
+        check("search: translate", WebSearch.resolve("tr good morning", language: "fr")?.url.absoluteString == "https://translate.google.com/?sl=auto&tl=fr&op=translate&text=good%20morning")
+        check("search: a lone bang is a normal query", WebSearch.resolve("yt")?.label == "Google" && WebSearch.resolve("   ") == nil)
+        check("search: nine engines", WebSearch.engines.count == 9 && Set(WebSearch.engines.map(\.bang)).count == 9)
+
+        check("network: format", NetworkRate.format(512) == "512 B/s" && NetworkRate.format(1_500) == "1.5 KB/s" && NetworkRate.format(2_300_000) == "2.3 MB/s")
+        let a = ["en0": (rx: UInt32.max - 99, tx: UInt32(0))], b = ["en0": (rx: UInt32(100), tx: UInt32(500)), "new": (rx: UInt32(9), tx: UInt32(9))]
+        let r = NetworkRate.rate(from: a, to: b, seconds: 2)
+        check("network: rate survives counter wrap and ignores new interfaces", r.down == 100 && r.up == 250, "\(r)")
+        check("network: counters are readable", !NetworkRate.counters().isEmpty)
+
+        let devs = AudioControl.outputDevices()
+        check("audio: output devices listed with names", !devs.isEmpty && devs.allSatisfy { !$0.name.isEmpty }, "\(devs.count)")
+        check("audio: the current output is one of them", AudioControl.currentOutput().map { id in devs.contains { $0.id == id } } == true)
+
+        let t = Teleprompter()
+        t.script = "x"; t.speed = 60; let before = t.offset
+        t.tick(0.5)
+        check("teleprompter: scrolls at its speed", t.offset - before == 30, "\(t.offset)")
+        t.restart()
+        check("teleprompter: restart returns to the top", t.offset == 0)
+        UserDefaults.standard.removeObject(forKey: "teleScript"); UserDefaults.standard.removeObject(forKey: "teleSpeed")
     }
 }
 

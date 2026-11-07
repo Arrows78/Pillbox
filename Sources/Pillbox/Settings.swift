@@ -11,6 +11,8 @@ struct SettingsView: View {
     @AppStorage("volumeHUD") private var volumeHUD = true
     @AppStorage("keystrokeHUD") private var keystrokeHUD = false
     @AppStorage("hideFromCapture") private var hideFromCapture = false
+    @AppStorage("hideNotch") private var hideNotch = false
+    @AppStorage("searchEngine") private var searchEngine = "google"
     @AppStorage("screenshotShelf") private var screenshotShelf = true
     @AppStorage("driveEject") private var driveEject = true
     @AppStorage("shortcutsOnly") private var shortcutsOnly = true
@@ -27,6 +29,8 @@ struct SettingsView: View {
                 Toggle("Open when hovering the notch", isOn: $hoverOpen)
                 if hoverOpen { Slider(value: $hoverDelay, in: 0.05...0.6) { Text("Hover delay") } }
                 Toggle("Hide from screenshots and screen sharing", isOn: $hideFromCapture)
+                Toggle("Hide the notch (black menu bar)", isOn: $hideNotch)
+                Picker("Palette search engine", selection: $searchEngine) { ForEach(WebSearch.engines) { Text(verbatim: $0.name).tag($0.key) } }
                 Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { on in try? on ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister() }
                 if NotchModel.shared.geometry.screen?.safeAreaInsets.top == 0 {

@@ -159,6 +159,13 @@ struct ExpandedView: View {
                     }.buttonStyle(.plain).help(tab.title)
                 }
                 Spacer()
+                Menu {
+                    let current = AudioControl.currentOutput()
+                    ForEach(AudioControl.outputDevices()) { d in
+                        Button { AudioControl.shared.selectOutput(d) } label: { Text(verbatim: (d.id == current ? "✓ " : "") + d.name) }
+                    }
+                } label: { Image(systemName: "hifispeaker.fill").foregroundStyle(.white.opacity(0.5)) }
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help("Sound output")
                 Button { SettingsWindow.show() } label: { Image(systemName: "gearshape.fill").foregroundStyle(.white.opacity(0.5)) }
                     .buttonStyle(.plain)
             }

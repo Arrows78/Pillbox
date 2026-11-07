@@ -23,6 +23,11 @@ struct HomeTab: View {
                         .font(.system(size: 11)).symbolRenderingMode(.multicolor).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Spacer(minLength: 4)
+                Text("↓ \(NetworkRate.format(stats.down))  ↑ \(NetworkRate.format(stats.up))").font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                if !stats.devices.isEmpty {
+                    Label(stats.devices.map { "\($0.name) \($0.percent)%" }.joined(separator: " · "), systemImage: "battery.75percent")
+                        .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                }
                 if let e = calendar.next {
                     HStack(spacing: 8) {
                         Image(systemName: "calendar").foregroundStyle(.red)
@@ -414,6 +419,37 @@ struct ShelfCell: View {
 }
 
 struct LauncherTab: View {
+    @State private var mode = 0
+    var body: some View {
+        VStack(spacing: 6) {
+            Picker("", selection: $mode) { Text("Apps").tag(0); Text("Shortcuts").tag(1) }
+                .pickerStyle(.segmented).labelsHidden().controlSize(.small).frame(width: 170)
+            if mode == 0 { AppsGrid() } else { ShortcutsGrid() }
+        }
+    }
+}
+
+struct ShortcutsGrid: View {
+    @ObservedObject var svc = ShortcutsService.shared
+    var body: some View {
+        ScrollView {
+            if svc.names.isEmpty { Text("No shortcuts found. Create some in the Shortcuts app.").font(.system(size: 11)).foregroundStyle(.tertiary) }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 6)], spacing: 6) {
+                ForEach(svc.names, id: \.self) { n in
+                    Button { svc.run(n) } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: svc.running == n ? "hourglass" : "bolt.fill").foregroundStyle(.orange)
+                            Text(verbatim: n).lineLimit(1)
+                        }.font(.system(size: 11)).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.vertical, 7)
+                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                    }.buttonStyle(.plain)
+                }
+            }
+        }.onAppear { svc.refresh() }
+    }
+}
+
+struct AppsGrid: View {
     @ObservedObject var store = LauncherStore.shared
     @State private var dragging: String?
 
