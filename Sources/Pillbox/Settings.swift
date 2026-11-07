@@ -36,6 +36,11 @@ struct SettingsView: View {
             Section("Developer API (127.0.0.1:\(DevAPI.defaultPort))") {
                 Toggle("Enable local API", isOn: $devAPI).onChange(of: devAPI) { _ in DevAPI.shared.apply() }
                 if devAPI {
+                    Button("Copy Claude Code approval hook") {
+                        let path = Bundle.main.path(forResource: "claude-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-hook.sh"
+                        let cfg = "{\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash|Write|Edit\",\"hooks\":[{\"type\":\"command\",\"command\":\"\(path)\",\"timeout\":130}]}]}}"
+                        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(cfg, forType: .string)
+                    }
                     Button(copied ? "Copied" : "Copy example request") {
                         let cmd = "curl -X POST http://127.0.0.1:\(DevAPI.defaultPort)/notify -H 'Authorization: Bearer \(DevAPI.token)' -d '{\"title\":\"Build done\",\"symbol\":\"hammer.fill\"}'"
                         NSPasteboard.general.clearContents(); NSPasteboard.general.setString(cmd, forType: .string); copied = true

@@ -26,7 +26,8 @@ struct NotchRootView: View {
             UnevenRoundedRectangle(bottomLeadingRadius: model.expanded ? 28 : 12, bottomTrailingRadius: model.expanded ? 28 : 12)
                 .fill(.black)
             Group {
-                if model.expanded { ExpandedView() }
+                if let a = model.approval { ApprovalView(approval: a) }
+                else if model.expanded { ExpandedView() }
                 else if let a = model.activity { ActivityView(activity: a) }
                 else if wings { CollapsedWings() }
             }
@@ -171,6 +172,7 @@ struct ExpandedView: View {
                 case .music: MusicTab()
                 case .timer: TimerTab()
                 case .stocks: StocksTab()
+                case .ai: AIUsageTab()
                 case .notes: NotesTab()
                 case .clipboard: ClipboardTab()
                 case .shelf: ShelfTab()
@@ -192,5 +194,32 @@ struct ExpandedView: View {
             }
             return true
         }
+    }
+}
+
+struct ApprovalView: View {
+    let approval: Approval
+    @ObservedObject var model = NotchModel.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "hand.raised.fill").foregroundStyle(.orange)
+                Text("\(approval.tool) wants to run").font(.system(size: 13, weight: .semibold))
+                Spacer()
+            }
+            Text(approval.detail).font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.8))
+                .lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
+                .padding(6).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+            HStack {
+                Button("Ask in terminal") { model.resolveApproval("ask") }
+                Spacer()
+                Button("Deny") { model.resolveApproval("deny") }.tint(.red)
+                Button("Allow") { model.resolveApproval("allow") }.buttonStyle(.borderedProminent).tint(.green)
+                    .keyboardShortcut(.return, modifiers: [])
+            }.controlSize(.small)
+        }
+        .padding(.horizontal, 20).padding(.top, model.geometry.height).padding(.bottom, 8)
+        .foregroundStyle(.white)
     }
 }

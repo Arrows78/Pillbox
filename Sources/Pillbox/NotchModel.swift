@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum Tab: String, CaseIterable, Identifiable {
-    case home, music, timer, stocks, notes, clipboard, shelf, launcher
+    case home, music, timer, stocks, ai, notes, clipboard, shelf, launcher
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -9,6 +9,7 @@ enum Tab: String, CaseIterable, Identifiable {
         case .music: "Music"
         case .timer: "Timer"
         case .stocks: "Stocks"
+        case .ai: "AI usage"
         case .notes: "Notes"
         case .clipboard: "Clipboard"
         case .shelf: "Shelf"
@@ -21,6 +22,7 @@ enum Tab: String, CaseIterable, Identifiable {
         case .music: "music.note"
         case .timer: "timer"
         case .stocks: "chart.line.uptrend.xyaxis"
+        case .ai: "sparkles"
         case .notes: "note.text"
         case .clipboard: "doc.on.clipboard"
         case .shelf: "tray.full.fill"
@@ -40,6 +42,14 @@ struct Activity: Identifiable {
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
     var duration: TimeInterval = 3
+}
+
+/// A permission request from a coding agent, answered with Allow or Deny.
+struct Approval: Identifiable {
+    let id = UUID()
+    var tool: String
+    var detail: String
+    var respond: (String) -> Void   // "allow", "deny" or "ask" (hand back to the terminal)
 }
 
 /// Physical notch (or virtual pill on Macs without one) of the target screen.
@@ -74,6 +84,7 @@ final class NotchModel: ObservableObject {
     @Published var expanded = false
     @Published var tab: Tab = .home
     @Published var activity: Activity?
+    @Published var approval: Approval?
     @Published var geometry = NotchGeometry.detect()
     /// Set while the user keeps the panel open (text fields focused, drag in progress).
     @Published var pinnedOpen = false
@@ -83,6 +94,7 @@ final class NotchModel: ObservableObject {
 
     /// Size of the visible black shape for the current state.
     func size(hasWings: Bool) -> CGSize {
+        if approval != nil { return CGSize(width: 520, height: geometry.height + 92) }
         if expanded { return Self.expandedSize }
         if activity != nil { return CGSize(width: max(geometry.width + 150, 330), height: geometry.height + 34) }
         let extra = hasWings ? Self.wing * 2 : 0
@@ -112,6 +124,30 @@ final class NotchModel: ObservableObject {
             guard !Task.isCancelled else { return }
             self?.dismissActivity()
         }
+    }
+
+    private var approvalTask: Task<Void, Never>?
+
+    /// Shows an Allow / Deny island. Falls back to "ask" after `timeout` so the agent never hangs.
+    func requestApproval(tool: String, detail: String, timeout: TimeInterval = 120, respond: @escaping (String) -> Void) {
+        resolveApproval("ask")   // a newer request supersedes the previous one
+        approvalTask?.cancel()
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { approval = Approval(tool: tool, detail: detail, respond: respond) }
+        NotificationCenter.default.post(name: .notchStateChanged, object: nil)
+        NSSound(named: "Pop")?.play()
+        approvalTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+            guard !Task.isCancelled else { return }
+            self?.resolveApproval("ask")
+        }
+    }
+
+    func resolveApproval(_ decision: String) {
+        guard let a = approval else { return }
+        approvalTask?.cancel()
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.85)) { approval = nil }
+        NotificationCenter.default.post(name: .notchStateChanged, object: nil)
+        a.respond(decision)
     }
 
     func dismissActivity() {
