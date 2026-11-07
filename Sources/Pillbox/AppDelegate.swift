@@ -27,6 +27,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Tools.startCapsLockHUD()
         KeystrokeHUD.shared.start()
         BrightnessHUD.shared.start()
+        BreakReminder.shared.start()
+        DownloadProgress.shared.start()
+        BuildWatcher.shared.start()
         FocusMonitor.shared.start()
         CallMonitor.shared.start()
         HyperKey.shared.apply()
@@ -152,6 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var dragPasteboardCount = 0
+    private var shake = ShakeDetector()
 
     /// A real drag-and-drop session changes the drag pasteboard; dragging a window does not (its contents are stale).
     private var isDataDrag: Bool { NSPasteboard(name: .drag).changeCount != dragPasteboardCount }
@@ -159,7 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Dragging a file toward the notch opens the shelf; dragging a window toward it shows snap zones.
     private func setupDragToShelf() {
         monitors.append(NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDown) { _ in
-            DispatchQueue.main.async { MainActor.assumeIsolated { self.dragPasteboardCount = NSPasteboard(name: .drag).changeCount } }
+            DispatchQueue.main.async { MainActor.assumeIsolated { self.dragPasteboardCount = NSPasteboard(name: .drag).changeCount; self.shake.reset() } }
         } as Any)
         monitors.append(NSEvent.addGlobalMonitorForEvents(matching: .leftMouseDragged) { _ in
             DispatchQueue.main.async {
@@ -169,7 +173,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                         guard !model.expanded else { return }
                         let pb = NSPasteboard(name: .drag)
                         guard pb.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) else { return }
-                        if self.controller.shapeRectOnScreen.insetBy(dx: -30, dy: -30).contains(p) { model.pinnedOpen = true; model.expand(.shelf) }
+                        let shaken = UserDefaults.standard.object(forKey: "shakeToOpen") as? Bool ?? true && self.shake.add(p, at: Date())
+                        if shaken || self.controller.shapeRectOnScreen.insetBy(dx: -30, dy: -30).contains(p) { model.pinnedOpen = true; model.expand(.shelf) }
                     } else if UserDefaults.standard.bool(forKey: "snapZones"), !model.expanded {
                         let r = self.controller.shapeRectOnScreen
                         if SnapZones.shared.visible { SnapZones.shared.update(mouse: p) }

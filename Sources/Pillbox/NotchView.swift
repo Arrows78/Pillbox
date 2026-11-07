@@ -9,7 +9,7 @@ final class LiveState {
     var hasWings: Bool {
         let t = TimerService.shared, m = MusicService.shared
         return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
-            || CallMonitor.shared.call != nil || lottiePath != nil
+            || CallMonitor.shared.call != nil || lottiePath != nil || !DownloadProgress.shared.items.isEmpty || BuildWatcher.shared.since != nil
     }
 }
 
@@ -21,8 +21,10 @@ struct NotchRootView: View {
     @ObservedObject var privacy = PrivacyService.shared
     @ObservedObject var cleaning = CleaningLock.shared
     @ObservedObject var calls = CallMonitor.shared
+    @ObservedObject var downloads = DownloadProgress.shared
+    @ObservedObject var build = BuildWatcher.shared
 
-    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil }
+    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil }
     private var size: CGSize { model.size(hasWings: wings) }
 
     var body: some View {
@@ -54,6 +56,8 @@ struct NotchRootView: View {
 }
 
 struct CollapsedWings: View {
+    @ObservedObject var downloads = DownloadProgress.shared
+    @ObservedObject var build = BuildWatcher.shared
     @ObservedObject var calls = CallMonitor.shared
     @ObservedObject var cleaning = CleaningLock.shared
     @ObservedObject var privacy = PrivacyService.shared
@@ -76,6 +80,10 @@ struct CollapsedWings: View {
             Image(systemName: "lock.fill").foregroundStyle(.yellow)
         } else if calls.call != nil {
             Image(systemName: "phone.fill").font(.system(size: 12)).foregroundStyle(.green)
+        } else if build.since != nil {
+            Image(systemName: "hammer.fill").font(.system(size: 12)).foregroundStyle(.blue)
+        } else if !downloads.items.isEmpty {
+            Image(systemName: "arrow.down.circle.fill").font(.system(size: 13)).foregroundStyle(.blue)
         } else if privacy.live {
             HStack(spacing: 4) {
                 if privacy.micLive { Image(systemName: "mic.fill").foregroundStyle(.orange) }
@@ -97,6 +105,10 @@ struct CollapsedWings: View {
     @ViewBuilder private var right: some View {
         if let c = calls.call {
             Text(c.since, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.green).frame(width: 52)
+        } else if let s = build.since {
+            Text(s, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.blue).frame(width: 52)
+        } else if let d = downloads.items.first {
+            Text(verbatim: DownloadProgress.size(d.bytes)).font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(.blue)
         } else if CleaningLock.shared.active {
             Text("\(CleaningLock.shared.remaining)s").font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.yellow)
         } else if timer.isActive {
