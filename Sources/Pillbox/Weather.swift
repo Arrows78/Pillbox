@@ -13,6 +13,10 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     private var timer: Timer?
     private var location: CLLocation?
 
+    func requestAuthorization() {
+        if timer == nil { start() } else { manager.requestWhenInUseAuthorization() }
+    }
+
     func start() {
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyKilometer

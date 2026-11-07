@@ -15,16 +15,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MusicService.shared.start()
         ClipboardService.shared.start()
         BatteryService.shared.start()
-        CalendarService.shared.start()
+        if PermissionsCenter.shared.state(of: .calendar) == .granted { CalendarService.shared.start() }
         DownloadsWatcher.shared.start()
         Tools.startCapsLockHUD()
         DevAPI.shared.apply()
         PrivacyService.shared.start()
-        WeatherService.shared.start()
+        if PermissionsCenter.shared.state(of: .location) == .granted { WeatherService.shared.start() }
         StocksService.shared.start()
         AIUsageService.shared.start()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
+        // First launch: show the settings (permissions first) instead of letting prompts appear out of nowhere.
+        if !UserDefaults.standard.bool(forKey: "onboarded") {
+            UserDefaults.standard.set(true, forKey: "onboarded")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SettingsWindow.show() }
+        }
         setupHover()
         setupDragToShelf()
         hotKeys = [

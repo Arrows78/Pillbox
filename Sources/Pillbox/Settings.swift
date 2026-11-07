@@ -17,6 +17,7 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            PermissionsSection()
             Section("General") {
                 Toggle("Open when hovering the notch", isOn: $hoverOpen)
                 if hoverOpen { Slider(value: $hoverDelay, in: 0.05...0.6) { Text("Hover delay") } }
@@ -51,7 +52,7 @@ struct SettingsView: View {
                 Text("⌃⌥K  command palette    ⌃⌥N  toggle notch").foregroundStyle(.secondary)
             }
         }
-        .formStyle(.grouped).frame(width: 440, height: 520)
+        .formStyle(.grouped).frame(width: 480, height: 640)
     }
 }
 
