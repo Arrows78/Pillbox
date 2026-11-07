@@ -42,6 +42,7 @@
 
 - **Spotify and Apple Music**: title, artist, artwork, seek, previous / play / next.
 - **Synced lyrics** from LRCLIB, the current line shown under the title.
+- **Floating player**: a small always-on-top player in four sizes (right-click to choose), with a swipe on the cover to skip tracks. **Full-screen lyrics** show the current line big and its neighbours dimmed; Esc or a click closes them. Both are in the palette.
 - **Shuffle and repeat** for both players (state read back from the app), and a **favourite** heart for Apple Music.
 
 ### ⏱️ Timer
@@ -120,6 +121,9 @@
 - **Drives**: an island with a one-tap **Eject** when a removable drive is plugged in, then *Safe to disconnect*.
 - **Hide from capture**: asks screenshot and screen-sharing tools to leave the island out (some apps may still capture it).
 - **Colour eyedropper** (HEX copied), **area screenshot** to the clipboard.
+- **Panel size**: a slider in Settings scales the open panel from 80 to 130 %.
+- **Copy stack** (opt-in): copy several things in a row and paste them back in order with `⌃⌥V` (needs Accessibility to type the paste).
+- **Calculation history**: the palette keeps your last ten results and lists them when it is empty; pick one to copy it again.
 - **Home**: clock, weather, next calendar event, CPU, memory and battery gauges, live network speed, the battery of your Magic Mouse, Keyboard and Trackpad, and your AirPods and other Bluetooth accessories (per bud and case).
 - **Sound output switcher**: the speaker menu in the island header (and the palette) changes the output device in one tap.
 - **Display options**: choose which display hosts the island, and hide it in full screen.
@@ -132,6 +136,11 @@
 
 Anything else becomes a **web search** with your default engine (Google, DuckDuckGo, Bing, Brave, Ecosia, YouTube, Wikipedia, GitHub or Apple Maps, set in Settings). Start with a bang to pick one: `yt lofi`, `gh swiftterm`, `w notch`. `tr good morning` opens a translation in your language.
 
+### 🔌 For AI apps
+
+- **MCP server**: `Pillbox --mcp` speaks the Model Context Protocol over stdio, so an AI app can start or stop a timer, control the music, add a file to the shelf, show a message in the notch or keep the Mac awake. **Settings › Developer API › Copy MCP configuration** gives the JSON to paste into the app. Every call goes through the local API, so it works only while that switch is on. Arguments are validated (timers 1 to 180 minutes, files must exist) and an unknown tool is refused.
+- **Turn summary**: a Claude Code `Stop` hook (**Copy Claude Code turn-summary hook**) shows how many tokens the turn that just ended used, cache reads excluded. The API only reads transcripts under `~/.claude`.
+
 ### 🔗 Developer API
 
 Off by default. When enabled in **Settings**, scripts and CI can show a message in the notch:
@@ -142,7 +151,7 @@ curl -X POST http://127.0.0.1:9998/notify \
   -d '{"title":"Build done","message":"main passed","symbol":"hammer.fill","duration":4}'
 ```
 
-`POST /approve` takes a Claude Code hook payload and answers with its decision (see AI tools). The token is generated per install (**Settings › Developer API › Copy example request**). Titles are limited to 120 characters, messages to 500, durations to 1–10 seconds.
+`POST /approve` takes a Claude Code hook payload and answers with its decision (see AI tools). `POST /action` runs one of the tool calls above and `POST /turn` takes a Claude Code `Stop` hook payload. Requests may arrive in several TCP segments: the API reads up to `Content-Length`. The token is generated per install (**Settings › Developer API › Copy example request**). Titles are limited to 120 characters, messages to 500, durations to 1–10 seconds.
 
 ## ⌨️ Default shortcuts
 
@@ -150,6 +159,7 @@ curl -X POST http://127.0.0.1:9998/notify \
 | --- | --- |
 | `⌃⌥K` | Command palette |
 | `⌃⌥N` | Toggle the notch |
+| `⌃⌥V` | Paste the next item of the copy stack |
 | `⌘1`–`⌘9` | Switch tab while the notch is open |
 
 The palette also takes `yt`, `gh`, `w`, `ddg`, `b`, `br`, `e`, `map` search bangs and `tr` to translate.
@@ -260,6 +270,8 @@ Pillbox/
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
     ├── Overlays.swift                   # Hidden notch, teleprompter
+    ├── Mcp.swift                        # MCP server, agent actions, turn tokens
+    ├── Player.swift                     # Floating player, full-screen lyrics, copy stack, calculation history
     ├── Extras4.swift                    # Usage limit alert, GitHub pull requests, edge volume bar
     ├── Extras3.swift                    # Activity queue, themes, pill gestures, quick actions and web mini-apps, notification island
     ├── Features2.swift                  # Shake, break reminder, download and build islands, Bluetooth batteries, quick capture
@@ -280,7 +292,7 @@ Pillbox/
 
 ## 🗺️ Roadmap
 
-Answering calls from the island, MCP server for AI apps, resizable panel, floating player and full-screen lyrics, message replies, connecting AirPods from the island, browser video speed, clipboard stack and importing other managers' history, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, notarised releases, native review of the Spanish and German texts. Face Unlock is deliberately left out.
+Answering calls from the island, message replies, in-app translation (needs Apple's Translation framework and its language downloads), connecting AirPods from the island, browser video speed, clipboard stack and importing other managers' history, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, notarised releases, native review of the Spanish and German texts. Face Unlock is deliberately left out.
 
 ## 🙌 Contributing
 

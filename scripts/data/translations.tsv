@@ -350,3 +350,21 @@ Pull requests	Pull requests	Pull Requests
 Edge bar	Barra en el borde	Randleiste
 Warn when an AI limit reaches	Avisar cuando un límite de IA llegue a	Warnen, wenn ein KI-Limit erreicht
 Never	Nunca	Nie
+%@ tokens	%@ tokens	%@ Tokens
+Agent turn finished	Turno del agente terminado	Agenten-Durchlauf beendet
+Extra large	Extragrande	Sehr groß
+Large	Grande	Groß
+Medium	Mediano	Mittel
+Small	Pequeño	Klein
+Full-screen lyrics	Letras a pantalla completa	Songtext im Vollbild
+No synced lyrics for this track	No hay letra sincronizada para esta pista	Kein synchronisierter Text für diesen Titel
+Press Esc or click to close	Pulsa Esc o haz clic para cerrar	Zum Schließen Esc drücken oder klicken
+Stack: %d	Pila: %d	Stapel: %d
+The copy stack is empty	La pila de copias está vacía	Der Kopierstapel ist leer
+Copy Claude Code turn-summary hook	Copiar el hook de resumen de turno de Claude Code	Claude-Code-Durchlauf-Hook kopieren
+Copy MCP configuration	Copiar la configuración MCP	MCP-Konfiguration kopieren
+Copy stack: copy several things, paste them in order with ⌃⌥V	Pila de copias: copia varias cosas y pégalas en orden con ⌃⌥V	Kopierstapel: mehreres kopieren und der Reihe nach mit ⌃⌥V einfügen
+Panel size	Tamaño del panel	Größe des Panels
+Floating player	Reproductor flotante	Schwebender Player
+Paste next from the copy stack	Pegar el siguiente de la pila de copias	Nächsten aus dem Kopierstapel einfügen
+Clear the copy stack	Vaciar la pila de copias	Kopierstapel leeren

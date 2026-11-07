@@ -16,3 +16,5 @@
 "Action: %@" = "Action: %@";
 "Failed (status %d)" = "Failed (status %d)";
 "%@ limit at %d%%" = "%@ limit at %d%%";
+"Stack: %d" = "Stack: %d";
+"%@ tokens" = "%@ tokens";

@@ -1,6 +1,7 @@
 import AppKit
 
 MainActor.assumeIsolated {
+    if CommandLine.arguments.contains("--mcp") { MCPServer.run(); exit(0) }
     if CommandLine.arguments.contains("--selftest") {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("pillbox-data-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)

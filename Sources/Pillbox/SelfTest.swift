@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -560,6 +560,88 @@ enum SelfTest {
         check("edge bar: with the edge style a volume change does not take over the island", m.activity == nil)
         m.show(Activity(symbol: "bell", title: "Hello"))
         check("edge bar: other islands still show", m.activity?.title == "Hello")
+    }
+
+    private static func batch7() {
+        // MCP protocol
+        var calls: [(String, [String: Any])] = []
+        let call: (String, [String: Any]) -> (ok: Bool, text: String) = { n, a in calls.append((n, a)); return (n != "stop_timer", "ran \(n)") }
+        let `init` = MCPServer.handle(["jsonrpc": "2.0", "id": 1, "method": "initialize", "params": ["protocolVersion": "2025-03-26"]], call: call)
+        check("mcp: initialize echoes the protocol version and announces tools", (`init`?["result"] as? [String: Any])?["protocolVersion"] as? String == "2025-03-26" && ((`init`?["result"] as? [String: Any])?["capabilities"] as? [String: Any])?["tools"] != nil)
+        check("mcp: a notification gets no answer", MCPServer.handle(["jsonrpc": "2.0", "method": "notifications/initialized"], call: call) == nil)
+        let list = MCPServer.handle(["jsonrpc": "2.0", "id": "abc", "method": "tools/list"], call: call)
+        let names = ((list?["result"] as? [String: Any])?["tools"] as? [[String: Any]])?.compactMap { $0["name"] as? String } ?? []
+        check("mcp: lists the six tools, and string ids are kept", names.count == 6 && names.contains("start_timer") && list?["id"] as? String == "abc", "\(names)")
+        let res = MCPServer.handle(["jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": ["name": "start_timer", "arguments": ["minutes": 5]]], call: call)
+        check("mcp: a tool call runs the tool and returns its text", calls.last?.0 == "start_timer" && calls.last?.1["minutes"] as? Int == 5 && ((res?["result"] as? [String: Any])?["isError"] as? Bool) == false)
+        let bad = MCPServer.handle(["jsonrpc": "2.0", "id": 4, "method": "tools/call", "params": ["name": "stop_timer"]], call: call)
+        check("mcp: a failing tool is flagged as an error", ((bad?["result"] as? [String: Any])?["isError"] as? Bool) == true)
+        let before = calls.count
+        let unknown = MCPServer.handle(["jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": ["name": "rm_rf"]], call: call)
+        check("mcp: an unknown tool is refused and never runs", (unknown?["error"] as? [String: Any])?["code"] as? Int == -32602 && calls.count == before)
+        check("mcp: an unknown method is an error", (MCPServer.handle(["jsonrpc": "2.0", "id": 6, "method": "nope"], call: call)?["error"] as? [String: Any])?["code"] as? Int == -32601)
+        let cfg = (try? JSONSerialization.jsonObject(with: Data(MCPServer.configuration(executable: "/x/Pillbox").utf8))) as? [String: Any]
+        check("mcp: the configuration is valid JSON pointing at --mcp", ((cfg?["mcpServers"] as? [String: Any])?["pillbox"] as? [String: Any])?["args"] as? [String] == ["--mcp"])
+
+        // The API reads until the whole body is there (headers and body can come in separate packets)
+        let head = "POST /action HTTP/1.1\r\nContent-Length: 10\r\n\r\n"
+        check("api: headers alone are not a request", !DevAPI.completeness(Data(head.utf8)).complete)
+        check("api: a partial body is not complete", !DevAPI.completeness(Data((head + "12345").utf8)).complete)
+        check("api: the full body completes it, with the right start", DevAPI.completeness(Data((head + "1234567890").utf8)) == (true, head.utf8.count))
+        check("api: no Content-Length means no body", DevAPI.completeness(Data("POST /x HTTP/1.1\r\n\r\n".utf8)).complete)
+        check("api: no blank line yet is incomplete", !DevAPI.completeness(Data("POST /x HTTP/1.1\r\nContent-Le".utf8)).complete)
+
+        // Agent actions, validated before anything happens
+        check("actions: bad arguments are refused", !AgentActions.run("start_timer", ["minutes": 0]).ok && !AgentActions.run("start_timer", [:]).ok && !AgentActions.run("music_control", ["action": "explode"]).ok
+              && !AgentActions.run("add_to_shelf", ["path": "/definitely/not/here"]).ok && !AgentActions.run("show_notification", ["title": ""]).ok && !AgentActions.run("nope", [:]).ok)
+        let t = TimerService.shared; let ok = AgentActions.run("start_timer", ["minutes": 7])
+        check("actions: start_timer sets a countdown and runs it", ok.ok && t.mode == .countdown && t.countdownMinutes == 7 && t.running); _ = AgentActions.run("stop_timer", [:])
+        check("actions: stop_timer stops it", !t.running)
+
+        // Turn tokens
+        let tr = [#"{"type":"user","message":{"role":"user","content":"first prompt"}}"#,
+                  #"{"type":"assistant","requestId":"r1","message":{"id":"m1","usage":{"input_tokens":100,"output_tokens":50,"cache_creation_input_tokens":10,"cache_read_input_tokens":9999}}}"#,
+                  #"{"type":"user","message":{"role":"user","content":"second prompt"}}"#,
+                  #"{"type":"assistant","requestId":"r2","message":{"id":"m2","usage":{"input_tokens":200,"output_tokens":100,"cache_creation_input_tokens":0}}}"#,
+                  #"{"type":"assistant","requestId":"r2","message":{"id":"m2","usage":{"input_tokens":200,"output_tokens":100,"cache_creation_input_tokens":0}}}"#,
+                  #"{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"x","content":"ok"}]}}"#,
+                  #"{"type":"assistant","requestId":"r3","message":{"id":"m3","usage":{"input_tokens":10,"output_tokens":5,"cache_creation_input_tokens":0}}}"#].joined(separator: "\n")
+        check("turn: counts only the last prompt's turn, once per message, without cache reads, across tool results", AgentTurn.tokens(in: tr) == 300 + 15, "\(AgentTurn.tokens(in: tr))")
+        check("turn: an empty transcript is zero", AgentTurn.tokens(in: "") == 0)
+        let home = NSHomeDirectory()
+        check("turn: only .jsonl under ~/.claude are readable", AgentTurn.isAllowed(home + "/.claude/projects/x/s.jsonl") && !AgentTurn.isAllowed("/etc/passwd") && !AgentTurn.isAllowed(home + "/.claude/../.ssh/id_rsa.jsonl") && !AgentTurn.isAllowed(home + "/.claude/settings.json"))
+
+        // Panel size
+        UserDefaults.standard.set(1.3, forKey: "panelScale"); defer { UserDefaults.standard.removeObject(forKey: "panelScale") }
+        let m = NotchModel(); m.expanded = true
+        check("panel: scales the open size", abs(m.size(hasWings: false).width - NotchModel.expandedSize.width * 1.3) < 0.01)
+        UserDefaults.standard.set(9.0, forKey: "panelScale")
+        check("panel: the scale is clamped", NotchModel.scale == 1.3)
+        UserDefaults.standard.set(0.1, forKey: "panelScale")
+        check("panel: ... on both sides", NotchModel.scale == 0.8)
+        check("panel: the largest panel fits its window", NotchModel.baseExpanded(.terminal).width * 1.3 <= NotchModel.windowSize.width && NotchModel.baseExpanded(.terminal).height * 1.3 <= NotchModel.windowSize.height)
+
+        // Floating player and lyrics
+        check("player: swipe left is next, right is previous", swipeAction(dx: -80, dy: 5) == .next && swipeAction(dx: 80, dy: -5) == .previous)
+        check("player: short or vertical drags do nothing", swipeAction(dx: -30, dy: 0) == nil && swipeAction(dx: 60, dy: 80) == nil)
+        check("player: four sizes, growing", PlayerSize.allCases.map(\.rawValue) == PlayerSize.allCases.map(\.rawValue).sorted() && PlayerSize.allCases.count == 4)
+        let ls = [LyricLine(time: 1, text: "a"), LyricLine(time: 5, text: "b"), LyricLine(time: 9, text: "c")]
+        check("lyrics: the current line follows the playback position", LyricsScreenView.currentIndex(ls, at: 0) == nil && LyricsScreenView.currentIndex(ls, at: 5.5) == 1 && LyricsScreenView.currentIndex(ls, at: 99) == 2)
+
+        let env = TerminalSession.sanitized(["PATH=/usr/bin", "PWD=/somewhere", "OLDPWD=/else", "CLAUDE_PROJECT_DIR=/proj", "TERM=xterm", "INIT_CWD=/x"], home: "/Users/me")
+        check("terminal: inherited directory variables are dropped and PWD is the home folder", env.sorted() == ["PATH=/usr/bin", "PWD=/Users/me", "TERM=xterm"], "\(env)")
+
+        // Copy stack and calculation history
+        var st = CopyStack(); st.push("one"); st.push("two"); st.push("three")
+        check("stack: pastes in the order of copying", st.pop() == "one" && st.pop() == "two" && st.items == ["three"])
+        var big = CopyStack(); for n in 0..<(CopyStack.cap + 5) { big.push("\(n)") }
+        check("stack: capped, dropping the oldest", big.items.count == CopyStack.cap && big.items.first == "5")
+        check("stack: empty gives nil", { var e = CopyStack(); return e.pop() == nil }())
+        var h = CalcHistory(); h.add(expression: "2+2", result: "4"); h.add(expression: "3*3", result: "9"); h.add(expression: "2+2", result: "4")
+        check("calc history: newest first, no duplicates", h.entries == ["2+2 = 4", "3*3 = 9"], "\(h.entries)")
+        for n in 0..<15 { h.add(expression: "\(n)+1", result: "\(n + 1)") }
+        check("calc history: capped", h.entries.count == CalcHistory.cap)
+        check("calc history: gets the result back", CalcHistory.result(of: "2+2 = 4") == "4")
     }
 }
 

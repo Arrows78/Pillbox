@@ -399,3 +399,23 @@
 "Edge bar" = "Barre au bord";
 "Warn when an AI limit reaches" = "Prévenir quand une limite d'IA atteint";
 "Never" = "Jamais";
+
+/* MCP, lecteur flottant, pile, taille du panneau */
+"%@ tokens" = "%@ tokens";
+"Agent turn finished" = "Tour de l'agent terminé";
+"Extra large" = "Très grand";
+"Large" = "Grand";
+"Medium" = "Moyen";
+"Small" = "Petit";
+"Full-screen lyrics" = "Paroles en plein écran";
+"No synced lyrics for this track" = "Pas de paroles synchronisées pour ce titre";
+"Press Esc or click to close" = "Appuie sur Échap ou clique pour fermer";
+"Stack: %d" = "Pile : %d";
+"The copy stack is empty" = "La pile de copies est vide";
+"Copy Claude Code turn-summary hook" = "Copier le hook de résumé de tour Claude Code";
+"Copy MCP configuration" = "Copier la configuration MCP";
+"Copy stack: copy several things, paste them in order with ⌃⌥V" = "Pile de copies : copie plusieurs choses, colle-les dans l'ordre avec ⌃⌥V";
+"Panel size" = "Taille du panneau";
+"Floating player" = "Lecteur flottant";
+"Paste next from the copy stack" = "Coller le suivant de la pile de copies";
+"Clear the copy stack" = "Vider la pile de copies";
