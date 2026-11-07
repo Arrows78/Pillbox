@@ -38,6 +38,10 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Camera mirror", symbol: "video.fill") { CameraMirror.shared.toggle() },
             PaletteCommand(title: "Lock keyboard to clean it (60 s, ⌘⎋ unlocks)", symbol: "keyboard") { CleaningLock.shared.startKeyboardLock() },
             PaletteCommand(title: "Black out screens to clean them", symbol: "display") { CleaningLock.shared.startScreenBlackout() },
+            PaletteCommand(title: "Floating player", symbol: "music.note.tv") { FloatingPlayer.shared.toggle() },
+            PaletteCommand(title: "Full-screen lyrics", symbol: "text.quote") { LyricsScreen.shared.show() },
+            PaletteCommand(title: "Paste next from the copy stack", symbol: "square.stack") { CopyStackStore.shared.pasteNext() },
+            PaletteCommand(title: "Clear the copy stack", symbol: "square.stack.3d.up.slash") { CopyStackStore.shared.clear() },
             PaletteCommand(title: "Ask about screen", symbol: "text.viewfinder") { AskAboutScreen.start() },
             PaletteCommand(title: WindowWatch.shared.watching ? "Stop watching the screen area" : "Watch a screen area", symbol: "eye") { WindowWatch.shared.watching ? WindowWatch.shared.stop() : WindowWatch.shared.choose() },
             PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
@@ -48,7 +52,9 @@ final class PaletteModel: ObservableObject {
         list += ShortcutsService.shared.names.map { n in PaletteCommand(localized: L("Shortcut: %@", n), symbol: "bolt.fill") { ShortcutsService.shared.run(n) } }
         list += SnapZone.allCases.map { z in PaletteCommand(localized: L("Snap window: %@", L(z.rawValue)), symbol: "rectangle.split.2x1") { WindowSnap.snap(z) } }
         let q = query.trimmingCharacters(in: .whitespaces)
-        guard !q.isEmpty else { return list }
+        guard !q.isEmpty else {
+            return list + CalcStore.history.entries.prefix(5).map { e in PaletteCommand(localized: e, symbol: "clock.arrow.circlepath") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(CalcHistory.result(of: e), forType: .string) } }
+        }
         var out = list.filter { $0.title.localizedCaseInsensitiveContains(q) }
         out += ClipboardService.shared.items.filter { $0.searchable.localizedCaseInsensitiveContains(q) }.prefix(5).map { item in
             PaletteCommand(localized: L("Paste: %@", String((item.text ?? item.ocr ?? L("Image")).prefix(50))), symbol: "doc.on.clipboard") { ClipboardService.shared.paste(item) }
@@ -59,6 +65,7 @@ final class PaletteModel: ObservableObject {
         if let v = Self.evaluate(q) {
             out.insert(PaletteCommand(localized: "= \(v)  (" + L("copy") + ")", symbol: "equal.circle") {
                 NSPasteboard.general.clearContents(); NSPasteboard.general.setString(v, forType: .string)
+                CalcStore.record(q, v)
             }, at: 0)
         }
         if let t = QuickCapture.argument(q, keywords: ["event", "ev"]) {

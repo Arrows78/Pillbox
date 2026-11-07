@@ -55,6 +55,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
         if CommandLine.arguments.contains("--open-teleprompter") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { Teleprompter.shared.show() } }
+        if CommandLine.arguments.contains("--open-player") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { FloatingPlayer.shared.show() } }
+        if CommandLine.arguments.contains("--open-lyrics") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { LyricsScreen.shared.show() } }
         if CommandLine.arguments.contains("--open-palette") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { PaletteController.shared.show() } }
         // Debug aid: `Pillbox --open-tab ai` opens the notch on a tab and keeps it open (used to screenshot each tab).
         if let i = CommandLine.arguments.firstIndex(of: "--open-tab"), CommandLine.arguments.indices.contains(i + 1),
@@ -71,6 +73,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         hotKeys = [
             HotKey(keyCode: UInt32(kVK_ANSI_K), modifiers: UInt32(controlKey | optionKey), id: 1) { PaletteController.shared.toggle() },
             HotKey(keyCode: UInt32(kVK_ANSI_N), modifiers: UInt32(controlKey | optionKey), id: 2) { NotchModel.shared.toggle() },
+            HotKey(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(controlKey | optionKey), id: 3) { CopyStackStore.shared.pasteNext() },
         ]
         // ⌘1–9 switches tabs while the notch is open.
         monitors.append(NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in

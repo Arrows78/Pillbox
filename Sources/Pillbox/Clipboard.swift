@@ -52,6 +52,7 @@ final class ClipboardService: ObservableObject {
         if let s = pb.string(forType: .string), !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             if let i = items.firstIndex(where: { $0.text == s }) { items[i].date = Date() }
             else { items.append(ClipItem(text: s)) }
+            CopyStackStore.shared.noteCopy(s)
         } else if let img = NSImage(pasteboard: pb), let png = img.pngData() {
             let name = UUID().uuidString + ".png"
             try? png.write(to: imageDir.appendingPathComponent(name))
