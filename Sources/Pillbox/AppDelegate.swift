@@ -26,6 +26,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         AIUsageService.shared.start()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
+        // Debug aid: `Pillbox --open-tab ai` opens the notch on a tab and keeps it open (used to screenshot each tab).
+        if let i = CommandLine.arguments.firstIndex(of: "--open-tab"), CommandLine.arguments.indices.contains(i + 1),
+           let tab = Tab(rawValue: CommandLine.arguments[i + 1]) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { NotchModel.shared.pinnedOpen = true; NotchModel.shared.expand(tab) }
+        }
         // First launch: show the settings (permissions first) instead of letting prompts appear out of nowhere.
         if !UserDefaults.standard.bool(forKey: "onboarded") {
             UserDefaults.standard.set(true, forKey: "onboarded")
