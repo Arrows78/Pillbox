@@ -21,7 +21,7 @@
 **Pillbox** turns the notch of your MacBook into a small control centre. Hover it and it opens into tabs for what is playing, your timers, your clipboard history, a shelf for files and your pinned apps. Collapsed, it shows live activity on both sides and pops short islands for events such as a download finishing or the battery reaching a level. On Macs and monitors without a notch it becomes a virtual pill at the top of the screen.
 
 > [!NOTE]
-> Pillbox runs entirely on your Mac: no account, no analytics. The only network calls are the lyrics lookup (LRCLIB) and the optional local developer API, which listens on `127.0.0.1` only.
+> Pillbox has no account and no analytics, and keeps its data on your Mac. A few features do talk to the network, only when you use them: see [What leaves your Mac](#-what-leaves-your-mac).
 
 ## ✨ Features
 
@@ -254,7 +254,7 @@ Pillbox/
 ├── Package.swift          # Swift Package, one executable target
 ├── build.sh               # Builds and signs build/Pillbox.app, installs it into /Applications
 ├── install.sh             # Builds, installs into /Applications, relaunches
-├── Resources/             # Info.plist, app icon and its generator, en.lproj and fr.lproj
+├── Resources/             # Info.plist, app icon and its generator, en, fr, es and de .lproj
 ├── scripts/               # ci.sh, release.py and its tests, l10n tools and table, signing helper, claude-hook.sh
 ├── docs/                  # Releasing guide, app icon
 ├── .github/workflows/     # CI and release
@@ -263,8 +263,9 @@ Pillbox/
     ├── NotchModel, NotchPanel           # State, geometry, click-through panel
     ├── NotchView, Tabs                  # Island, wings, activities, tab views
     ├── Music, Timers, Clipboard, Shelf  # Feature services
+    ├── Converter.swift                  # Offline image, audio and video conversion for the shelf
     ├── System.swift                     # Keep awake, battery, stats, downloads, tools, calendar
-    ├── Stores.swift                     # Notes and launcher
+    ├── Stores.swift                     # Notes, launcher, snippets
     ├── Audio, Mirror, Cleaning, WindowSnap  # Volume, mic, privacy, camera, locks, snapping
     ├── Weather, Stocks, AIUsage         # Weather, watchlist, Claude Code and Codex usage
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
@@ -283,16 +284,46 @@ Pillbox/
     ├── Palette, Settings, DevAPI        # Command palette, hotkeys, settings, local API
 ```
 
+## 🌐 What leaves your Mac
+
+Nothing is sent to the author, there is no telemetry, and no feature needs an account. These are the only network calls:
+
+| Feature | Sent to | What is sent |
+| --- | --- | --- |
+| Synced lyrics | `lrclib.net` | Artist, title, album and duration of the current track. |
+| Spotify artwork | Spotify's image server | A request for the cover of the current track. |
+| Weather | `api.open-meteo.com` | Your approximate coordinates (needs Location). |
+| Stocks | `query1.finance.yahoo.com` | The symbols of your watchlist. |
+| Ask about screen | `api.anthropic.com` | The text recognised in the area you picked and your question, only when you press **Ask** and have saved your own API key. Never the picture. |
+| Pull requests | GitHub, through the `gh` command | Nothing from Pillbox: `gh` uses its own login. |
+| Web search, translation, web mini-apps | Your browser, or a small window you configured | The query or link you chose. |
+| Local API and MCP server | `127.0.0.1` only | Off by default, protected by a per-install token. |
+
+Everything else (OCR, clipboard history, usage scans, notifications, calendars, files) stays on the Mac.
+
 ## 💾 Local data
 
 | What | Where |
 | --- | --- |
 | Settings | `UserDefaults` (bundle identifier `dev.labs.pillbox`) |
-| Clipboard, shelf, notes, launcher, sessions, watchlist | `~/Library/Application Support/Pillbox` |
+| Clipboard history and its images | `~/Library/Application Support/Pillbox/clipboard.json` and `Clipboard/` |
+| Shelf, notes, launcher, snippets, quick actions, watchlist, focus sessions, calculation history | `~/Library/Application Support/Pillbox/*.json` |
+| Your Anthropic API key (optional) | The macOS Keychain |
+| Local API token | `UserDefaults` (`devAPIToken`) |
+
+Deleting `~/Library/Application Support/Pillbox` and the preferences resets the app.
 
 ## 🗺️ Roadmap
 
-Answering calls from the island, message replies, in-app translation (needs Apple's Translation framework and its language downloads), connecting AirPods from the island, browser video speed, clipboard stack and importing other managers' history, keyboard backlight and external display brightness, per-app sound mixer, knock to control, Cursor and Copilot usage, lock-screen and WidgetKit widgets, automatic updates, notarised releases, native review of the Spanish and German texts. Face Unlock is deliberately left out.
+Not done yet, or not verifiable without hardware or accounts:
+
+- **Phone and message islands**: answering calls and replying to messages from the island.
+- **Audio and displays**: per-app sound mixer, keyboard backlight, external display brightness, extra brightness.
+- **Widgets**: lock-screen and WidgetKit widgets (they need an Xcode project).
+- **Distribution**: automatic updates, notarised releases, and a native review of the Spanish and German texts.
+- **Smaller ones**: in-app translation (Apple's Translation framework), connecting AirPods from the island, browser video speed, importing other clipboard managers' history, knock to control, Cursor and Copilot usage.
+
+Face Unlock is deliberately left out: it would mean storing your password to type it at the lock screen.
 
 ## 🙌 Contributing
 
