@@ -496,3 +496,10 @@
 "New script" = "Nuevo guion";
 "No script yet" = "Aún no hay guiones";
 "Follow my voice" = "Seguir mi voz";
+"Calendar" = "Calendario";
+"Tomorrow" = "Mañana";
+"All day" = "Todo el día";
+"Join" = "Unirse";
+"Calendar access is off" = "El acceso al calendario está desactivado";
+"Allow Calendar Access" = "Permitir el acceso al calendario";
+"No events today or tomorrow" = "No hay eventos hoy ni mañana";

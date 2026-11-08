@@ -547,3 +547,10 @@
 "New script" = "Nouveau script";
 "No script yet" = "Aucun script";
 "Follow my voice" = "Suivre ma voix";
+"Calendar" = "Calendrier";
+"Tomorrow" = "Demain";
+"All day" = "Toute la journée";
+"Join" = "Rejoindre";
+"Calendar access is off" = "L'accès au calendrier est désactivé";
+"Allow Calendar Access" = "Autoriser l'accès au calendrier";
+"No events today or tomorrow" = "Aucun événement aujourd'hui ni demain";

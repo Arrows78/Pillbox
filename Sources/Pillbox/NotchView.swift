@@ -211,6 +211,7 @@ struct TabContent: View {
         case .launcher: LauncherTab()
         case .terminal: TerminalTab().clipShape(RoundedRectangle(cornerRadius: 8))
         case .prompter: PrompterTab()
+        case .calendar: CalendarTab()
         }
     }
 }

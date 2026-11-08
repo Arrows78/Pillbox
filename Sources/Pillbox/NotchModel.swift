@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum Tab: String, CaseIterable, Identifiable {
-    case home, music, timer, stocks, ai, pulls, reminders, notifications, notes, clipboard, shelf, launcher, terminal, prompter
+    case home, music, timer, stocks, ai, pulls, reminders, notifications, notes, clipboard, shelf, launcher, terminal, prompter, calendar
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -19,6 +19,7 @@ enum Tab: String, CaseIterable, Identifiable {
         case .launcher: L("Launcher")
         case .terminal: L("Terminal")
         case .prompter: L("Prompter")
+        case .calendar: L("Calendar")
         }
     }
     var symbol: String {
@@ -37,6 +38,7 @@ enum Tab: String, CaseIterable, Identifiable {
         case .launcher: "square.grid.2x2.fill"
         case .terminal: "terminal.fill"
         case .prompter: "text.viewfinder"
+        case .calendar: "calendar"
         }
     }
 }

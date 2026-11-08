@@ -352,6 +352,9 @@ enum SelfTest {
         check("teleprompter: restart returns to the top", t.offset == 0)
         let pw = PrompterText.words("Good morning, everyone, and thanks for joining.")
         check("prompter: words are normalised with their offsets", pw.map(\.word) == ["good", "morning", "everyone", "and", "thanks", "for", "joining"] && pw[1].start == 5)
+        check("calendar: finds a Zoom, Meet or Teams link and ignores others",
+              MeetingLink.find(in: [nil, "Room 4", "Join https://us02web.zoom.us/j/123?pwd=x now"])?.host == "us02web.zoom.us"
+              && MeetingLink.find(in: ["https://example.com/zoom.us"]) == nil)
         let sw = pw.map(\.word)
         check("prompter: voice advances past the words heard", PrompterText.advance(sw, from: 0, heard: ["Good", "morning"]) == 2)
         check("prompter: voice skips ahead when words are dropped", PrompterText.advance(sw, from: 2, heard: ["thanks", "for"]) == 6)
