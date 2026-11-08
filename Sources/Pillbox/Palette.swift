@@ -85,14 +85,62 @@ final class PaletteModel: ObservableObject {
         return out
     }
 
-    /// Quick math: only digits, operators, dots and parentheses are ever handed to NSExpression.
+    /// Quick math: only digits, operators, dots and parentheses are accepted, and a small parser (not NSExpression,
+    /// which raises an exception on "5+" or "(2" and would crash the app while typing) evaluates them.
     static func evaluate(_ s: String) -> String? {
         guard s.range(of: #"^[0-9+\-*/().% ]+$"#, options: .regularExpression) != nil,
-              s.contains(where: { "+-*/%".contains($0) }) else { return nil }
-        let e = s.replacingOccurrences(of: "%", with: "/100.0")
-        let withFloats = e.replacingOccurrences(of: #"(\d+)(?!\.|\d)"#, with: "$1.0", options: .regularExpression)
-        guard let v = NSExpression(format: withFloats).expressionValue(with: nil, context: nil) as? Double, v.isFinite else { return nil }
+              s.contains(where: { "+-*/%".contains($0) }),
+              s.range(of: #"[0-9.)] +[0-9.(]"#, options: .regularExpression) == nil else { return nil }
+        var p = MathParser(Array(s.filter { $0 != " " }))
+        guard let v = p.parse(), v.isFinite else { return nil }
         return v == v.rounded() && abs(v) < 1e15 ? String(Int(v)) : String(format: "%.6g", v)
+    }
+}
+
+/// Recursive-descent evaluator: `+ - * /`, unary minus, parentheses and a trailing `%` (which divides by 100,
+/// at the precedence of `*` and `/`). Returns nil for anything malformed.
+struct MathParser {
+    private let chars: [Character]
+    private var i = 0
+    init(_ chars: [Character]) { self.chars = chars }
+
+    mutating func parse() -> Double? {
+        guard let v = expression(), i == chars.count else { return nil }
+        return v
+    }
+
+    private mutating func expression() -> Double? {
+        guard var v = term() else { return nil }
+        while i < chars.count, chars[i] == "+" || chars[i] == "-" {
+            let op = chars[i]; i += 1
+            guard let r = term() else { return nil }
+            v = op == "+" ? v + r : v - r
+        }
+        return v
+    }
+
+    private mutating func term() -> Double? {
+        guard var v = factor() else { return nil }
+        while i < chars.count, "*/%".contains(chars[i]) {
+            let op = chars[i]; i += 1
+            if op == "%" { v /= 100; continue }
+            guard let r = factor() else { return nil }
+            v = op == "*" ? v * r : v / r
+        }
+        return v
+    }
+
+    private mutating func factor() -> Double? {
+        guard i < chars.count else { return nil }
+        if chars[i] == "-" { i += 1; return factor().map { -$0 } }
+        if chars[i] == "(" {
+            i += 1
+            guard let v = expression(), i < chars.count, chars[i] == ")" else { return nil }
+            i += 1; return v
+        }
+        let start = i
+        while i < chars.count, chars[i].isNumber || chars[i] == "." { i += 1 }
+        return start < i ? Double(String(chars[start..<i])) : nil
     }
 }
 
@@ -158,6 +206,40 @@ final class PaletteController {
     }
 
     func hide() { panel?.orderOut(nil) }
+}
+
+/// The app's global shortcuts. They are registered at launch and listed in Settings from this one table,
+/// so the Shortcuts page can never show a key that does nothing.
+enum GlobalShortcut: UInt32, CaseIterable {
+    case palette = 1, toggleNotch, pasteNext
+
+    /// English text of the action (a localisation key).
+    var title: String {
+        switch self {
+        case .palette: "Command palette"
+        case .toggleNotch: "Toggle Notch"
+        case .pasteNext: "Paste next from the copy stack"
+        }
+    }
+
+    var key: String {
+        switch self { case .palette: "K"; case .toggleNotch: "N"; case .pasteNext: "V" }
+    }
+
+    var keyCode: UInt32 {
+        switch self { case .palette: UInt32(kVK_ANSI_K); case .toggleNotch: UInt32(kVK_ANSI_N); case .pasteNext: UInt32(kVK_ANSI_V) }
+    }
+
+    static let modifiers = UInt32(controlKey | optionKey)
+    var keycaps: String { "⌃⌥" + key }
+
+    @MainActor func run() {
+        switch self {
+        case .palette: PaletteController.shared.toggle()
+        case .toggleNotch: NotchModel.shared.toggle()
+        case .pasteNext: CopyStackStore.shared.pasteNext()
+        }
+    }
 }
 
 /// Carbon global hotkey (works without any privacy permission).

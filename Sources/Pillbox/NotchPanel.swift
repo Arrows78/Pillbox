@@ -83,7 +83,9 @@ final class NotchWindowController {
         panel.sharingType = UserDefaults.standard.bool(forKey: "hideFromCapture") ? .none : .readOnly
         panel.collectionBehavior = UserDefaults.standard.bool(forKey: "hideInFullScreen") ? [.canJoinAllSpaces, .stationary, .ignoresCycle] : [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         let detected = NotchGeometry.detect()
-        if detected.screen != model.geometry.screen { model.geometry = detected; reposition() }
+        // The pill width setting changes the geometry without changing the screen.
+        let g = model.geometry
+        if detected.screen != g.screen || detected.width != g.width || detected.height != g.height { model.geometry = detected; reposition() }
         NotchHider.shared.apply(screen: model.geometry.screen ?? NSScreen.main, height: model.geometry.height)
     }
 

@@ -345,6 +345,7 @@ final class CalendarService: ObservableObject {
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     self?.refresh()
+                    self?.timer?.invalidate()   // start() runs again when access is granted later
                     self?.timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
                         MainActor.assumeIsolated { self?.refresh() }
                     }

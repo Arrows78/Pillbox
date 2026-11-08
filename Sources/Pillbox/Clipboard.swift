@@ -23,7 +23,6 @@ final class ClipboardService: ObservableObject {
     @Published var query = ""
 
     private var lastChange = NSPasteboard.general.changeCount
-    private var ignoreNext = false
     private var timer: Timer?
     private let imageDir = Store.dir.appendingPathComponent("Clipboard", isDirectory: true)
 
@@ -44,7 +43,6 @@ final class ClipboardService: ObservableObject {
         let pb = NSPasteboard.general
         guard pb.changeCount != lastChange else { return }
         lastChange = pb.changeCount
-        if ignoreNext { ignoreNext = false; return }
         // Skip concealed/transient content (password managers).
         let types = pb.types?.map(\.rawValue) ?? []
         if types.contains("org.nspasteboard.ConcealedType") || types.contains("org.nspasteboard.TransientType") { return }
@@ -95,11 +93,10 @@ final class ClipboardService: ObservableObject {
 
     func copy(_ item: ClipItem) {
         let pb = NSPasteboard.general
-        ignoreNext = true
         pb.clearContents()
         if let t = item.text { pb.setString(t, forType: .string) }
         else if let img = image(for: item) { pb.writeObjects([img]) }
-        lastChange = pb.changeCount
+        lastChange = pb.changeCount   // our own write is not a new copy
         if let i = items.firstIndex(of: item) { items[i].date = Date(); save() }
     }
 
