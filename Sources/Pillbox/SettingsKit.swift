@@ -1,10 +1,27 @@
 import SwiftUI
 
-/// The settings window's own look: a dark sidebar of tinted panes and, in each page, titled cards of explained rows.
+/// The settings window's own look: a sidebar of tinted panes and, in each page, titled cards of explained rows.
+/// It follows the theme chosen in General (system, light or dark); the island itself always stays dark.
 enum SettingsStyle {
-    static let window = NSColor(srgbRed: 0.106, green: 0.106, blue: 0.118, alpha: 1)
+    /// Window background that follows the appearance of the window.
+    static let window = NSColor(name: nil) { appearance in
+        appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            ? NSColor(srgbRed: 0.106, green: 0.106, blue: 0.118, alpha: 1) : NSColor(srgbRed: 0.961, green: 0.961, blue: 0.969, alpha: 1)
+    }
+    static let sidebar = NSColor(name: nil) { appearance in
+        NSColor.black.withAlphaComponent(appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? 0.18 : 0.04)
+    }
     static let accent = Color(red: 0.357, green: 0.549, blue: 1)
-    static let dim = Color.white.opacity(0.45)
+    static let dim = Color.primary.opacity(0.45)
+
+    /// The window's appearance for the saved theme: nil follows macOS.
+    static func appearance(for theme: String?) -> NSAppearance? {
+        switch theme {
+        case "light": NSAppearance(named: .aqua)
+        case "dark": NSAppearance(named: .darkAqua)
+        default: nil
+        }
+    }
 }
 
 enum SettingsPane: String, CaseIterable, Identifiable {
@@ -68,9 +85,9 @@ struct SettingsCard<Content: View>: View {
                 Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(SettingsStyle.dim).textCase(.uppercase).padding(.leading, 4)
             }
             VStack(spacing: 0) { content }
-                .background(Color.white.opacity(0.05))
+                .background(Color.primary.opacity(0.05))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.07)))
+                .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.07)))
         }
     }
 }
@@ -84,7 +101,7 @@ struct SettingsRow<Control: View>: View {
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13)).foregroundStyle(.white.opacity(0.92))
+                Text(title).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(0.92))
                 if let subtitle {
                     Text(subtitle).font(.system(size: 11)).foregroundStyle(SettingsStyle.dim).fixedSize(horizontal: false, vertical: true)
                 }
@@ -93,7 +110,7 @@ struct SettingsRow<Control: View>: View {
             control
         }
         .padding(.horizontal, 12).padding(.vertical, 9)
-        .overlay(alignment: .top) { Rectangle().fill(Color.white.opacity(0.06)).frame(height: 0.5).padding(.leading, 12) }
+        .overlay(alignment: .top) { Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 12) }
     }
 }
 
@@ -131,7 +148,7 @@ struct SettingsPage<Content: View>: View {
                 HStack(spacing: 10) {
                     Image(systemName: pane.symbol).font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
                         .frame(width: 28, height: 28).background(RoundedRectangle(cornerRadius: 7).fill(pane.tint.gradient))
-                    Text(pane.title).font(.system(size: 20, weight: .bold)).foregroundStyle(.white)
+                    Text(pane.title).font(.system(size: 20, weight: .bold)).foregroundStyle(.primary)
                 }
                 content
             }
@@ -152,11 +169,11 @@ struct SettingsSidebar: View {
                     HStack(spacing: 9) {
                         Image(systemName: p.symbol).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
                             .frame(width: 22, height: 22).background(RoundedRectangle(cornerRadius: 6).fill(p.tint.gradient))
-                        Text(p.title).font(.system(size: 13)).foregroundStyle(.white.opacity(pane == p ? 1 : 0.8))
+                        Text(p.title).font(.system(size: 13)).foregroundStyle(Color.primary.opacity(pane == p ? 1 : 0.8))
                         Spacer()
                     }
                     .padding(.horizontal, 8).padding(.vertical, 5)
-                    .background(RoundedRectangle(cornerRadius: 7).fill(Color.white.opacity(pane == p ? 0.12 : 0)))
+                    .background(RoundedRectangle(cornerRadius: 7).fill(Color.primary.opacity(pane == p ? 0.12 : 0)))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -168,7 +185,7 @@ struct SettingsSidebar: View {
         }
         .padding(.horizontal, 10).padding(.top, 38)
         .frame(width: 190)
-        .background(Color.black.opacity(0.18))
+        .background(Color(nsColor: SettingsStyle.sidebar))
     }
 }
 
@@ -178,11 +195,11 @@ struct SettingsSidebarFooter: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Divider().overlay(Color.white.opacity(0.08)).padding(.horizontal, 2).padding(.bottom, 10)
+            Divider().overlay(Color.primary.opacity(0.08)).padding(.horizontal, 2).padding(.bottom, 10)
             HStack(spacing: 9) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 30, height: 30)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(verbatim: "Pillbox").font(.system(size: 12, weight: .semibold)).foregroundStyle(.white.opacity(0.9))
+                    Text(verbatim: "Pillbox").font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.9))
                     Text(verbatim: L("Version %@", version)).font(.system(size: 11)).foregroundStyle(SettingsStyle.dim)
                 }
                 Spacer(minLength: 0)

@@ -48,6 +48,8 @@ struct SettingsView: View {
     @AppStorage("fullChargeLevel") private var fullCharge = 100
     @AppStorage("pillWidth") private var pillWidth = 170.0
     @AppStorage("devAPIEnabled") private var devAPI = false
+    @AppStorage("appearance") private var appearance = "system"
+    @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     @State private var pane: SettingsPane
@@ -57,12 +59,11 @@ struct SettingsView: View {
     var body: some View {
         HStack(spacing: 0) {
             SettingsSidebar(pane: $pane)
-            Divider().overlay(Color.white.opacity(0.08))
+            Divider().overlay(Color.primary.opacity(0.08))
             page.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: 780, height: 580)
         .background(Color(nsColor: SettingsStyle.window))
-        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder private var page: some View {
@@ -82,42 +83,110 @@ struct SettingsView: View {
 
     private var general: some View {
         SettingsPage(pane: .general) {
-            SettingsCard(title: "General") {
+            SettingsCard(title: "Startup") {
+                SettingsToggle("Launch at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { on in setLaunchAtLogin(on) }
+                SettingsToggle("Show in the menu bar", "When hidden, open Settings from the gear on the island or by launching Pillbox again.", isOn: $showMenuBarIcon)
+            }
+            SettingsCard(title: "Appearance") {
+                SettingsRow(title: "Theme", subtitle: "Applies to this window. The island always stays dark.") {
+                    Picker("", selection: $appearance) { Text("System").tag("system"); Text("Light").tag("light"); Text("Dark").tag("dark") }.labelsHidden().frame(width: 140)
+                }
+            }
+            SettingsCard(title: "Notch") {
                 SettingsToggle("Open when hovering the notch", isOn: $hoverOpen)
                 if hoverOpen { SettingsRow(title: "Hover delay") { Slider(value: $hoverDelay, in: 0.05...0.6).frame(width: 180) } }
                 SettingsToggle("Hide from screenshots and screen sharing", "Pillbox stays out of screenshots, recordings and screen sharing.", isOn: $hideFromCapture)
                 SettingsToggle("Hide the notch (black menu bar)", "Paints the menu bar black so the notch disappears.", isOn: $hideNotch)
-                SettingsRow(title: "Palette search engine") {
+                if NotchModel.shared.geometry.screen?.safeAreaInsets.top == 0 {
+                    SettingsRow(title: "Pill width", subtitle: "Width of the pill on a screen without a notch.") { Slider(value: $pillWidth, in: 120...260).frame(width: 180) }
+                }
+            }
+            SettingsCard(title: "Command palette") {
+                SettingsRow(title: "Search engine", subtitle: "Used for text that is not a command. Start with a prefix such as yt or gh to pick another one.") {
                     Picker("", selection: $searchEngine) { ForEach(WebSearch.engines) { Text(verbatim: $0.name).tag($0.key) } }.labelsHidden().frame(width: 170)
                 }
-                SettingsToggle("Launch at login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { on in try? on ? SMAppService.mainApp.register() : SMAppService.mainApp.unregister() }
-                if NotchModel.shared.geometry.screen?.safeAreaInsets.top == 0 {
-                    SettingsRow(title: "Pill width") { Slider(value: $pillWidth, in: 120...260).frame(width: 180) }
+            }
+            SettingsCard(title: "Backup") {
+                SettingsRow(title: "Export settings…", subtitle: "Saves your preferences to a file. Notes, clipboard history, the shelf and quick actions are not included.") {
+                    Button("Export…") { exportSettings() }.controlSize(.small)
+                }
+                SettingsRow(title: "Import settings…", subtitle: "Applies a backup file. Settings it does not contain stay as they are.") {
+                    Button("Import…") { importSettings() }.controlSize(.small)
+                }
+                SettingsRow(title: "Restore defaults…", subtitle: "Puts every preference back to its default. Your data and Launch at login are kept.") {
+                    Button("Restore…", role: .destructive) { restoreDefaults() }.controlSize(.small)
                 }
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
+        .onChange(of: appearance) { _ in SettingsWindow.applyTheme() }
+    }
+
+    private func setLaunchAtLogin(_ on: Bool) {
+        do { if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() } }
+        catch { launchAtLogin = SMAppService.mainApp.status == .enabled }   // the switch must not claim what macOS refused
+    }
+
+    private func exportSettings() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.propertyList]
+        panel.nameFieldStringValue = "Pillbox Settings.plist"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            guard let data = SettingsBackup.data() else { throw CocoaError(.fileWriteUnknown) }
+            try data.write(to: url, options: .atomic)
+            NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings exported", tint: .green))
+        } catch {
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: "Could not export the settings", subtitle: error.localizedDescription, tint: .orange))
+        }
+    }
+
+    private func importSettings() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.propertyList]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let data = try? Data(contentsOf: url), let n = SettingsBackup.restore(data) else {
+            let alert = NSAlert()
+            alert.messageText = L("This file is not a Pillbox backup")
+            alert.runModal(); return
+        }
+        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings imported", subtitle: L("%d setting(s) applied", n), tint: .green))
+    }
+
+    private func restoreDefaults() {
+        let alert = NSAlert()
+        alert.messageText = L("Restore default settings?")
+        alert.informativeText = L("Every preference goes back to its default. Your notes, clipboard history, shelf and quick actions are kept.")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: L("Restore"))
+        alert.addButton(withTitle: L("Cancel"))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        SettingsBackup.resetAll()
+        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings restored", tint: .green))
     }
 
     private var island: some View {
         SettingsPage(pane: .island) {
             SettingsCard(title: "Island") {
-                SettingsToggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
-                SettingsToggle("Double-press Control to open the notch", isOn: $doubleTapOpen)
-                SettingsToggle("Snap zones when dragging a window to the notch", isOn: $snapZones)
-                SettingsRow(title: "Panel size") { Slider(value: $panelScale, in: 0.8...1.3).frame(width: 180) }
-                SettingsToggle("Copy stack: copy several things, paste them in order with ⌃⌥V", isOn: $copyStack)
-                SettingsToggle("Shake a dragged file to open the shelf", isOn: $shakeToOpen)
-                SettingsToggle("Hide the island in full screen", isOn: $hideInFullScreen)
-                SettingsRow(title: "Display") {
+                SettingsRow(title: "Display", subtitle: "Which screen shows the island. Automatic uses the screen with the notch.") {
                     Picker("", selection: $targetDisplay) {
                         Text("Automatic").tag("")
                         ForEach(NSScreen.screens, id: \.localizedName) { Text(verbatim: $0.localizedName).tag($0.localizedName) }
                     }.labelsHidden().frame(width: 170)
                 }
+                SettingsRow(title: "Panel size") { Slider(value: $panelScale, in: 0.8...1.3).frame(width: 180) }
+                SettingsToggle("Hide the island in full screen", isOn: $hideInFullScreen)
+                SettingsToggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
+                SettingsToggle("Shake a dragged file to open the shelf", isOn: $shakeToOpen)
+                SettingsToggle("Snap zones when dragging a window to the notch", "Needs Accessibility. Drop the window on a zone to tile it.", isOn: $snapZones)
+                SettingsToggle("Double-press Control to open the notch", "Needs Input Monitoring.", isOn: $doubleTapOpen)
+                SettingsToggle("Copy stack", "Copy several things, then paste them one by one, in order, with the Paste next shortcut.", isOn: $copyStack)
             }
-            SettingsCard(title: "Appearance") {
-                SettingsRow(title: "Island theme") {
+            SettingsCard(title: "Island appearance") {
+                SettingsRow(title: "Island theme", subtitle: "The collapsed pill always stays black to blend into the notch.") {
                     Picker("", selection: $islandTheme) { ForEach(IslandTheme.allCases) { Text(LocalizedStringKey($0.title)).tag($0.rawValue) } }.labelsHidden().frame(width: 170)
                 }
                 SettingsRow(title: "Volume and brightness style") {
@@ -126,7 +195,7 @@ struct SettingsView: View {
                 SettingsRow(title: "Timer mascot") {
                     Picker("", selection: $mascot) { ForEach(Mascot.allCases) { m in Text(verbatim: (m.emoji ?? "") + " " + m.title).tag(m.rawValue) } }.labelsHidden().frame(width: 170)
                 }
-                SettingsRow(title: lottiePath.isEmpty ? "Idle animation: none" : LocalizedStringKey((lottiePath as NSString).lastPathComponent)) {
+                SettingsRow(title: "Idle animation", subtitle: lottiePath.isEmpty ? LocalizedStringKey("None") : LocalizedStringKey((lottiePath as NSString).lastPathComponent)) {
                     HStack {
                         Button("Choose Lottie file…") {
                             let p = NSOpenPanel(); p.allowedContentTypes = [.json]
@@ -135,6 +204,7 @@ struct SettingsView: View {
                         if !lottiePath.isEmpty { Button("Remove") { lottiePath = "" } }
                     }.controlSize(.small)
                 }
+                SettingsToggle("Live audio spectrum", "The equalizer follows the real sound. Asks for audio capture.", isOn: $liveSpectrum)
             }
             SettingsCard(title: "Pill gestures") {
                 SettingsRow(title: "Double-click the pill") {
@@ -149,44 +219,52 @@ struct SettingsView: View {
 
     private var alerts: some View {
         SettingsPage(pane: .alerts) {
-            SettingsCard(title: "Alerts") {
+            SettingsCard(title: "System") {
                 SettingsToggle("Caps Lock island", isOn: $capsHUD)
-                SettingsToggle("Download finished island", isOn: $downloadAlerts)
-                SettingsToggle("Microphone and camera indicator", isOn: $privacyIndicator)
                 SettingsToggle("Volume island", isOn: $volumeHUD)
-                SettingsToggle("Stage new screenshots on the shelf", isOn: $screenshotShelf)
-                SettingsToggle("Drive connected island with Eject", isOn: $driveEject)
-                SettingsToggle("Show keystrokes (for presentations)", isOn: $keystrokeHUD)
-                if keystrokeHUD { SettingsToggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }
-                SettingsRow(title: "Charged island at \(fullCharge)%") { Stepper("", value: $fullCharge, in: 80...100, step: 5).labelsHidden() }
-            }
-            SettingsCard(title: "More alerts") {
                 SettingsToggle("Brightness island", isOn: $brightnessHUD)
-                SettingsRow(title: "Warn when an AI limit reaches") {
+                SettingsRow(title: "Charged island", subtitle: "Shows when the battery reaches this level while plugged in.") {
+                    HStack(spacing: 6) {
+                        Text(verbatim: "\(fullCharge)%").monospacedDigit().foregroundStyle(SettingsStyle.dim)
+                        Stepper("", value: $fullCharge, in: 80...100, step: 5).labelsHidden()
+                    }
+                }
+                SettingsToggle("Drive connected island with Eject", isOn: $driveEject)
+                SettingsToggle("Download finished island", "Also shows the size of a download while it runs.", isOn: $downloadAlerts)
+                SettingsToggle("Microphone and camera indicator", "Shows when an app is using the microphone or the camera.", isOn: $privacyIndicator)
+            }
+            SettingsCard(title: "Activity") {
+                SettingsToggle("Focus mode island", "Needs Full Disk Access.", isOn: $focusIsland)
+                SettingsToggle("Call in progress island", "Shows the duration while a call app uses the microphone.", isOn: $callIsland)
+                SettingsToggle("Build island", "Shows a stopwatch while Xcode or swift build runs.", isOn: $buildIsland)
+                SettingsToggle("Show new notifications as islands", "Needs Full Disk Access.", isOn: $notificationIsland)
+                SettingsToggle("Stage new screenshots on the shelf", isOn: $screenshotShelf)
+                SettingsRow(title: "Warn when an AI limit reaches", subtitle: "Claude Code and Codex usage limits.") {
                     Picker("", selection: $usageAlert) { Text("Never").tag(0); Text("70%").tag(70); Text("80%").tag(80); Text("90%").tag(90) }.labelsHidden().frame(width: 170)
                 }
-                SettingsToggle("Focus mode island", isOn: $focusIsland)
-                SettingsToggle("Show new notifications as islands (Full Disk Access)", isOn: $notificationIsland)
-                SettingsToggle("Call in progress island", isOn: $callIsland)
-                SettingsToggle("Build island (Xcode and swift build)", isOn: $buildIsland)
-                SettingsRow(title: "Break reminder") {
+                SettingsRow(title: "Break reminder", subtitle: "Suggests a pause after this long at the keyboard.") {
                     Picker("", selection: $breakReminder) {
                         Text("Off").tag(0); Text("Every 20 min").tag(20); Text("Every 30 min").tag(30); Text("Every 45 min").tag(45); Text("Every hour").tag(60)
                     }.labelsHidden().frame(width: 170)
                 }
-                SettingsToggle("Live audio spectrum (asks for audio capture)", isOn: $liveSpectrum)
+            }
+            SettingsCard(title: "Presentations") {
+                SettingsToggle("Show keystrokes", "For demos and screen sharing. Needs Input Monitoring. Nothing is stored.", isOn: $keystrokeHUD)
+                if keystrokeHUD { SettingsToggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }
             }
         }
     }
 
     private var menuBar: some View {
         SettingsPage(pane: .menuBar) {
-            SettingsCard(title: "Menu bar and desktop") {
-                SettingsToggle("Hide menu bar icons (⌘-drag them left of the divider)", isOn: $hideMenuBarIcons)
-                SettingsToggle("Next calendar event in the menu bar", isOn: $menuBarCalendar)
+            SettingsCard(title: "Menu bar") {
+                SettingsToggle("Hide menu bar icons", "Adds a divider: ⌘-drag icons to its left, then click the chevron to hide them.", isOn: $hideMenuBarIcons)
+                SettingsToggle("Next calendar event in the menu bar", "Needs Calendars access.", isOn: $menuBarCalendar)
                 ForEach(MenuBarDetach.detachable) { tab in DetachToggle(tab: tab) }
-                SettingsToggle("Desktop widgets (clock, world clock, weather, music)", isOn: $desktopWidgets)
-                SettingsToggle("Hyper key: Caps Lock becomes ⌃⌥⇧⌘", isOn: $hyperKey)
+            }
+            SettingsCard(title: "Desktop and keyboard") {
+                SettingsToggle("Desktop widgets", "Clock, world clock, weather and music on the desktop.", isOn: $desktopWidgets)
+                SettingsToggle("Hyper key", "Caps Lock becomes ⌃⌥⇧⌘. Needs Accessibility.", isOn: $hyperKey)
                 if hyperKey { SettingsToggle("A quick press sends Escape", isOn: $hyperEscape) }
             }
         }
@@ -210,17 +288,21 @@ struct SettingsView: View {
                     }.controlSize(.small)
                 }
             }
+            SettingsNote("Only the text recognised in the area you pick is sent to Anthropic, never the picture. Needs Screen Recording.")
         }
     }
 
     private var developer: some View {
         SettingsPage(pane: .developer) {
             SettingsCard(title: "Developer API") {
-                SettingsRow(title: "Enable local API", subtitle: LocalizedStringKey("127.0.0.1:\(DevAPI.defaultPort)")) {
+                SettingsRow(title: "Enable local API", subtitle: "Scripts and AI apps on this Mac can then reach Pillbox, with a private token.") {
                     Toggle("", isOn: $devAPI).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(SettingsStyle.accent)
                         .onChange(of: devAPI) { _ in DevAPI.shared.apply() }
                 }
                 if devAPI {
+                    SettingsRow(title: "Address", subtitle: "Reachable from this Mac only.") {
+                        Text(verbatim: "127.0.0.1:\(DevAPI.defaultPort)").font(.system(size: 12, design: .monospaced)).foregroundStyle(SettingsStyle.dim).textSelection(.enabled)
+                    }
                     copyRow("Copy MCP configuration") {
                         MCPServer.configuration(executable: Bundle.main.executablePath ?? "/Applications/Pillbox.app/Contents/MacOS/Pillbox")
                     }
@@ -256,11 +338,19 @@ struct SettingsView: View {
 
     private var shortcuts: some View {
         SettingsPage(pane: .shortcuts) {
-            SettingsCard {
-                SettingsRow(title: "Command palette") { Keycaps("⌃⌥K") }
-                SettingsRow(title: "Toggle Notch") { Keycaps("⌃⌥N") }
-                SettingsRow(title: "Paste next from the copy stack") { Keycaps("⌃⌥V") }
+            SettingsCard(title: "Anywhere") {
+                ForEach(GlobalShortcut.allCases, id: \.self) { s in
+                    SettingsRow(title: LocalizedStringKey(s.title), subtitle: s == .pasteNext && !copyStack ? "Turn on Copy stack in Island first." : nil) { Keycaps(s.keycaps) }
+                }
+                if doubleTapOpen { SettingsRow(title: "Open the notch", subtitle: "Press Control twice quickly.") { Keycaps("⌃⌃") } }
             }
+            SettingsCard(title: "While the island is open") {
+                SettingsRow(title: "Switch tab", subtitle: "Or swipe left and right with two fingers.") { Keycaps("⌘1–\(min(Tab.allCases.count, 9))") }
+            }
+            SettingsCard(title: "While cleaning") {
+                SettingsRow(title: "Unlock the keyboard") { Keycaps("⌘⎋") }
+            }
+            SettingsNote("These shortcuts are fixed.")
         }
     }
 
@@ -270,17 +360,34 @@ struct SettingsView: View {
 
     private var about: some View {
         SettingsPage(pane: .about) {
-            HStack(spacing: 14) {
+            HStack(spacing: 16) {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(verbatim: "Pillbox").font(.system(size: 18, weight: .bold))
-                    Text(verbatim: L("Version %@", Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")).font(.system(size: 12)).foregroundStyle(SettingsStyle.dim)
+                    Text(verbatim: "Pillbox").font(.system(size: 22, weight: .bold))
+                    Text(verbatim: L("Version %@", Diagnostics.version)).font(.system(size: 12)).foregroundStyle(SettingsStyle.dim)
+                    Text("A notch island for macOS: music, timers, clipboard, files and system alerts.").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6))
                 }
             }
             SettingsCard {
                 SettingsRow(title: "Source code and releases") {
-                    Button("Open on GitHub") { NSWorkspace.shared.open(URL(string: "https://github.com/Arrows78/Pillbox")!) }.controlSize(.small)
+                    HStack {
+                        Button("GitHub") { NSWorkspace.shared.open(URL(string: "https://github.com/Arrows78/Pillbox")!) }
+                        Button("Releases") { NSWorkspace.shared.open(URL(string: "https://github.com/Arrows78/Pillbox/releases")!) }
+                    }.controlSize(.small)
                 }
+                SettingsRow(title: "Updates", subtitle: "Asks GitHub for the latest release when you click. Pillbox never checks on its own.") {
+                    Button("Check for updates…") { UpdateCheck.run() }.controlSize(.small)
+                }
+                SettingsRow(title: "Diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.") {
+                    CopyButton(text: { Diagnostics.text }, title: "Copy diagnostics")
+                }
+                SettingsRow(title: "Report a problem", subtitle: "Opens a prefilled GitHub issue. Review it before sending.") {
+                    Button("Report…") { ProblemReport.open() }.controlSize(.small)
+                }
+            }
+            SettingsCard(title: "Privacy") {
+                Text("Pillbox has no account and no analytics. It only uses the network when you use a feature: synced lyrics (LRCLIB), weather (Open-Meteo), stock quotes (Yahoo Finance), Spotify album art, Ask about screen (the recognised text only, to Anthropic, with your own key) and Check for updates (GitHub). Everything else stays on this Mac.")
+                    .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.7)).fixedSize(horizontal: false, vertical: true).padding(12)
             }
         }
     }
@@ -289,10 +396,11 @@ struct SettingsView: View {
 /// "Copy" that turns into "Copied" for a moment.
 struct CopyButton: View {
     let text: () -> String
+    var title = "Copy"
     @State private var copied = false
 
     var body: some View {
-        Button(LocalizedStringKey(copied ? "Copied" : "Copy")) {
+        Button(LocalizedStringKey(copied ? "Copied" : title)) {
             NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text(), forType: .string)
             copied = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
@@ -308,7 +416,7 @@ struct Keycaps: View {
         HStack(spacing: 3) {
             ForEach(Array(keys.enumerated()), id: \.offset) { _, k in
                 Text(String(k)).font(.system(size: 12, weight: .medium, design: .rounded)).frame(minWidth: 22, minHeight: 22)
-                    .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+                    .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
             }
         }
     }
@@ -324,14 +432,19 @@ enum SettingsWindow {
             w.styleMask = [.titled, .closable, .fullSizeContentView]
             w.titlebarAppearsTransparent = true
             w.titleVisibility = .hidden
-            w.appearance = NSAppearance(named: .darkAqua)
             w.backgroundColor = SettingsStyle.window
             w.isMovableByWindowBackground = true
             w.isReleasedWhenClosed = false
             window = w
         }
+        applyTheme()
         NSApp.activate(ignoringOtherApps: true)
         window?.center(); window?.makeKeyAndOrderFront(nil)
+    }
+
+    /// The theme chosen in General applies to this window only: the island stays dark, other windows follow macOS.
+    static func applyTheme() {
+        window?.appearance = SettingsStyle.appearance(for: UserDefaults.standard.string(forKey: "appearance"))
     }
 }
 
@@ -345,6 +458,10 @@ struct DetachToggle: View {
                 var set = MenuBarDetach.wanted
                 if v { set.insert(tab) } else { set.remove(tab) }
                 UserDefaults.standard.set(set.map(\.rawValue).sorted(), forKey: "detachedTabs")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
+                let now = MenuBarDetach.wanted.contains(tab)   // an import or a reset changes it behind this switch
+                if now != on { on = now }
             }
     }
 }

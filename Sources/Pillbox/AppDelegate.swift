@@ -40,10 +40,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         AudioSpectrum.shared.apply()
         DoubleTapKey.shared.apply()
         DesktopWidgets.shared.apply()
-        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { _ in
+        NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 HyperKey.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
                 AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
+                SettingsWindow.applyTheme(); self?.applyStatusItemVisibility()
             }
         }
         DevAPI.shared.apply()
@@ -81,11 +82,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         setupHover()
         setupDragToShelf()
-        hotKeys = [
-            HotKey(keyCode: UInt32(kVK_ANSI_K), modifiers: UInt32(controlKey | optionKey), id: 1) { PaletteController.shared.toggle() },
-            HotKey(keyCode: UInt32(kVK_ANSI_N), modifiers: UInt32(controlKey | optionKey), id: 2) { NotchModel.shared.toggle() },
-            HotKey(keyCode: UInt32(kVK_ANSI_V), modifiers: UInt32(controlKey | optionKey), id: 3) { CopyStackStore.shared.pasteNext() },
-        ]
+        hotKeys = GlobalShortcut.allCases.map { s in
+            HotKey(keyCode: s.keyCode, modifiers: GlobalShortcut.modifiers, id: s.rawValue) { s.run() }
+        }
         // ⌘1–9 switches tabs while the notch is open.
         monitors.append(NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
             guard NotchModel.shared.expanded, e.modifierFlags.contains(.command),
@@ -109,6 +108,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Caps Lock must never stay remapped after Pillbox quits.
     func applicationWillTerminate(_ notification: Notification) { HyperKey.shared.disable(); AudioSpectrum.shared.stop() }
 
+    /// Launching Pillbox again opens Settings, which is the way back in when the menu bar icon is hidden.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        SettingsWindow.show(); return true
+    }
+
+    func applyStatusItemVisibility() {
+        statusItem?.isVisible = UserDefaults.standard.object(forKey: "showMenuBarIcon") as? Bool ?? true
+    }
+
     private func setupStatusItem() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "capsule.fill", accessibilityDescription: "Pillbox")
@@ -116,6 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.delegate = self
         statusItem.menu = menu
         rebuildMenu(menu)
+        applyStatusItemVisibility()
     }
 
     /// Rebuilt every time the menu opens, so the checkmarks and the running timer are current.
@@ -136,8 +145,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             menu.addItem(item)
             return item
         }
-        _ = add("Toggle Notch", "capsule.portrait.bottomhalf.filled", #selector(toggleNotch), key: "n")
-        _ = add("Command Palette", "command", #selector(palette), key: "k")
+        _ = add("Toggle Notch", "capsule.portrait.bottomhalf.filled", #selector(toggleNotch), key: GlobalShortcut.toggleNotch.key.lowercased())
+        _ = add("Command Palette", "command", #selector(palette), key: GlobalShortcut.palette.key.lowercased())
 
         menu.addItem(.separator())
         let tabs = NSMenu()

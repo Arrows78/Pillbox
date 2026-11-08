@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -560,6 +560,34 @@ enum SelfTest {
         check("edge bar: with the edge style a volume change does not take over the island", m.activity == nil)
         m.show(Activity(symbol: "bell", title: "Hello"))
         check("edge bar: other islands still show", m.activity?.title == "Hello")
+    }
+
+    private static func batch8() {
+        // Palette math must never throw: NSExpression raised an exception on "5+" and crashed the app while typing.
+        for bad in ["5+", "(2+3", "2+3)", "*3", "5 6+1", "1..2+3", "()+1", "5%3", "--"] {
+            check("palette math: \"\(bad)\" is rejected, not a crash", PaletteModel.evaluate(bad) == nil, PaletteModel.evaluate(bad) ?? "nil")
+        }
+        check("palette math: unary minus and percent", PaletteModel.evaluate("-2+10") == "8" && PaletteModel.evaluate("200*10%") == "20", "\(PaletteModel.evaluate("-2+10") ?? "nil") \(PaletteModel.evaluate("200*10%") ?? "nil")")
+        // Settings backup
+        let suite = UserDefaults(suiteName: "pillbox.selftest.backup")!; suite.removePersistentDomain(forName: "pillbox.selftest.backup")
+        suite.set(false, forKey: "hoverOpen"); suite.set(0.3, forKey: "hoverDelay"); suite.set("evil", forKey: "devAPIToken"); suite.set(true, forKey: "devAPIEnabled")
+        let data = SettingsBackup.data(from: suite)!
+        check("backup: leaves the local API switch and token out", { let f = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]; let st = f?["settings"] as? [String: Any]; return st?["devAPIToken"] == nil && st?["devAPIEnabled"] == nil && st?["hoverOpen"] as? Bool == false }())
+        let other = UserDefaults(suiteName: "pillbox.selftest.backup2")!; other.removePersistentDomain(forName: "pillbox.selftest.backup2")
+        check("backup: restores what it holds", SettingsBackup.restore(data, into: other) == 2 && other.object(forKey: "hoverOpen") as? Bool == false && other.double(forKey: "hoverDelay") == 0.3)
+        let hostile: [String: Any] = ["format": "pillbox-settings", "version": 1, "settings": ["hoverDelay": 99.0, "hoverOpen": "yes", "hudStyle": "<script>", "devAPIEnabled": true, "panelScale": 1.1, "searchEngine": "bing"]]
+        let hdata = try! PropertyListSerialization.data(fromPropertyList: hostile, format: .xml, options: 0)
+        let third = UserDefaults(suiteName: "pillbox.selftest.backup3")!; third.removePersistentDomain(forName: "pillbox.selftest.backup3")
+        check("backup: clamps numbers, drops wrong types, unknown values and unlisted keys", SettingsBackup.restore(hdata, into: third) == 3 && third.double(forKey: "hoverDelay") == 0.6 && third.object(forKey: "hoverOpen") == nil && third.object(forKey: "hudStyle") == nil && third.object(forKey: "devAPIEnabled") == nil && third.string(forKey: "searchEngine") == "bing")
+        check("backup: a foreign plist is not a backup", SettingsBackup.restore(try! PropertyListSerialization.data(fromPropertyList: ["hoverOpen": true], format: .xml, options: 0), into: third) == nil)
+        SettingsBackup.resetAll(in: other)
+        check("backup: reset removes every stored setting", other.object(forKey: "hoverOpen") == nil && other.object(forKey: "hoverDelay") == nil)
+        for (suite, name) in [(suite, "pillbox.selftest.backup"), (other, "pillbox.selftest.backup2"), (third, "pillbox.selftest.backup3")] { suite.removePersistentDomain(forName: name) }
+        // Update check and shortcuts table
+        check("update: compares versions numerically", UpdateCheck.isNewer("v0.10.0", than: "0.9.9") && !UpdateCheck.isNewer("0.3.1", than: "0.3.1") && UpdateCheck.isNewer("1.0", than: "0.9.9") && !UpdateCheck.isNewer("0.3", than: "0.3.1"))
+        check("update: only offers a github.com https page", UpdateCheck.releasePage(from: ["html_url": "https://github.com/Arrows78/Pillbox/releases/tag/v1"]) != nil && UpdateCheck.releasePage(from: ["html_url": "https://evil.example/x"]) == nil && UpdateCheck.releasePage(from: ["html_url": "http://github.com/x"]) == nil)
+        check("shortcuts: every global shortcut has its own id and key", Set(GlobalShortcut.allCases.map(\.rawValue)).count == GlobalShortcut.allCases.count && GlobalShortcut.palette.keycaps == "⌃⌥K")
+        check("diagnostics: no home folder or user name", !Diagnostics.text.contains(NSHomeDirectory()) && !Diagnostics.text.contains(NSUserName()))
     }
 
     private static func batch7() {
