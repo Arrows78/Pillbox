@@ -486,3 +486,13 @@
 "You are using version %@." = "Estás usando la versión %@.";
 "View release" = "Ver la versión";
 "Later" = "Más tarde";
+"Prompter" = "Teleprompter";
+"Untitled script" = "Guion sin título";
+"Slow" = "Lento";
+"Normal" = "Normal";
+"Fast" = "Rápido";
+"Sprint" = "Sprint";
+"Scripts" = "Guiones";
+"New script" = "Nuevo guion";
+"No script yet" = "Aún no hay guiones";
+"Follow my voice" = "Seguir mi voz";

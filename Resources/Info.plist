@@ -43,6 +43,10 @@
 	<string>Pillbox uses your location for the local weather on the Home tab.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>Pillbox uses your location for the local weather on the Home tab.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Pillbox listens only while the teleprompter follows your voice.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Pillbox turns your speech into text on the Mac so the teleprompter can follow your reading.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Pillbox shows a camera preview so you can check yourself before a call.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>

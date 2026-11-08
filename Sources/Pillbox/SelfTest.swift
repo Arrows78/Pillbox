@@ -350,6 +350,13 @@ enum SelfTest {
         check("teleprompter: scrolls at its speed", t.offset - before == 30, "\(t.offset)")
         t.restart()
         check("teleprompter: restart returns to the top", t.offset == 0)
+        let pw = PrompterText.words("Good morning, everyone, and thanks for joining.")
+        check("prompter: words are normalised with their offsets", pw.map(\.word) == ["good", "morning", "everyone", "and", "thanks", "for", "joining"] && pw[1].start == 5)
+        let sw = pw.map(\.word)
+        check("prompter: voice advances past the words heard", PrompterText.advance(sw, from: 0, heard: ["Good", "morning"]) == 2)
+        check("prompter: voice skips ahead when words are dropped", PrompterText.advance(sw, from: 2, heard: ["thanks", "for"]) == 6)
+        check("prompter: unrelated speech does not move it", PrompterText.advance(sw, from: 3, heard: ["banana"]) == 3)
+        check("prompter: speeds map to their nearest preset", PrompterSpeed.nearest(32) == .normal && PrompterSpeed.nearest(100) == .sprint)
         UserDefaults.standard.removeObject(forKey: "teleScript"); UserDefaults.standard.removeObject(forKey: "teleSpeed")
     }
 

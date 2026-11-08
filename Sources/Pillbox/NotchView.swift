@@ -210,6 +210,7 @@ struct TabContent: View {
         case .shelf: ShelfTab()
         case .launcher: LauncherTab()
         case .terminal: TerminalTab().clipShape(RoundedRectangle(cornerRadius: 8))
+        case .prompter: PrompterTab()
         }
     }
 }

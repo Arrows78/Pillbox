@@ -32,13 +32,25 @@ final class Teleprompter: ObservableObject {
     @Published private(set) var offset: CGFloat = 0
     @Published private(set) var running = false
     @Published var editing = false
+    @Published var voice: Bool { didSet { UserDefaults.standard.set(voice, forKey: "teleVoice") } }
+    private let follower = VoiceFollower()
+    private var textHeight: CGFloat = 0
     private var timer: Timer?
     private var panel: NSPanel?
 
     init() {
         script = UserDefaults.standard.string(forKey: "teleScript") ?? ""
         speed = UserDefaults.standard.double(forKey: "teleSpeed").nonZero ?? 30
+        voice = UserDefaults.standard.bool(forKey: "teleVoice")
         editing = script.isEmpty
+    }
+
+    /// Shows `script` in the panel and starts it, scrolling by itself or following your voice.
+    func begin(script text: String) {
+        if running { toggle() }
+        script = text; editing = false; restart()
+        show()
+        toggle()
     }
 
     /// Moves the text up by `speed` points per second; never below the start.
@@ -46,11 +58,25 @@ final class Teleprompter: ObservableObject {
 
     func toggle() {
         running.toggle()
-        timer?.invalidate()
-        if running { timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.tick(1.0 / 30) } } }
+        timer?.invalidate(); follower.stop()
+        if running, voice {
+            textHeight = Self.measure(script, width: 436)
+            VoiceFollower.requestAccess { [weak self] ok in
+                guard let self, self.running else { return }
+                let started = ok && self.follower.start(script: self.script) { [weak self] fraction in
+                    MainActor.assumeIsolated { self?.offset = max(0, CGFloat(fraction) * (self?.textHeight ?? 0)) }
+                }
+                if !started { self.voice = false; self.running = false }
+            }
+        } else if running { timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.tick(1.0 / 30) } } }
     }
 
     func restart() { offset = 0 }
+
+    static func measure(_ text: String, width: CGFloat) -> CGFloat {
+        let font = NSFont.systemFont(ofSize: 22, weight: .semibold)
+        return ceil((text as NSString).boundingRect(with: NSSize(width: width, height: .greatestFiniteMagnitude), options: .usesLineFragmentOrigin, attributes: [.font: font]).height)
+    }
 
     func show() {
         NotchModel.shared.collapse()
@@ -69,7 +95,7 @@ final class Teleprompter: ObservableObject {
         p.orderFrontRegardless()
     }
 
-    func close() { if running { toggle() }; panel?.orderOut(nil) }
+    func close() { if running { toggle() }; follower.stop(); panel?.orderOut(nil) }
 }
 
 struct TeleprompterView: View {

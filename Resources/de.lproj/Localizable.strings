@@ -486,3 +486,13 @@
 "You are using version %@." = "Du verwendest Version %@.";
 "View release" = "Version ansehen";
 "Later" = "Später";
+"Prompter" = "Prompter";
+"Untitled script" = "Unbenanntes Skript";
+"Slow" = "Langsam";
+"Normal" = "Normal";
+"Fast" = "Schnell";
+"Sprint" = "Sprint";
+"Scripts" = "Skripte";
+"New script" = "Neues Skript";
+"No script yet" = "Noch kein Skript";
+"Follow my voice" = "Meiner Stimme folgen";

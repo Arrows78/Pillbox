@@ -24,6 +24,7 @@ extension Tab {
         case .shelf: .cyan
         case .launcher: .indigo
         case .terminal: .green
+        case .prompter: .brown
         }
     }
 }

@@ -537,3 +537,13 @@
 "You are using version %@." = "Vous utilisez la version %@.";
 "View release" = "Voir la version";
 "Later" = "Plus tard";
+"Prompter" = "Prompteur";
+"Untitled script" = "Script sans titre";
+"Slow" = "Lent";
+"Normal" = "Normal";
+"Fast" = "Rapide";
+"Sprint" = "Sprint";
+"Scripts" = "Scripts";
+"New script" = "Nouveau script";
+"No script yet" = "Aucun script";
+"Follow my voice" = "Suivre ma voix";
