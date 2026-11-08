@@ -37,10 +37,16 @@ struct TabBarButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: tab.symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .frame(width: 34, height: 26)
-                .foregroundStyle(selected ? tab.tint : .white.opacity(hovering ? 0.9 : 0.5))
+            HStack(spacing: 5) {
+                Image(systemName: tab.symbol)
+                    .font(.system(size: 13, weight: .semibold))
+                if selected {
+                    Text(tab.title).font(.system(size: 12, weight: .semibold)).lineLimit(1).fixedSize()
+                }
+            }
+            .padding(.horizontal, selected ? 12 : 0)
+            .frame(minWidth: 34, minHeight: 26)
+            .foregroundStyle(selected ? tab.tint : .white.opacity(hovering ? 0.9 : 0.5))
                 .background(selected ? tab.tint.opacity(0.22) : .white.opacity(hovering ? 0.08 : 0), in: Capsule())
         }
         .buttonStyle(.plain)
