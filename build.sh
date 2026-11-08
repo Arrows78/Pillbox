@@ -41,7 +41,8 @@ for h in claude-hook claude-stop-hook; do [ -f "scripts/$h.sh" ] && cp "scripts/
 # A stable signing identity keeps macOS privacy permissions across rebuilds; an ad-hoc signature changes on
 # every build and makes macOS forget them.
 IDENTITY="${PILLBOX_SIGN_IDENTITY:-Pillbox Local Signing}"
-if security find-identity -v -p codesigning | grep -q "\"$IDENTITY\""; then
+# On a CI runner the imported self-signed identity is not "trusted", so it is only listed without -v.
+if { security find-identity -v -p codesigning; [ -n "${CI:-}" ] && security find-identity -p codesigning; true; } | grep -qF "$IDENTITY"; then
   SIGN="$IDENTITY"
 else
   SIGN="-"
