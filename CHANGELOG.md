@@ -4,6 +4,18 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.4.0] - 2026-11-08
+
+### Added
+
+- **ui**: Show the icon and version at the foot of the settings sidebar
+- **settings**: Adaptive theme, startup, backup, shortcuts read from one source, fuller About page
+
+### Fixed
+
+- **build**: Keep macOS privacy permissions across updates
+- Safe calculator in the palette, clipboard copies not skipped, pill width applied, single calendar timer
+
 ## [0.3.1] - 2026-11-08
 
 ### Fixed
@@ -52,6 +64,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.4.0]: https://github.com/Arrows78/Pillbox/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Arrows78/Pillbox/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Arrows78/Pillbox/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Arrows78/Pillbox/compare/v0.1.0...v0.2.0
