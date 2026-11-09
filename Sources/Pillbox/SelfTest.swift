@@ -195,6 +195,8 @@ enum SelfTest {
         var withOCR = ClipItem(imageFile: "x.png"); withOCR.ocr = "invoice total 42"
         clip.items.append(withOCR); clip.query = "invoice"
         check("clipboard: search finds text inside images", clip.filtered.count == 1)
+        check("shelf: summary counts items and selection", ShelfService.summary(count: 1, selected: 0) == L("1 item")
+              && ShelfService.summary(count: 3, selected: 2) == L("%lld items", 3) + " · " + L("%lld selected", 2))
         check("timer: presets are sorted, none for the stopwatch", TimerService.Mode.allCases.allSatisfy { $0.presets == $0.presets.sorted() }
               && TimerService.Mode.stopwatch.presets.isEmpty && TimerService.Mode.focus.presets.contains(25))
     }

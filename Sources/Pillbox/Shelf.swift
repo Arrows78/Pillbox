@@ -37,6 +37,24 @@ final class ShelfService: ObservableObject {
 
     func reveal(_ list: [ShelfItem]) { NSWorkspace.shared.activateFileViewerSelecting(list.map(\.url)) }
 
+    /// Picks files with an open panel and adds them, for when there is nothing at hand to drag.
+    func browse() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true; panel.canChooseDirectories = true; panel.canChooseFiles = true
+        NSApp.activate(ignoringOtherApps: true)
+        if panel.runModal() == .OK { add(panel.urls) }
+    }
+
+    func copyPaths(_ list: [ShelfItem]) {
+        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(list.map(\.path).joined(separator: "\n"), forType: .string)
+    }
+
+    /// "3 items · 2 selected", the shelf's header line.
+    nonisolated static func summary(count: Int, selected: Int) -> String {
+        let n = count == 1 ? L("1 item") : L("%lld items", count)
+        return selected > 0 ? n + " · " + L("%lld selected", selected) : n
+    }
+
     /// A sibling URL that does not exist yet ("name", "name 2", "name 3"…), so nothing is ever overwritten.
     nonisolated static func uniqueURL(_ url: URL) -> URL {
         let fm = FileManager.default
