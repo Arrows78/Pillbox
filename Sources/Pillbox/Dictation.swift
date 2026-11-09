@@ -151,8 +151,8 @@ final class DictationService: ObservableObject {
         SpeechListener.requestAccess { [weak self] ok in
             guard let self else { return }
             guard ok else {
-                NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: "Microphone access needed",
-                                                subtitle: "Dictation also needs speech recognition", tint: .orange, actionTitle: "Open Settings", action: {
+                NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: "Microphone needed",
+                                                subtitle: "Also allow speech recognition", tint: .orange, actionTitle: "Settings", action: {
                     if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") { NSWorkspace.shared.open(u) }
                 }, duration: 6))
                 return

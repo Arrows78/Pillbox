@@ -576,8 +576,8 @@
 "Dictate" = "Diktieren";
 "Stop dictation" = "Diktat beenden";
 "Activity today" = "Aktivität heute";
-"Microphone access needed" = "Mikrofonzugriff erforderlich";
-"Dictation also needs speech recognition" = "Das Diktat braucht auch die Spracherkennung";
+"Microphone needed" = "Mikrofon nötig";
+"Also allow speech recognition" = "Und die Spracherkennung";
 "Speech recognition is not available" = "Die Spracherkennung ist nicht verfügbar";
 "Nothing was heard" = "Es wurde nichts gehört";
 "Dictation copied" = "Diktat kopiert";
