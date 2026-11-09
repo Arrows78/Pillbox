@@ -94,11 +94,9 @@ struct PullRequestsTab: View {
     var body: some View {
         Group {
             if svc.failed {
-                VStack(spacing: 8) {
-                    Image(systemName: "arrow.triangle.pull").font(.system(size: 26)).foregroundStyle(.secondary)
-                    Text("Needs the GitHub CLI (gh), logged in").foregroundStyle(.secondary)
-                    Button("Try again") { svc.refresh() }.controlSize(.small)
-                }
+                EmptyState(symbol: "arrow.triangle.pull", title: "Needs the GitHub CLI (gh), logged in", actionTitle: "Try again", tint: .teal) { svc.refresh() }
+            } else if svc.loading && svc.mine.isEmpty && svc.review.isEmpty {
+                EmptyState(symbol: "arrow.triangle.pull", title: "Loading pull requests…")
             } else {
                 HStack(alignment: .top, spacing: 12) {
                     column("To review", svc.review)
@@ -110,18 +108,31 @@ struct PullRequestsTab: View {
 
     private func column(_ title: LocalizedStringKey, _ list: [PullRequest]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(DS.secondary)
+                if !list.isEmpty { Text(verbatim: "\(list.count)").font(.system(size: 10, weight: .semibold)).padding(.horizontal, 6).padding(.vertical, 1).background(DS.card, in: Capsule()) }
+                Spacer()
+                if svc.loading { ProgressView().controlSize(.mini) }
+            }.frame(height: 16)
             ScrollView {
                 VStack(spacing: 4) {
-                    if list.isEmpty { Text(svc.loading ? "…" : "Nothing open").font(.system(size: 11)).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading) }
+                    if list.isEmpty && !svc.loading {
+                        Label("Nothing open", systemImage: "checkmark.circle").font(.system(size: 11)).foregroundStyle(DS.tertiary)
+                            .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 8)
+                            .background(RoundedRectangle(cornerRadius: DS.rowRadius, style: .continuous).strokeBorder(DS.hairline, style: StrokeStyle(lineWidth: 1, dash: [3])))
+                    }
                     ForEach(list) { pr in
                         Button { if let u = URL(string: pr.url) { NSWorkspace.shared.open(u) } } label: {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(verbatim: pr.title).font(.system(size: 12)).lineLimit(1)
                                 Text(verbatim: "\(pr.repo) #\(pr.number)" + (pr.draft ? " · draft" : "")).font(.system(size: 9)).foregroundStyle(.secondary)
-                            }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.vertical, 5)
-                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                            }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 5)
+                            .rowCard()
                         }.buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Open on GitHub") { if let u = URL(string: pr.url) { NSWorkspace.shared.open(u) } }
+                            Button("Copy link") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(pr.url, forType: .string) }
+                        }
                     }
                 }
             }

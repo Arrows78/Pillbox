@@ -192,15 +192,8 @@ struct MusicTab: View {
         if mixer.showing {
             AppVolumeView()
         } else if !music.hasTrack {
-            VStack(spacing: 6) {
-                Image(systemName: "music.note.list").font(.system(size: 26)).foregroundStyle(.secondary)
-                Text("Nothing playing").foregroundStyle(.secondary)
-                Text("Start Spotify or Apple Music").font(.system(size: 11)).foregroundStyle(.tertiary)
-                if AppVolumeService.supported {
-                    Button { mixer.showing = true } label: { Label("App volume", systemImage: "slider.horizontal.3").font(.system(size: 11)) }
-                        .buttonStyle(.plain).foregroundStyle(.white.opacity(0.6)).padding(.top, 4)
-                }
-            }
+            EmptyState(symbol: "music.note.list", title: "Nothing playing", message: "Start Spotify or Apple Music",
+                       actionTitle: AppVolumeService.supported ? "App volume" : nil, action: AppVolumeService.supported ? { mixer.showing = true } : nil)
         } else {
             HStack(spacing: 14) {
                 Group {
@@ -404,29 +397,32 @@ struct NotesTab: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                TextField("Jot something down…", text: $store.draft).textFieldStyle(.roundedBorder).focused($focused)
+        VStack(spacing: DS.gap) {
+            HStack(spacing: DS.gap) {
+                TextField("Jot something down…", text: $store.draft).pillField().focused($focused)
                     .onSubmit { store.add() }
-                if store.notes.contains(where: \.done) { Button("Clear done") { store.clearDone() }.controlSize(.small) }
+                if store.notes.contains(where: \.done) { Button("Clear done") { store.clearDone() }.buttonStyle(PillButtonStyle()).fixedSize() }
             }
             .onChange(of: focused) { model.pinnedOpen = $0 }
             if store.notes.isEmpty {
-                Spacer()
-                Text("Quick notes and to-dos stay here until you check them off").font(.system(size: 11)).foregroundStyle(.tertiary)
-                Spacer()
-            }
-            ScrollView {
-                VStack(spacing: 4) {
-                    ForEach(store.notes) { n in
-                        HStack(spacing: 8) {
-                            Button { store.toggle(n) } label: { Image(systemName: n.done ? "checkmark.circle.fill" : "circle") }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey(n.done ? "Mark as not done" : "Mark as done"))
-                            Text(n.text).strikethrough(n.done).foregroundStyle(n.done ? .secondary : .primary).lineLimit(2)
-                            Spacer()
-                            Button { store.remove(n) } label: { Image(systemName: "trash").foregroundStyle(.secondary) }.buttonStyle(.plain).accessibilityLabel("Delete")
+                EmptyState(symbol: "note.text", title: "No notes yet", message: "Quick notes and to-dos stay here until you check them off")
+            } else {
+                ScrollView {
+                    VStack(spacing: 4) {
+                        ForEach(store.notes) { n in
+                            HStack(spacing: 8) {
+                                Button { store.toggle(n) } label: { Image(systemName: n.done ? "checkmark.circle.fill" : "circle").foregroundStyle(n.done ? Color.yellow : DS.secondary) }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey(n.done ? "Mark as not done" : "Mark as done"))
+                                Text(n.text).strikethrough(n.done).foregroundStyle(n.done ? DS.secondary : .white).lineLimit(2)
+                                Spacer(minLength: 0)
+                                IconButton(symbol: "trash", label: L("Delete")) { store.remove(n) }
+                            }
+                            .font(.system(size: 12)).padding(.leading, 10).padding(.trailing, 4).padding(.vertical, 3).rowCard()
+                            .contextMenu {
+                                Button("Copy") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(n.text, forType: .string) }
+                                Button(LocalizedStringKey(n.done ? "Mark as not done" : "Mark as done")) { store.toggle(n) }
+                                Button("Delete", role: .destructive) { store.remove(n) }
+                            }
                         }
-                        .font(.system(size: 12)).padding(.horizontal, 8).padding(.vertical, 5)
-                        .background(card, in: RoundedRectangle(cornerRadius: 8))
                     }
                 }
             }
@@ -693,9 +689,8 @@ struct ShelfCell: View {
 struct LauncherTab: View {
     @State private var mode = 0
     var body: some View {
-        VStack(spacing: 6) {
-            Picker("", selection: $mode) { Text("Apps").tag(0); Text("Shortcuts").tag(1); Text("Actions").tag(2) }
-                .pickerStyle(.segmented).labelsHidden().controlSize(.small).frame(width: 250)
+        VStack(spacing: DS.gap) {
+            PillSegmented(options: [0, 1, 2], selection: $mode, tint: .indigo) { ["Apps", "Shortcuts", "Actions"][$0] }.frame(width: 300)
             if mode == 0 { AppsGrid() } else if mode == 1 { ShortcutsGrid() } else { ActionsGrid() }
         }
     }
@@ -705,7 +700,7 @@ struct ShortcutsGrid: View {
     @ObservedObject var svc = ShortcutsService.shared
     var body: some View {
         ScrollView {
-            if svc.names.isEmpty { Text("No shortcuts found. Create some in the Shortcuts app.").font(.system(size: 11)).foregroundStyle(.tertiary) }
+            if svc.names.isEmpty { EmptyState(symbol: "bolt", title: "No shortcuts found. Create some in the Shortcuts app.").padding(.top, 12) }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 6)], spacing: 6) {
                 ForEach(svc.names, id: \.self) { n in
                     Button { svc.run(n) } label: {
@@ -713,7 +708,7 @@ struct ShortcutsGrid: View {
                             Image(systemName: svc.running == n ? "hourglass" : "bolt.fill").foregroundStyle(.orange)
                             Text(verbatim: n).lineLimit(1)
                         }.font(.system(size: 11)).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.vertical, 7)
-                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                        .rowCard()
                     }.buttonStyle(.plain)
                 }
             }
@@ -728,29 +723,32 @@ struct AppsGrid: View {
     var body: some View {
         ScrollView {
             if store.paths.isEmpty {
-                Text("Pin the apps you open most with +, drag to reorder").font(.system(size: 11)).foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 6)
+                Text("Pin the apps you open most with +, drag to reorder").font(.system(size: 11)).foregroundStyle(DS.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 2)
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.fixed(64), spacing: 10), count: 8), spacing: 10) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 84, maximum: 96), spacing: DS.gap)], spacing: DS.gap) {
                 ForEach(store.paths, id: \.self) { path in
                     VStack(spacing: 3) {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().frame(width: 38, height: 38)
+                        Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().frame(width: 46, height: 46)
                         Text(((path as NSString).lastPathComponent as NSString).deletingPathExtension)
-                            .font(.system(size: 9)).lineLimit(1)
+                            .font(.system(size: 10)).lineLimit(1).minimumScaleFactor(0.75).truncationMode(.middle).padding(.horizontal, 4)
                     }
-                    .frame(width: 64, height: 60)
-                    .contentShape(Rectangle())
+                    .frame(maxWidth: .infinity).frame(height: 78)
+                    .rowCard(radius: 10)
                     .onTapGesture { store.launch(path) }
                     .onDrag { dragging = path; return NSItemProvider(object: path as NSString) }
                     .onDrop(of: [.text], isTargeted: nil) { _ in
                         if let d = dragging { store.move(d, onto: path) }
                         return true
                     }
-                    .contextMenu { Button("Remove") { store.remove(path) } }
+                    .contextMenu {
+                        Button("Reveal in Finder") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)]) }
+                        Button("Remove", role: .destructive) { store.remove(path) }
+                    }
                 }
                 Button { store.add() } label: {
-                    Image(systemName: "plus").frame(width: 38, height: 38).background(card, in: RoundedRectangle(cornerRadius: 9))
-                }.buttonStyle(.plain).frame(width: 64, height: 60)
+                    Image(systemName: "plus").font(.system(size: 15, weight: .medium)).foregroundStyle(DS.secondary).frame(maxWidth: .infinity).frame(height: 78)
+                }.buttonStyle(.plain).rowCard(radius: 10).hoverTip(L("Add an app")).accessibilityLabel("Add an app")
             }
         }
     }
@@ -764,15 +762,19 @@ struct StocksTab: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            HStack {
-                TextField("Add a symbol (AAPL, ^GSPC, BTC-USD…)", text: $symbol).textFieldStyle(.roundedBorder).focused($focused)
+            HStack(spacing: DS.gap) {
+                TextField("Add a symbol (AAPL, ^GSPC, BTC-USD…)", text: $symbol).pillField().focused($focused)
                     .onSubmit { stocks.add(symbol); symbol = "" }
-                Button { stocks.refresh() } label: { Image(systemName: "arrow.clockwise") }.controlSize(.small).accessibilityLabel("Refresh")
+                IconButton(symbol: "arrow.clockwise", label: L("Refresh")) { stocks.refresh() }
             }
             .onChange(of: focused) { model.pinnedOpen = $0 }
-            ScrollView {
-                VStack(spacing: 4) {
-                    ForEach(stocks.watchlist, id: \.symbol) { w in row(w) }
+            if stocks.watchlist.isEmpty {
+                EmptyState(symbol: "chart.line.uptrend.xyaxis", title: "Your watchlist is empty", message: "Type a symbol above and press Return")
+            } else {
+                ScrollView {
+                    VStack(spacing: 4) {
+                        ForEach(stocks.watchlist, id: \.symbol) { w in row(w) }
+                    }
                 }
             }
         }
@@ -798,16 +800,16 @@ struct StocksTab: View {
                 }.frame(width: 80, alignment: .trailing)
             }
         }
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
-        .contentShape(Rectangle())
+        .padding(.horizontal, 10).padding(.vertical, 4)
+        .rowCard()
         .onTapGesture { if let u = URL(string: "https://finance.yahoo.com/quote/\(w.symbol)") { NSWorkspace.shared.open(u) } }
         .contextMenu {
             Button(LocalizedStringKey(stocks.pinned == w.symbol ? "Unpin from pill" : "Pin to pill")) { stocks.pinned = stocks.pinned == w.symbol ? nil : w.symbol }
             Button("Alert at ±2%") { stocks.setAlert(w.symbol, percent: 2) }
             Button("Alert at ±5%") { stocks.setAlert(w.symbol, percent: 5) }
             Button("Clear alert") { stocks.setAlert(w.symbol, percent: nil) }
-            Button("Remove") { stocks.remove(w.symbol) }
+            Divider()
+            Button("Remove", role: .destructive) { stocks.remove(w.symbol) }
         }
     }
 }
@@ -836,18 +838,14 @@ struct AIUsageTab: View {
 
     var body: some View {
         if usage.providers.isEmpty {
-            VStack(spacing: 6) {
-                Image(systemName: "sparkles").font(.system(size: 26)).foregroundStyle(.secondary)
-                Text(LocalizedStringKey(usage.loading ? "Reading local logs…" : "No Claude Code or Codex activity in the last 7 days")).foregroundStyle(.secondary)
-            }.onAppear { usage.refresh() }
+            EmptyState(symbol: "sparkles", title: LocalizedStringKey(usage.loading ? "Reading local logs…" : "No Claude Code or Codex activity in the last 7 days"))
+                .onAppear { usage.refresh() }
         } else {
             let p = usage.providers[min(selected, usage.providers.count - 1)]
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
                     if usage.providers.count > 1 {
-                        Picker("", selection: $selected) {
-                            ForEach(Array(usage.providers.enumerated()), id: \.offset) { i, v in Text(v.name).tag(i) }
-                        }.pickerStyle(.segmented).labelsHidden().controlSize(.small)
+                        PillSegmented(options: Array(usage.providers.indices), selection: $selected, tint: .purple.opacity(0.7)) { LocalizedStringKey(usage.providers[$0].name) }
                     } else { Label(p.name, systemImage: p.symbol).font(.system(size: 13, weight: .semibold)) }
                     if let pct = p.limitPercent {
                         VStack(alignment: .leading, spacing: 2) {
@@ -857,7 +855,7 @@ struct AIUsageTab: View {
                             }.font(.system(size: 11))
                             ProgressBar(value: pct, total: 100) { _ in }.tint(.orange)
                             if let r = p.limitResetsAt { Text("Resets \(r, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
-                        }.padding(8).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                        }.padding(8).rowCard()
                     }
                     stat("Last 5 hours", p.fiveHour)
                     stat("Today", p.today)
@@ -884,7 +882,7 @@ struct AIUsageTab: View {
     private func stat(_ name: LocalizedStringKey, _ n: Int) -> some View {
         HStack { Text(name).foregroundStyle(.secondary); Spacer(); Text(AIUsageService.short(n)).font(.system(size: 14, weight: .semibold, design: .rounded)) }
             .font(.system(size: 11)).padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+            .background(DS.card, in: RoundedRectangle(cornerRadius: DS.rowRadius, style: .continuous))
     }
 }
 
@@ -895,28 +893,33 @@ struct RemindersTab: View {
 
     var body: some View {
         if !rem.authorized {
-            VStack(spacing: 8) {
-                Image(systemName: "checklist").font(.system(size: 26)).foregroundStyle(.secondary)
-                Text("Pillbox needs access to your reminders").foregroundStyle(.secondary)
-                Button("Allow") { PermissionsCenter.shared.request(.reminders) }.controlSize(.small)
-            }
+            EmptyState(symbol: "checklist", title: "Pillbox needs access to your reminders", actionTitle: "Allow", tint: .blue) { PermissionsCenter.shared.request(.reminders) }
         } else {
-            VStack(spacing: 8) {
-                TextField("Add a reminder, e.g. call mum tomorrow at 9am", text: $rem.draft).textFieldStyle(.roundedBorder).focused($focused)
-                    .onSubmit { rem.add() }
-                    .onChange(of: focused) { model.pinnedOpen = $0 }
-                ScrollView {
-                    VStack(spacing: 4) {
-                        if rem.items.isEmpty { Text("Nothing to do").font(.system(size: 11)).foregroundStyle(.tertiary) }
-                        ForEach(rem.items) { r in
-                            HStack(spacing: 8) {
-                                Button { rem.complete(r) } label: { Image(systemName: "circle") }.buttonStyle(.plain).accessibilityLabel("Complete")
-                                Text(r.title).lineLimit(1)
-                                Spacer()
-                                if let d = r.due { Text(d, format: .dateTime.day().month(.abbreviated).hour().minute()).foregroundStyle(r.overdue ? .red : .secondary) }
+            VStack(spacing: DS.gap) {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus.circle.fill").foregroundStyle(.blue)
+                    TextField("Add a reminder, e.g. call mum tomorrow at 9am", text: $rem.draft).textFieldStyle(.plain).font(.system(size: 12)).focused($focused)
+                        .onSubmit { rem.add() }
+                        .onChange(of: focused) { model.pinnedOpen = $0 }
+                }
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .background(DS.card, in: RoundedRectangle(cornerRadius: DS.rowRadius, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: DS.rowRadius, style: .continuous).strokeBorder(DS.hairline, lineWidth: 0.5))
+                if rem.items.isEmpty {
+                    EmptyState(symbol: "checkmark.circle", title: "Nothing to do", message: "Type a reminder above, with a date like tomorrow at 9am")
+                } else {
+                    ScrollView {
+                        VStack(spacing: 4) {
+                            ForEach(rem.items) { r in
+                                HStack(spacing: 8) {
+                                    Button { rem.complete(r) } label: { Image(systemName: "circle").foregroundStyle(DS.secondary) }.buttonStyle(.plain).accessibilityLabel("Complete")
+                                    Text(r.title).lineLimit(1)
+                                    Spacer()
+                                    if let d = r.due { Text(d, format: .dateTime.day().month(.abbreviated).hour().minute()).foregroundStyle(r.overdue ? .red : DS.secondary) }
+                                }
+                                .font(.system(size: 12)).padding(.horizontal, 10).padding(.vertical, 5).rowCard()
+                                .contextMenu { Button("Complete") { rem.complete(r) } }
                             }
-                            .font(.system(size: 12)).padding(.horizontal, 8).padding(.vertical, 5)
-                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                         }
                     }
                 }
@@ -930,10 +933,11 @@ struct NotificationsTab: View {
 
     var body: some View {
         Group {
-            if let items = mirror.items {
+            if let items = mirror.items, items.isEmpty {
+                EmptyState(symbol: "bell.slash", title: "No notifications")
+            } else if let items = mirror.items {
                 ScrollView {
                     VStack(spacing: 4) {
-                        if items.isEmpty { Text("No notifications").font(.system(size: 11)).foregroundStyle(.tertiary) }
                         ForEach(items) { n in
                             VStack(alignment: .leading, spacing: 1) {
                                 HStack {
@@ -943,17 +947,13 @@ struct NotificationsTab: View {
                                 }
                                 if !n.body.isEmpty { Text(verbatim: n.body).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2) }
                             }
-                            .padding(.horizontal, 8).padding(.vertical, 5).frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                            .padding(.horizontal, 10).padding(.vertical, 5).frame(maxWidth: .infinity, alignment: .leading)
+                            .rowCard()
                         }
                     }
                 }
             } else {
-                VStack(spacing: 8) {
-                    Image(systemName: "bell.badge").font(.system(size: 26)).foregroundStyle(.secondary)
-                    Text("Reading notifications needs Full Disk Access").foregroundStyle(.secondary)
-                    Button("Open Settings") { PermissionsCenter.shared.openSettings(.fullDisk) }.controlSize(.small)
-                }
+                EmptyState(symbol: "bell.badge", title: "Reading notifications needs Full Disk Access", actionTitle: "Open Settings", tint: .red) { PermissionsCenter.shared.openSettings(.fullDisk) }
             }
         }
         .onAppear { mirror.refresh() }

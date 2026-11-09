@@ -619,4 +619,11 @@
 "Open with default app" = "Abrir con la app predeterminada";
 "Copy path" = "Copiar la ruta";
 "Remove from shelf" = "Quitar de la estantería";
+"No notes yet" = "Aún no hay notas";
+"Add an app" = "Añadir una app";
+"Your watchlist is empty" = "Tu lista de seguimiento está vacía";
+"Type a symbol above and press Return" = "Escribe un símbolo arriba y pulsa Intro";
+"Type a reminder above, with a date like tomorrow at 9am" = "Escribe un recordatorio arriba, con una fecha como mañana a las 9";
+"Loading pull requests…" = "Cargando pull requests…";
+"Copy link" = "Copiar el enlace";
 "Counts up until you stop it" = "Cuenta hasta que lo detengas";
