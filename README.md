@@ -28,7 +28,7 @@
 ### 🏝️ Island
 
 - **Hover to open**, auto-close when the pointer leaves, adjustable delay. A flick to the top edge counts.
-- **Tabs**: Home, Music, Timer, Stocks, AI usage, Pull requests, Reminders, Notifications, Notes, Clipboard, Shelf, Launcher, Terminal. Switch with ⌘1–9 or a two-finger swipe.
+- **Tabs**: Home, Music, Timer, Stocks, AI usage, Pull requests, Reminders, Notifications, Notes, Clipboard, Shelf, Launcher, Terminal, Prompter, Calendar. Switch with ⌘1–9 or a two-finger swipe. The selected tab shows its name; tabs that do not fit go behind a **…** menu.
 - **Live wings** on the collapsed pill: album art and equalizer, running timer, keep-awake countdown, microphone and camera dots, a pinned stock.
 - **Activity islands**: short messages in place of the pill, with an optional action button.
 - **Any Mac**: virtual pill with an adjustable width when there is no hardware notch.
@@ -74,6 +74,10 @@
 - **Desktop widgets** (opt-in): clock, world clocks, weather and now playing, draggable, sitting under your windows.
 - **Window watch**: watch a part of the screen (a percentage, a build status, a price) and get an island when its text changes. Needs Screen Recording.
 - **Ask about screen**: pick an area, read its text on device (Vision), then copy it, search it, translate it, open its links, or ask a question with your own Anthropic API key stored in the Keychain. Only the recognised text is sent, never the picture.
+
+### 📅 Calendar
+
+- **Calendar** tab: today's and tomorrow's events with their calendar colour, past ones dimmed, and a **Join** button when the event holds a Zoom, Meet, Teams, Webex, Whereby or FaceTime link.
 
 ### ✅ Reminders
 
@@ -128,7 +132,7 @@
 - **Sound output switcher**: the speaker menu in the island header (and the palette) changes the output device in one tap.
 - **Display options**: choose which display hosts the island, and hide it in full screen.
 - **Hide the notch**: an option that paints the top strip black behind the menu bar, so the notch blends into it.
-- **Teleprompter**: `Open teleprompter` in the palette shows a script that scrolls under the webcam, with speed, restart and an editor. The panel is excluded from screen sharing and recordings, so only you see it.
+- **Teleprompter**: the **Prompter** tab keeps a list of scripts, with Slow / Normal / Fast / Sprint speeds and **Start**, which shows the script scrolling under the webcam (`Open teleprompter` in the palette too). Turn on the microphone switch and it **follows your voice** instead, with on-device speech recognition. The panel is excluded from screen sharing and recordings, so only you see it.
 
 ### ⌨️ Command palette
 
@@ -177,7 +181,7 @@ The palette also takes `yt`, `gh`, `w`, `ddg`, `b`, `br`, `e`, `map` search bang
 | `build/Pillbox.app/Contents/MacOS/Pillbox --selftest` | Non-interactive checks (parsers, maths, timers, stores, shelf zip, conversions, usage scan, SQLite and Keychain access, island geometry, approvals) against a throwaway data folder. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --render <dir>` | Draws the island, activities, approval, snap zones and some tabs to PNG without a screen. |
 | `build/Pillbox.app/Contents/MacOS/Pillbox --usage` | Prints the Claude Code and Codex usage scan and how long it took. |
-| `build/Pillbox.app/Contents/MacOS/Pillbox --open-tab <tab>` | Opens the notch on a tab and keeps it open (`home`, `music`, `timer`, `stocks`, `ai`, `reminders`, `notifications`, `notes`, `clipboard`, `shelf`, `launcher`, `terminal`). |
+| `build/Pillbox.app/Contents/MacOS/Pillbox --open-tab <tab>` | Opens the notch on a tab and keeps it open (`home`, `music`, `timer`, `stocks`, `ai`, `reminders`, `notifications`, `notes`, `clipboard`, `shelf`, `launcher`, `terminal`, `prompter`, `calendar`). |
 | `swift Resources/make_icon.swift <out.png>` | Renders the 1024 px app icon. |
 | `scripts/render_cask.sh VERSION SHA256` | Prints the Homebrew cask of a release (used by the release workflow). |
 | `python3 scripts/release.py prepare` | Next version, version bump and changelog from the commit messages ([`docs/RELEASING.md`](docs/RELEASING.md)). |
@@ -194,12 +198,13 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Permission | Used by | Why |
 | --- | --- | --- |
 | Automation (Spotify, Music) | Music | Read the current track and send transport commands. |
-| Calendars | Home | Show the next event. |
+| Calendars | Home, Calendar tab | Show the next event, today's and tomorrow's agenda. |
 | Reminders | Reminders tab | List, add and complete reminders. |
 | GitHub CLI login (`gh auth login`) | Pull requests tab | Read your PRs. Nothing is stored by Pillbox. |
 | Automation (Notes) | `note` in the palette | Create an Apple Note. |
 | Location | Home | Local weather. |
 | Camera | Camera mirror | Show the preview. |
+| Microphone, Speech Recognition | Prompter (voice following) | Follow your reading. Asked only when you turn it on; recognition runs on the Mac when it can. |
 | Input Monitoring | Keystroke display, double-press Control | Observe key presses system-wide. |
 | Screen Recording | Window watch, Ask about screen | Read the pixels of an area you pick. |
 | Full Disk Access | Notification mirror, Focus island | Read Notification Center and Do Not Disturb files. |
