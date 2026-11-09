@@ -721,7 +721,7 @@ enum ViewRenderer {
         }
         // The terminal is an AppKit view that ImageRenderer cannot draw.
         // Draw under a real 32 pt notch, so the header takes the room it takes on a MacBook.
-        model.geometry = NotchGeometry(width: 185, height: 32)
+        model.geometry = NotchGeometry(width: 185, height: 32, notch: true)
         for tab in Tab.allCases where tab != .terminal {
             model.tab = tab; model.expanded = true
             let size = NotchModel.baseExpanded(tab)

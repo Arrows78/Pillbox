@@ -75,7 +75,7 @@ struct TabStrip: View {
                     } label: { Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.5)) }
                         .menuStyle(.borderlessButton).menuIndicator(.hidden)
                         .frame(width: TabBarMetrics.more, height: 26)
-                        .help("More tabs").accessibilityLabel("More tabs")
+                        .hoverTip(L("More tabs")).accessibilityLabel("More tabs")
                 }
             }
             .frame(width: g.size.width, height: g.size.height, alignment: .leading)
@@ -112,7 +112,7 @@ struct TabBarButton: View {
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
         .animation(.easeOut(duration: 0.15), value: hovering)
-        .help(tab.title)
+        .hoverTip(selected ? nil : tab.title)
         .accessibilityLabel(tab.title)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
@@ -173,4 +173,39 @@ extension View {
             .background(DS.card, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).strokeBorder(DS.hairline, lineWidth: 0.5))
     }
+}
+
+/// A label under the control after a short hover. The panel never becomes key, so AppKit tooltips (`.help`) do not show.
+struct HoverTip: ViewModifier {
+    let text: String?
+    @State private var shown = false
+    @State private var pending: Task<Void, Never>?
+
+    func body(content: Content) -> some View {
+        content
+            .onHover { inside in
+                pending?.cancel()
+                guard inside, text != nil else { shown = false; return }
+                pending = Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(450))
+                    if !Task.isCancelled { withAnimation(.easeOut(duration: 0.12)) { shown = true } }
+                }
+            }
+            .onDisappear { pending?.cancel(); shown = false }
+            .overlay(alignment: .bottom) {
+                if shown, let text {
+                    Text(verbatim: text).font(.system(size: 11, weight: .medium)).foregroundStyle(.white).lineLimit(1).fixedSize()
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(Color(white: 0.16), in: Capsule())
+                        .overlay(Capsule().strokeBorder(DS.hairline, lineWidth: 0.5))
+                        .shadow(color: .black.opacity(0.4), radius: 4, y: 2)
+                        .offset(y: 28).allowsHitTesting(false).transition(.opacity)
+                }
+            }
+            .zIndex(shown ? 1 : 0)
+    }
+}
+
+extension View {
+    func hoverTip(_ text: String?) -> some View { modifier(HoverTip(text: text)) }
 }

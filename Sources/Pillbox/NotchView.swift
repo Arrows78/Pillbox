@@ -229,13 +229,14 @@ struct ExpandedView: View {
                         Button { AudioControl.shared.selectOutput(d) } label: { Text(verbatim: (d.id == current ? "✓ " : "") + d.name) }
                     }
                 } label: { Image(systemName: "hifispeaker.fill").foregroundStyle(.white.opacity(0.5)) }
-                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().help("Sound output").accessibilityLabel("Sound output")
-                Button { SettingsWindow.show() } label: { Image(systemName: "gearshape.fill").foregroundStyle(.white.opacity(0.5)) }.accessibilityLabel("Settings")
+                    .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().hoverTip(L("Sound output")).accessibilityLabel("Sound output")
+                Button { SettingsWindow.show() } label: { Image(systemName: "gearshape.fill").foregroundStyle(.white.opacity(0.5)) }.hoverTip(L("Settings")).accessibilityLabel("Settings")
                     .buttonStyle(.plain)
             }
             .padding(.horizontal, 22)
-            .padding(.top, max(model.geometry.height - 6, 8))
+            .padding(.top, model.geometry.notch ? model.geometry.height + 6 : max(model.geometry.height - 6, 8))
             .padding(.bottom, 8)
+            .zIndex(1)
 
             Rectangle().fill(DS.hairline).frame(height: 0.5).padding(.horizontal, 22)
 

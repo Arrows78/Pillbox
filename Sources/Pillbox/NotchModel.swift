@@ -69,13 +69,15 @@ struct NotchGeometry {
     var width: CGFloat = 185
     var height: CGFloat = 32
     var screen: NSScreen?
+    /// A hardware notch: the open panel must keep its controls below it, where they can be seen.
+    var notch = false
 
     static func detect() -> NotchGeometry {
         let screens = NSScreen.screens
         let chosen = UserDefaults.standard.string(forKey: "targetDisplay").flatMap { n in screens.first { $0.localizedName == n } }
         if let s = chosen ?? screens.first(where: { $0.safeAreaInsets.top > 0 }), s.safeAreaInsets.top > 0,
            let l = s.auxiliaryTopLeftArea, let r = s.auxiliaryTopRightArea {
-            return NotchGeometry(width: s.frame.width - l.width - r.width, height: s.safeAreaInsets.top, screen: s)
+            return NotchGeometry(width: s.frame.width - l.width - r.width, height: s.safeAreaInsets.top, screen: s, notch: true)
         }
         let s = chosen ?? NSScreen.main ?? screens.first
         let menuBar = s.map { $0.frame.maxY - $0.visibleFrame.maxY } ?? 24
@@ -91,12 +93,12 @@ final class NotchModel: ObservableObject {
     static let shared = NotchModel()
 
     static let windowSize = CGSize(width: 1000, height: 480)
-    static let expandedSize = CGSize(width: 620, height: 210)
+    static let expandedSize = CGSize(width: 760, height: 260)
     static let wing: CGFloat = 62
 
     /// User-chosen scale of the open panel (0.8 to 1.3).
     static var scale: CGFloat { CGFloat(min(max(UserDefaults.standard.object(forKey: "panelScale") as? Double ?? 1, 0.8), 1.3)) }
-    static func baseExpanded(_ tab: Tab) -> CGSize { tab == .terminal ? CGSize(width: 740, height: 340) : expandedSize }
+    static func baseExpanded(_ tab: Tab) -> CGSize { tab == .terminal ? CGSize(width: 760, height: 340) : expandedSize }
 
     @Published var expanded = false
     @Published var tab: Tab = .home
