@@ -57,6 +57,7 @@ struct HomeTab: View {
                             .accessibilityAddTraits(.isButton).accessibilityAction { batteryChart = false }
                     }
                 }
+                VStack(spacing: 8) {
                 HStack(spacing: 8) {
                     quick("cup.and.saucer.fill", "Awake", active: caffeine.active) { caffeine.toggle() }
                         .contextMenu {
@@ -69,9 +70,12 @@ struct HomeTab: View {
                         }
                     quick("eyedropper", "Color") { Tools.pickColor() }
                     quick("camera.viewfinder", "Capture") { Tools.captureArea() }
+                }
+                HStack(spacing: 8) {
                     quick("mic.slash.fill", "Mute", active: audio.micMuted) { audio.toggleMic() }
                     quick("video.fill", "Mirror") { CameraMirror.shared.toggle() }
                     quick("timer", "Focus", active: timer.running) { timer.mode = .focus; timer.toggle() }
+                }
                 }
             }.frame(width: 280)
         }
@@ -96,10 +100,11 @@ struct HomeTab: View {
     private func quick(_ symbol: String, _ title: LocalizedStringKey, active: Bool = false, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 3) {
-                Image(systemName: symbol).font(.system(size: 15)).frame(height: 18)
-                Text(title).font(.system(size: 9)).lineLimit(1).minimumScaleFactor(0.75).padding(.horizontal, 2)
+                Image(systemName: symbol).font(.system(size: 17)).frame(height: 20)
+                Text(title).font(.system(size: 10)).lineLimit(1).minimumScaleFactor(0.75).padding(.horizontal, 2)
             }
-            .frame(maxWidth: .infinity, minHeight: 44)
+            .frame(maxWidth: .infinity, minHeight: 44, maxHeight: .infinity)
+            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .background(active ? Color.orange.opacity(0.30) : card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(active ? Color.orange.opacity(0.6) : DS.hairline, lineWidth: 0.5))
         }.buttonStyle(.plain)
@@ -116,10 +121,13 @@ struct HomeNowPlaying: View {
                 if let a = music.artwork { Image(nsImage: a).resizable() }
                 else { Rectangle().fill(.white.opacity(0.08)).overlay(Image(systemName: "music.note").foregroundStyle(.secondary)) }
             }
-            .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            VStack(alignment: .leading, spacing: 2) {
-                Text(verbatim: music.hasTrack ? music.title : L("Nothing playing")).font(.system(size: 12, weight: .semibold)).lineLimit(1)
-                Text(verbatim: music.hasTrack ? music.artist : L("Start Spotify or Apple Music")).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+            .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(verbatim: music.hasTrack ? music.title : L("Nothing playing")).font(.system(size: 13, weight: .semibold)).lineLimit(1).minimumScaleFactor(music.hasTrack ? 1 : 0.8)
+                Text(verbatim: music.hasTrack ? music.artist : L("Start Spotify or Apple Music")).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(music.hasTrack ? 1 : 2)
+                if music.hasTrack {
+                    ProgressBar(value: music.position, total: music.duration) { music.seek(to: $0) }.frame(height: 4).padding(.top, 4)
+                }
             }
             Spacer(minLength: 4)
             if music.hasTrack {
@@ -131,39 +139,43 @@ struct HomeNowPlaying: View {
                 }.buttonStyle(.plain).font(.system(size: 12))
             }
         }
-        .padding(8).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(10).frame(maxWidth: .infinity, alignment: .leading)
         .background(card, in: RoundedRectangle(cornerRadius: DS.radius, style: .continuous))
         .contentShape(Rectangle())
         .onTapGesture { NotchModel.shared.tab = .music }
     }
 }
 
-/// Home card: the next timed event today or tomorrow, with Join when it is a video call.
+/// Home card: the next three timed events today and tomorrow, with Join for video calls.
 struct HomeUpNext: View {
     @ObservedObject var agenda = AgendaModel.shared
     @ObservedObject var calendar = CalendarService.shared
 
     var body: some View {
-        let e = agenda.events.first { !$0.allDay && $0.end > Date() }
-        HStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: 2).fill(e?.color ?? .red).frame(width: 4).padding(.vertical, 4)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Up next").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
-                if let e {
-                    Text(verbatim: e.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
-                    Group {
-                        if e.start > Date() { Text(e.start, style: .relative) } else { Text("Now") }
-                    }.font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
-                } else {
-                    Text(agenda.denied ? "Calendar access is off" : "No upcoming events").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+        let upcoming = Array(agenda.events.filter { !$0.allDay && $0.end > Date() }.prefix(3))
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Up next").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+            if upcoming.isEmpty {
+                Text(agenda.denied ? "Calendar access is off" : "No upcoming events").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+            }
+            ForEach(upcoming) { e in
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 2).fill(e.color).frame(width: 3, height: 28)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(verbatim: e.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                        Group {
+                            if e.start > Date() { Text(e.start, style: .relative) } else { Text("Now") }
+                        }.font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                    Spacer(minLength: 4)
+                    if let url = e.join {
+                        Button { NSWorkspace.shared.open(url) } label: { Label("Join", systemImage: "video.fill") }.buttonStyle(PillButtonStyle(tint: .green))
+                    }
                 }
             }
-            Spacer(minLength: 4)
-            if let url = e?.join {
-                Button { NSWorkspace.shared.open(url) } label: { Label("Join", systemImage: "video.fill") }.buttonStyle(PillButtonStyle(tint: .green))
-            }
+            Spacer(minLength: 0)
         }
-        .padding(8).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .padding(10).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(card, in: RoundedRectangle(cornerRadius: DS.radius, style: .continuous))
         .contentShape(Rectangle())
         .onTapGesture { NotchModel.shared.tab = .calendar }
@@ -195,12 +207,12 @@ struct MusicTab: View {
                     if let a = music.artwork { Image(nsImage: a).resizable() }
                     else { Rectangle().fill(card).overlay(Image(systemName: "music.note")) }
                 }
-                .frame(width: 118, height: 118).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(width: 190, height: 190).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .shadow(color: .black.opacity(0.6), radius: 10, y: 4)
                 .onTapGesture { music.openPlayer() }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(music.title).font(.system(size: 17, weight: .bold)).lineLimit(1)
+                    Text(music.title).font(.system(size: 20, weight: .bold)).lineLimit(1)
                     Text(music.artist).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                     if let l = music.currentLyric {
                         Text(l).font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.85)).lineLimit(2)
@@ -325,10 +337,10 @@ struct TimerTab: View {
                     .rotationEffect(.degrees(-90)).shadow(color: .orange.opacity(t.running ? 0.55 : 0), radius: 5)
                 VStack(spacing: 0) {
                     if let e = Mascot.emoji(for: Mascot.current, progress: t.progress) { Text(e).font(.system(size: 20)).scaleEffect(t.running ? 1.08 : 1).animation(t.running ? .easeInOut(duration: 0.8).repeatForever() : .default, value: t.running) }
-                    Text(t.display).font(.system(size: 22, weight: .semibold, design: .monospaced))
+                    Text(t.display).font(.system(size: 30, weight: .semibold, design: .monospaced))
                     Text(LocalizedStringKey(t.mode.rawValue)).font(.system(size: 10)).foregroundStyle(.secondary)
                 }
-            }.frame(width: 118, height: 118)
+            }.frame(width: 180, height: 180)
 
             VStack(alignment: .leading, spacing: 8) {
                 PillSegmented(options: TimerService.Mode.allCases, selection: $t.mode, tint: .orange) { LocalizedStringKey($0.rawValue) }
