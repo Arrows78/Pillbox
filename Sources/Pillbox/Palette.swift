@@ -49,6 +49,7 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Read QR code on screen", symbol: "qrcode.viewfinder") { QRReader.scanScreen() },
             PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
             PaletteCommand(title: DictationService.shared.active ? "Stop dictation" : "Dictate", symbol: "mic.fill") { DictationService.shared.toggle() },
+            PaletteCommand(title: "Activity today", symbol: "chart.bar.fill") { ActivityCounter.shared.showToday() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
         if AppVolumeService.supported { list.append(PaletteCommand(title: "App volume", symbol: "slider.horizontal.3") { AppVolumeService.shared.show() }) }

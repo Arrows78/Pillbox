@@ -127,6 +127,7 @@
 - **Camera island** (opt-in): an island the moment an app turns the camera on. macOS does not say which app it is, so the app in front is named as the likely one. Pillbox's own mirror never triggers it.
 - **Volume** island with a level bar, **Caps Lock** island.
 - **Keystrokes** (off by default): shows the shortcuts you press, or everything you type if you turn *Shortcuts only* off. Never shown while macOS secure input is on (password fields), never stored.
+- **Activity counter** (off by default, Settings › Alerts): counts clicks, keystrokes and how far the mouse travels (converted to metres from each screen's physical size), per day, with a 7-day bar chart. Only daily totals are kept, on the Mac, for 7 days, never which keys. `Activity today` in the palette shows today's figures. Needs Input Monitoring.
 - **Mic mute**: one switch mutes the input device itself, so every call app goes silent.
 - **Camera mirror**: a local preview under the notch. Nothing is recorded.
 - **Cleaning**: lock the keyboard for 60 s (⌘⎋ unlocks) or black out the displays.
@@ -217,7 +218,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Location | Home | Local weather. |
 | Camera | Camera mirror | Show the preview. |
 | Microphone, Speech Recognition | Prompter (voice following), Dictation | Follow your reading, turn speech into text. Asked only when you first use them; recognition runs on the Mac when it can. |
-| Input Monitoring | Keystroke display, double-press Control | Observe key presses system-wide. |
+| Input Monitoring | Keystroke display, double-press Control, activity counter | Observe key presses system-wide (the counter keeps only daily totals). |
 | Screen Recording | Window watch, Ask about screen, screen recording, Read QR code | Read the pixels of an area you pick, record the screen, find QR codes. |
 | Full Disk Access | Notification mirror, Focus island | Read Notification Center and Do Not Disturb files. |
 | Accessibility | Hyper key, keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
@@ -300,7 +301,7 @@ Pillbox/
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
     ├── Overlays.swift                   # Hidden notch, teleprompter
-    ├── Dictation.swift                  # Speech listener, dictation
+    ├── Dictation, ActivityCounter       # Speech listener and dictation, daily click/key/distance counts
     ├── Mcp.swift                        # MCP server, agent actions, turn tokens
     ├── Player.swift                     # Floating player, full-screen lyrics, copy stack, calculation history
     ├── Extras4.swift                    # Usage limit alert, GitHub pull requests, edge volume bar

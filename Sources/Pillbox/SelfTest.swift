@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness(); recordingQRAnnotate(); dictation()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness(); recordingQRAnnotate(); dictationAndActivity()
         appVolume()
         battery()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
@@ -789,7 +789,7 @@ enum SelfTest {
               Annotator.paths(marks[3], lineWidth: 3).fill != nil && Annotator.paths(Mark(kind: .arrow, color: red, points: [.zero, .zero]), lineWidth: 3).stroke == nil)
     }
 
-    private static func dictation() {
+    private static func dictationAndActivity() {
         var t = DictationText(); t.update("hello", finished: false); t.update("hello world", finished: true); t.update("again", finished: false)
         check("dictation: text survives the recogniser's restarts", t.full == "hello world again", t.full)
         t.update("", finished: true)
@@ -800,6 +800,25 @@ enum SelfTest {
               && [Float](repeating: 0.001, count: 64).withUnsafeBufferPointer { SpeechListener.level($0) } < 0.5)
         check("dictation: its shortcut is opt-in", GlobalShortcut.dictate.setting == "dictationShortcut" && GlobalShortcut.palette.isEnabled && GlobalShortcut.dictate.keycaps == "⌃⌥D")
 
+        var cal = Calendar(identifier: .gregorian); cal.timeZone = TimeZone(identifier: "Europe/Paris")!
+        let day = { (d: Int, h: Int) in cal.date(from: DateComponents(year: 2026, month: 3, day: d, hour: h))! }
+        var log = ActivityLog()
+        log.add(keys: 10, clicks: 2, metres: 1.5, on: day(1, 23), calendar: cal)
+        log.add(keys: 5, clicks: 1, metres: 0.5, on: day(1, 23), calendar: cal)
+        log.add(keys: 7, clicks: 0, metres: 0, on: day(2, 0), calendar: cal)
+        check("activity: counts add up within a day and roll over at midnight", log.days.count == 2 && log.days[0] == ActivityDay(day: "2026-03-01", keys: 15, clicks: 3, metres: 2) && log.days[1].keys == 7, "\(log.days)")
+        for d in 3...12 { log.add(keys: d, clicks: 0, metres: 0, on: day(d, 12), calendar: cal) }
+        check("activity: only the last 7 days are kept, oldest first", log.days.map(\.day) == (6...12).map { String(format: "2026-03-%02d", $0) }, "\(log.days.map(\.day))")
+        let week = log.lastWeek(ending: day(14, 9), calendar: cal)
+        check("activity: the week fills days without activity with zeros", week.count == 7 && week.first?.day == "2026-03-08" && week.last == ActivityDay(day: "2026-03-14") && week[4].keys == 12, "\(week)")
+        check("activity: today's counts", log.today(day(12, 18), calendar: cal).keys == 12 && log.today(day(20, 1), calendar: cal).keys == 0)
+        check("activity: the week crosses month ends", ActivityLog.week(ending: day(2, 8), calendar: cal).first == "2026-02-24")
+        let mm = ActivityCounter.millimetresPerPoint(physicalWidth: 300, pointWidth: 1500)
+        check("activity: points become millimetres from the screen's physical size", abs(mm - 0.2) < 1e-9 && ActivityCounter.millimetresPerPoint(physicalWidth: 0, pointWidth: 1500) == ActivityCounter.fallbackMillimetresPerPoint)
+        check("activity: 500 points at 0.2 mm/pt is 10 cm", abs(ActivityCounter.metres(from: .zero, to: CGPoint(x: 3000, y: 4000).applying(.init(scaleX: 0.1, y: 0.1)), mmPerPoint: 0.2) - 0.1) < 1e-9)
+        check("activity: a warp between screens is not travel", ActivityCounter.metres(from: .zero, to: CGPoint(x: 5000, y: 0), mmPerPoint: 0.2) == 0)
+        let back = try? JSONDecoder().decode(ActivityLog.self, from: JSONEncoder().encode(log))
+        check("activity: the log round-trips through JSON", back == log)
     }
 }
 
@@ -908,6 +927,18 @@ enum ViewRenderer {
         dic.meter.level = 0.7
         save("dictation-text", island(DictationView(), dsize), size: dsize)
         dic.forceActive(false)
+        var demo = ActivityLog()
+        for (i, n) in [3200, 5400, 800, 0, 6100, 4700, 2900].enumerated() {
+            demo.add(keys: n, clicks: n / 6, metres: Double(n) / 20, on: Calendar.current.date(byAdding: .day, value: i - 6, to: Date())!)
+        }
+        ActivityCounter.shared.preview(demo)
+        for (i, a) in [Activity(symbol: "chart.bar.fill", title: L("%@ keys · %@ clicks", 12_345.formatted(), 2_345.formatted()), subtitle: L("%@ of mouse travel", ActivityCounter.distance(1234)), tint: .cyan),
+                       Activity(symbol: "chart.bar.fill", title: "Activity counter is off", tint: .orange, actionTitle: "Turn on"),
+                       Activity(symbol: "mic.slash.fill", title: "Microphone needed", subtitle: "Also allow speech recognition", tint: .orange, actionTitle: "Settings")].enumerated() {
+            let size = CGSize(width: 330, height: 66)
+            save("activity-today-\(i)", island(ActivityView(activity: a), size), size: size)
+        }
+        save("activity-card", ActivityCounterCard().background(Color(white: 0.12)), size: CGSize(width: 530, height: 90))
         return ok ? 0 : 1
     }
 }

@@ -573,6 +573,7 @@ Level	Nivel	Ladestand
 Battery history	Historial de la batería	Akkuverlauf
 Dictate	Dictar	Diktieren
 Stop dictation	Detener el dictado	Diktat beenden
+Activity today	Actividad de hoy	Aktivität heute
 Microphone access needed	Se necesita acceso al micrófono	Mikrofonzugriff erforderlich
 Dictation also needs speech recognition	El dictado también necesita el reconocimiento de voz	Das Diktat braucht auch die Spracherkennung
 Speech recognition is not available	El reconocimiento de voz no está disponible	Die Spracherkennung ist nicht verfügbar
@@ -581,4 +582,18 @@ Dictation copied	Dictado copiado	Diktat kopiert
 Allow Accessibility to paste it for you	Permite Accesibilidad para pegarlo automáticamente	Erlaube Bedienungshilfen, damit es eingefügt wird
 Listening…	Escuchando…	Hört zu…
 Done	Listo	Fertig
+Input Monitoring needed	Se necesita Monitorización de entrada	Eingabeüberwachung erforderlich
+Allow Pillbox to count your activity	Permite que Pillbox cuente tu actividad	Erlaube Pillbox, deine Aktivität zu zählen
+Activity counter is off	Contador desactivado	Zähler ist aus
+Turn on	Activar	Einschalten
+%@ keys · %@ clicks	%@ teclas · %@ clics	%@ Tasten · %@ Klicks
+%@ of mouse travel	%@ recorridos con el ratón	%@ Mausweg
+Keystrokes	Pulsaciones	Anschläge
+Clicks	Clics	Klicks
+Distance	Distancia	Strecke
+Activity counter	Contador de actividad	Aktivitätszähler
+Count clicks, keystrokes and mouse distance	Contar clics, pulsaciones y distancia del ratón	Klicks, Anschläge und Mausweg zählen
+Needs Input Monitoring. Only totals per day are kept, on this Mac, for 7 days. Never which keys.	Necesita Monitorización de entrada. Solo se guardan los totales diarios, en este Mac, durante 7 días. Nunca qué teclas.	Braucht Eingabeüberwachung. Nur Tagessummen werden 7 Tage lang auf diesem Mac gespeichert. Nie, welche Tasten.
+Reset the counts	Poner los contadores a cero	Zähler zurücksetzen
+Keystroke display and activity counter.	Visualización de teclas y contador de actividad.	Tastenanzeige und Aktivitätszähler.
 Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone.	Habla y vuelve a pulsarlo o pulsa Escape: el texto se pega y se copia. Necesita el micrófono.	Sprich, dann drücke es erneut oder Escape: Der Text wird eingefügt und kopiert. Braucht das Mikrofon.

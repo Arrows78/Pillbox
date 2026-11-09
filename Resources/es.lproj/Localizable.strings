@@ -575,6 +575,7 @@
 "Battery history" = "Historial de la batería";
 "Dictate" = "Dictar";
 "Stop dictation" = "Detener el dictado";
+"Activity today" = "Actividad de hoy";
 "Microphone access needed" = "Se necesita acceso al micrófono";
 "Dictation also needs speech recognition" = "El dictado también necesita el reconocimiento de voz";
 "Speech recognition is not available" = "El reconocimiento de voz no está disponible";
@@ -583,4 +584,18 @@
 "Allow Accessibility to paste it for you" = "Permite Accesibilidad para pegarlo automáticamente";
 "Listening…" = "Escuchando…";
 "Done" = "Listo";
+"Input Monitoring needed" = "Se necesita Monitorización de entrada";
+"Allow Pillbox to count your activity" = "Permite que Pillbox cuente tu actividad";
+"Activity counter is off" = "Contador desactivado";
+"Turn on" = "Activar";
+"%@ keys · %@ clicks" = "%@ teclas · %@ clics";
+"%@ of mouse travel" = "%@ recorridos con el ratón";
+"Keystrokes" = "Pulsaciones";
+"Clicks" = "Clics";
+"Distance" = "Distancia";
+"Activity counter" = "Contador de actividad";
+"Count clicks, keystrokes and mouse distance" = "Contar clics, pulsaciones y distancia del ratón";
+"Needs Input Monitoring. Only totals per day are kept, on this Mac, for 7 days. Never which keys." = "Necesita Monitorización de entrada. Solo se guardan los totales diarios, en este Mac, durante 7 días. Nunca qué teclas.";
+"Reset the counts" = "Poner los contadores a cero";
+"Keystroke display and activity counter." = "Visualización de teclas y contador de actividad.";
 "Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone." = "Habla y vuelve a pulsarlo o pulsa Escape: el texto se pega y se copia. Necesita el micrófono.";

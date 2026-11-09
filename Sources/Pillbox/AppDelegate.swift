@@ -44,12 +44,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         AudioSpectrum.shared.apply()
         DoubleTapKey.shared.apply()
         DesktopWidgets.shared.apply()
+        ActivityCounter.shared.apply()
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 HyperKey.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
                 AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
                 SettingsWindow.applyTheme(); self?.applyStatusItemVisibility()
-                self?.applyHotKeys()
+                self?.applyHotKeys(); ActivityCounter.shared.apply()
             }
         }
         DevAPI.shared.apply()
@@ -109,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var sigterm: DispatchSourceSignal?
 
     /// Caps Lock must never stay remapped after Pillbox quits.
-    func applicationWillTerminate(_ notification: Notification) { HyperKey.shared.disable(); AudioSpectrum.shared.stop(); AppVolumeService.shared.stopAll() }
+    func applicationWillTerminate(_ notification: Notification) { HyperKey.shared.disable(); AudioSpectrum.shared.stop(); AppVolumeService.shared.stopAll(); ActivityCounter.shared.save() }
 
     /// Registers the enabled global shortcuts and releases the opt-in ones that were turned off.
     private func applyHotKeys() {

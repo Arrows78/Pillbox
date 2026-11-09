@@ -53,6 +53,7 @@ struct SettingsView: View {
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
     @AppStorage("dictationShortcut") private var dictationShortcut = false
+    @AppStorage("activityCounter") private var activityCounter = false
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     @State private var pane: SettingsPane
@@ -260,6 +261,13 @@ struct SettingsView: View {
             SettingsCard(title: "Presentations") {
                 SettingsToggle("Show keystrokes", "For demos and screen sharing. Needs Input Monitoring. Nothing is stored.", isOn: $keystrokeHUD)
                 if keystrokeHUD { SettingsToggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }
+            }
+            SettingsCard(title: "Activity counter") {
+                SettingsToggle("Count clicks, keystrokes and mouse distance", "Needs Input Monitoring. Only totals per day are kept, on this Mac, for 7 days. Never which keys.", isOn: $activityCounter)
+                if activityCounter {
+                    ActivityCounterCard().overlay(alignment: .top) { Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 12) }
+                    SettingsRow(title: "Reset the counts") { Button("Reset", role: .destructive) { ActivityCounter.shared.reset() }.controlSize(.small) }
+                }
             }
         }
     }

@@ -575,6 +575,7 @@
 "Battery history" = "Akkuverlauf";
 "Dictate" = "Diktieren";
 "Stop dictation" = "Diktat beenden";
+"Activity today" = "Aktivität heute";
 "Microphone access needed" = "Mikrofonzugriff erforderlich";
 "Dictation also needs speech recognition" = "Das Diktat braucht auch die Spracherkennung";
 "Speech recognition is not available" = "Die Spracherkennung ist nicht verfügbar";
@@ -583,4 +584,18 @@
 "Allow Accessibility to paste it for you" = "Erlaube Bedienungshilfen, damit es eingefügt wird";
 "Listening…" = "Hört zu…";
 "Done" = "Fertig";
+"Input Monitoring needed" = "Eingabeüberwachung erforderlich";
+"Allow Pillbox to count your activity" = "Erlaube Pillbox, deine Aktivität zu zählen";
+"Activity counter is off" = "Zähler ist aus";
+"Turn on" = "Einschalten";
+"%@ keys · %@ clicks" = "%@ Tasten · %@ Klicks";
+"%@ of mouse travel" = "%@ Mausweg";
+"Keystrokes" = "Anschläge";
+"Clicks" = "Klicks";
+"Distance" = "Strecke";
+"Activity counter" = "Aktivitätszähler";
+"Count clicks, keystrokes and mouse distance" = "Klicks, Anschläge und Mausweg zählen";
+"Needs Input Monitoring. Only totals per day are kept, on this Mac, for 7 days. Never which keys." = "Braucht Eingabeüberwachung. Nur Tagessummen werden 7 Tage lang auf diesem Mac gespeichert. Nie, welche Tasten.";
+"Reset the counts" = "Zähler zurücksetzen";
+"Keystroke display and activity counter." = "Tastenanzeige und Aktivitätszähler.";
 "Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone." = "Sprich, dann drücke es erneut oder Escape: Der Text wird eingefügt und kopiert. Braucht das Mikrofon.";
