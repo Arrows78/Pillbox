@@ -221,11 +221,8 @@ struct ExpandedView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 4) {
-                ForEach(Tab.allCases) { tab in
-                    TabBarButton(tab: tab, selected: model.tab == tab) { withAnimation(.easeOut(duration: 0.15)) { model.tab = tab } }
-                }
-                Spacer()
+            HStack(spacing: 10) {
+                TabStrip()
                 Menu {
                     let current = AudioControl.currentOutput()
                     ForEach(AudioControl.outputDevices()) { d in

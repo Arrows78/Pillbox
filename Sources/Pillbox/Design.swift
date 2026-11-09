@@ -24,13 +24,69 @@ extension Tab {
         case .shelf: .cyan
         case .launcher: .indigo
         case .terminal: .green
-        case .prompter: .brown
+        case .prompter: Color(red: 0.78, green: 0.45, blue: 1)
         case .calendar: .red
         }
     }
 }
 
-/// Icon of the tab bar: tinted capsule when selected, soft highlight under the pointer.
+/// Widths of the tab bar, shared by the buttons and the layout that decides which tabs fit.
+enum TabBarMetrics {
+    static let icon: CGFloat = 34, spacing: CGFloat = 4, more: CGFloat = 30
+    static let labelFont = NSFont.systemFont(ofSize: 12, weight: .semibold)
+
+    /// Icon only, or 12 + 18 (icon) + 5 + label + 12 for the selected tab.
+    static func width(_ tab: Tab, selected: Bool) -> CGFloat {
+        guard selected else { return icon }
+        return 47 + ceil((tab.title as NSString).size(withAttributes: [.font: labelFont]).width)
+    }
+
+    /// The tabs that fit in `available` points, in their usual order, and the rest for the "…" menu.
+    /// The selected tab is always shown; the others are kept from the start of the list.
+    static func split(_ tabs: [Tab], selected: Tab, available: CGFloat) -> (shown: [Tab], more: [Tab]) {
+        let all = tabs.reduce(-spacing) { $0 + spacing + width($1, selected: $1 == selected) }
+        if all <= available { return (tabs, []) }
+        var used = width(selected, selected: true) + spacing + more
+        var keep: Set<Tab> = tabs.contains(selected) ? [selected] : []
+        for t in tabs where t != selected {
+            guard used + icon + spacing <= available else { break }
+            used += icon + spacing; keep.insert(t)
+        }
+        return (tabs.filter(keep.contains), tabs.filter { !keep.contains($0) })
+    }
+}
+
+/// The row of tabs: as many as fit, the rest behind a "…" menu, so it never runs past the panel.
+struct TabStrip: View {
+    @ObservedObject var model = NotchModel.shared
+
+    var body: some View {
+        GeometryReader { g in
+            let split = TabBarMetrics.split(Tab.allCases, selected: model.tab, available: g.size.width)
+            HStack(spacing: TabBarMetrics.spacing) {
+                ForEach(split.shown) { tab in
+                    TabBarButton(tab: tab, selected: model.tab == tab) { select(tab) }
+                }
+                if !split.more.isEmpty {
+                    Menu {
+                        ForEach(split.more) { tab in
+                            Button { select(tab) } label: { Label(tab.title, systemImage: tab.symbol) }
+                        }
+                    } label: { Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold)).foregroundStyle(.white.opacity(0.5)) }
+                        .menuStyle(.borderlessButton).menuIndicator(.hidden)
+                        .frame(width: TabBarMetrics.more, height: 26)
+                        .help("More tabs").accessibilityLabel("More tabs")
+                }
+            }
+            .frame(width: g.size.width, height: g.size.height, alignment: .leading)
+        }
+        .frame(height: 26)
+    }
+
+    private func select(_ tab: Tab) { withAnimation(.easeOut(duration: 0.15)) { model.tab = tab } }
+}
+
+/// Icon of the tab bar: tinted capsule with the tab's name when selected, soft highlight under the pointer.
 struct TabBarButton: View {
     let tab: Tab
     let selected: Bool
@@ -42,14 +98,16 @@ struct TabBarButton: View {
             HStack(spacing: 5) {
                 Image(systemName: tab.symbol)
                     .font(.system(size: 13, weight: .semibold))
+                    .frame(width: 18)
                 if selected {
-                    Text(tab.title).font(.system(size: 12, weight: .semibold)).lineLimit(1).fixedSize()
+                    Text(tab.title).font(Font(TabBarMetrics.labelFont)).lineLimit(1).fixedSize()
                 }
             }
             .padding(.horizontal, selected ? 12 : 0)
-            .frame(minWidth: 34, minHeight: 26)
+            .frame(width: TabBarMetrics.width(tab, selected: selected), height: 26)
             .foregroundStyle(selected ? tab.tint : .white.opacity(hovering ? 0.9 : 0.5))
-                .background(selected ? tab.tint.opacity(0.22) : .white.opacity(hovering ? 0.08 : 0), in: Capsule())
+            .background(selected ? tab.tint.opacity(0.22) : .white.opacity(hovering ? 0.08 : 0), in: Capsule())
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }

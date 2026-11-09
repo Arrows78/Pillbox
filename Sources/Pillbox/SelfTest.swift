@@ -359,6 +359,15 @@ enum SelfTest {
         check("prompter: voice advances past the words heard", PrompterText.advance(sw, from: 0, heard: ["Good", "morning"]) == 2)
         check("prompter: voice skips ahead when words are dropped", PrompterText.advance(sw, from: 2, heard: ["thanks", "for"]) == 6)
         check("prompter: unrelated speech does not move it", PrompterText.advance(sw, from: 3, heard: ["banana"]) == 3)
+        let bar = NotchModel.expandedSize.width - 44 - 10 - 26 - 10 - 20
+        let fits = Tab.allCases.allSatisfy { sel in
+            let s = TabBarMetrics.split(Tab.allCases, selected: sel, available: bar)
+            let w = s.shown.reduce(-TabBarMetrics.spacing) { $0 + TabBarMetrics.spacing + TabBarMetrics.width($1, selected: $1 == sel) } + (s.more.isEmpty ? 0 : TabBarMetrics.spacing + TabBarMetrics.more)
+            return w <= bar && s.shown.contains(sel) && s.shown.count + s.more.count == Tab.allCases.count
+        }
+        check("tab bar: fits the panel for every selected tab, the rest in the menu", fits)
+        let wide = TabBarMetrics.split(Tab.allCases, selected: .calendar, available: 5000)
+        check("tab bar: everything shows when there is room", wide.more.isEmpty && wide.shown == Tab.allCases)
         check("prompter: speeds map to their nearest preset", PrompterSpeed.nearest(32) == .normal && PrompterSpeed.nearest(100) == .sprint)
         UserDefaults.standard.removeObject(forKey: "teleScript"); UserDefaults.standard.removeObject(forKey: "teleSpeed")
     }
@@ -710,9 +719,13 @@ enum ViewRenderer {
                 v.foregroundStyle(.white)
             }.frame(width: size.width, height: size.height)
         }
-        for tab in [Tab.home, .music, .ai, .shelf] {
+        // The terminal is an AppKit view that ImageRenderer cannot draw.
+        // Draw under a real 32 pt notch, so the header takes the room it takes on a MacBook.
+        model.geometry = NotchGeometry(width: 185, height: 32)
+        for tab in Tab.allCases where tab != .terminal {
             model.tab = tab; model.expanded = true
-            save("tab-\(tab.rawValue)", island(ExpandedView(), NotchModel.expandedSize), size: NotchModel.expandedSize)
+            let size = NotchModel.baseExpanded(tab)
+            save("tab-\(tab.rawValue)", island(ExpandedView(), size), size: size)
         }
         model.expanded = false
         let acts = [Activity(symbol: "hammer.fill", title: "Build done", subtitle: "main passed in 42s", tint: .green),
