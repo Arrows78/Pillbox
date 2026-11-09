@@ -848,8 +848,7 @@ extension SelfTest {
     }
 }
 
-/// `--render <dir>` draws the island states to PNG with ImageRenderer: no screen, no permission.
-/// ImageRenderer cannot draw AppKit-backed controls (text fields, pickers), so tabs using them are skipped.
+/// `--render <dir>` draws the island states to PNG from an offscreen window: no permission needed.
 @MainActor
 enum ViewRenderer {
     static func run(into dir: String) -> Int32 {
@@ -861,8 +860,15 @@ enum ViewRenderer {
         func save<V: View>(_ name: String, _ view: V, size: CGSize) {
             let framed = view.frame(width: size.width, height: size.height, alignment: .top)
                 .background(Color(white: 0.45)).environment(\.colorScheme, .dark)
-            let r = ImageRenderer(content: framed); r.scale = 2
-            guard let img = r.nsImage, let png = img.pngData() else { print("FAIL  render \(name)"); ok = false; return }
+            // Drawn by a real hosting view in an offscreen window: AppKit-backed controls (fields, menus) render too.
+            let host = NSHostingView(rootView: framed)
+            let win = NSWindow(contentRect: CGRect(origin: CGPoint(x: -10000, y: -10000), size: size), styleMask: .borderless, backing: .buffered, defer: false)
+            win.contentView = host; win.orderFrontRegardless()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.4))
+            host.layoutSubtreeIfNeeded()
+            guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { print("FAIL  render \(name)"); ok = false; return }
+            host.cacheDisplay(in: host.bounds, to: rep); win.orderOut(nil)
+            guard let png = rep.representation(using: .png, properties: [:]) else { print("FAIL  render \(name)"); ok = false; return }
             try? png.write(to: out.appendingPathComponent(name + ".png")); print("wrote \(name).png")
         }
         func island<V: View>(_ v: V, _ size: CGSize) -> some View {
@@ -871,8 +877,7 @@ enum ViewRenderer {
                 v.foregroundStyle(.white)
             }.frame(width: size.width, height: size.height)
         }
-        // The terminal is an AppKit view that ImageRenderer cannot draw.
-        // Draw under a real 32 pt notch, so the header takes the room it takes on a MacBook.
+        // Drawn under a real 32 pt notch, so the header takes the room it takes on a MacBook.
         model.geometry = NotchGeometry(width: 185, height: 32, notch: true)
         for tab in Tab.allCases where tab != .terminal {
             model.tab = tab; model.expanded = true
