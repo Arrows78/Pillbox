@@ -46,6 +46,8 @@ struct SettingsView: View {
     @AppStorage("driveEject") private var driveEject = true
     @AppStorage("shortcutsOnly") private var shortcutsOnly = true
     @AppStorage("fullChargeLevel") private var fullCharge = 100
+    @AppStorage("drainAlert") private var drainAlert = 0
+    @AppStorage("bluetoothIsland") private var bluetoothIsland = false
     @AppStorage("pillWidth") private var pillWidth = 170.0
     @AppStorage("devAPIEnabled") private var devAPI = false
     @AppStorage("appearance") private var appearance = "system"
@@ -229,6 +231,11 @@ struct SettingsView: View {
                         Stepper("", value: $fullCharge, in: 80...100, step: 5).labelsHidden()
                     }
                 }
+                SettingsRow(title: "Fast drain island", subtitle: "On battery, when the level falls this fast.") {
+                    Picker("", selection: $drainAlert) { Text("Off").tag(0); ForEach([3, 5, 8], id: \.self) { Text(verbatim: "−\($0)%/10 min").tag($0) } }.labelsHidden().frame(width: 170)
+                }
+                SettingsToggle("Bluetooth audio island", "AirPods and headphones connecting, with their battery. Asks for Bluetooth access.", isOn: $bluetoothIsland)
+                    .onChange(of: bluetoothIsland) { _ in BluetoothIslands.shared.apply() }
                 SettingsToggle("Drive connected island with Eject", isOn: $driveEject)
                 SettingsToggle("Download finished island", "Also shows the size of a download while it runs.", isOn: $downloadAlerts)
                 SettingsToggle("Microphone and camera indicator", "Shows when an app is using the microphone or the camera.", isOn: $privacyIndicator)

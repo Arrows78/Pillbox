@@ -10,6 +10,8 @@ struct HomeTab: View {
     @ObservedObject var timer = TimerService.shared
     @ObservedObject var audio = AudioControl.shared
     @ObservedObject var weather = WeatherService.shared
+    @ObservedObject var batteryLog = BatteryLog.shared
+    @State private var batteryChart = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -23,7 +25,7 @@ struct HomeTab: View {
                         .font(.system(size: 11)).symbolRenderingMode(.multicolor).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Spacer(minLength: 4)
-                Text("↓ \(NetworkRate.format(stats.down))  ↑ \(NetworkRate.format(stats.up))").font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                NetworkLine(down: stats.down, up: stats.up, samples: stats.netHistory)
                 ForEach(stats.bluetooth, id: \.self) { line in
                     Label { Text(verbatim: line) } icon: { Image(systemName: "airpodspro") }.font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
                 }
@@ -42,7 +44,18 @@ struct HomeTab: View {
                 HStack(spacing: 8) {
                     gauge("CPU", stats.cpu, .green)
                     gauge("RAM", stats.memory, .blue)
-                    gauge("Batt", Double(battery.level) / 100, battery.level < 20 ? .red : .yellow, icon: battery.pluggedIn ? "bolt.fill" : nil)
+                    gauge("Batt", Double(battery.level) / 100, battery.level < 20 ? .red : .yellow, icon: battery.pluggedIn ? "bolt.fill" : nil, detail: batteryLog.remaining)
+                        .contentShape(Rectangle()).onTapGesture { batteryChart = true }.hoverTip(L("Battery history"))
+                        .accessibilityAddTraits(.isButton).accessibilityAction { batteryChart = true }
+                }
+                .opacity(batteryChart ? 0 : 1)
+                .overlay {   // same footprint as the gauges, so the column never grows
+                    if batteryChart {
+                        BatteryChartCard(samples: batteryLog.history, level: battery.level, remaining: batteryLog.remaining,
+                                         health: batteryLog.health, hasBattery: batteryLog.hasBattery)
+                            .contentShape(Rectangle()).onTapGesture { batteryChart = false }
+                            .accessibilityAddTraits(.isButton).accessibilityAction { batteryChart = false }
+                    }
                 }
                 HStack(spacing: 8) {
                     quick("cup.and.saucer.fill", "Awake", active: caffeine.active) { caffeine.toggle() }
@@ -66,7 +79,7 @@ struct HomeTab: View {
         .onDisappear { stats.stop() }
     }
 
-    private func gauge(_ name: LocalizedStringKey, _ v: Double, _ c: Color, icon: String? = nil) -> some View {
+    private func gauge(_ name: LocalizedStringKey, _ v: Double, _ c: Color, icon: String? = nil, detail: String? = nil) -> some View {
         VStack(spacing: 4) {
             ZStack {
                 Circle().stroke(c.opacity(0.2), lineWidth: 5)
@@ -74,7 +87,7 @@ struct HomeTab: View {
                 if let icon { Image(systemName: icon).font(.system(size: 10)).foregroundStyle(c) }
                 else { Text("\(Int(v * 100))").font(.system(size: 11, weight: .semibold, design: .rounded)) }
             }.frame(width: 46, height: 46)
-            Text(name).font(.system(size: 10)).foregroundStyle(.secondary)
+            (Text(name) + Text(verbatim: detail.map { " · " + $0 } ?? "")).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
         }.frame(maxWidth: .infinity).padding(.vertical, 8)
         .background(card, in: RoundedRectangle(cornerRadius: DS.radius, style: .continuous))
         .accessibilityElement(children: .ignore).accessibilityLabel(Text(name)).accessibilityValue("\(Int(v * 100))%")

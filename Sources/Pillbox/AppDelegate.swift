@@ -20,6 +20,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         MusicService.shared.start()
         ClipboardService.shared.start()
         BatteryService.shared.start()
+        BatteryLog.shared.start()
+        BluetoothIslands.shared.apply()
         if PermissionsCenter.shared.state(of: .calendar) == .granted { CalendarService.shared.start() }
         DownloadsWatcher.shared.start()
         ScreenshotWatcher.shared.start()

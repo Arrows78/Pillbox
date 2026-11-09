@@ -554,3 +554,20 @@ Undo	Deshacer	Widerrufen
 Save	Guardar	Sichern
 Annotate	Anotar	Annotieren
 Window watch, Ask about screen, screen recording and QR codes.	Vigilar zona, Preguntar a la pantalla, grabación de pantalla y códigos QR.	Bereichsüberwachung, „Frag den Bildschirm“, Bildschirmaufnahme und QR-Codes.
+Battery draining fast	La batería se agota rápido	Akku entlädt sich schnell
+%d%% · −%d%%/10 min	%d %% · −%d %%/10 min	%d %% · −%d %%/10 Min.
+%@ left	quedan %@	noch %@
+Health %d%% · %d cycles	Salud %d %% · %d ciclos	Zustand %d %% · %d Zyklen
+Health %d%%	Salud %d %%	Zustand %d %%
+No battery	Sin batería	Kein Akku
+Collecting data…	Recopilando datos…	Daten werden gesammelt …
+Bluetooth device	Dispositivo Bluetooth	Bluetooth-Gerät
+Connected	Conectado	Verbunden
+Disconnected	Desconectado	Getrennt
+Fast drain island	Isla de descarga rápida	Insel bei schneller Entladung
+On battery, when the level falls this fast.	Con batería, cuando el nivel baja así de rápido.	Im Akkubetrieb, wenn der Ladestand so schnell sinkt.
+Bluetooth audio island	Isla de audio Bluetooth	Bluetooth-Audio-Insel
+AirPods and headphones connecting, with their battery. Asks for Bluetooth access.	Conexión de AirPods y auriculares, con su batería. Pide acceso a Bluetooth.	Verbindung von AirPods und Kopfhörern, mit Akkustand. Fragt nach Bluetooth-Zugriff.
+Time	Hora	Uhrzeit
+Level	Nivel	Ladestand
+Battery history	Historial de la batería	Akkuverlauf

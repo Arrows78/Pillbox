@@ -18,6 +18,7 @@ enum SelfTest {
     static func run() -> Int32 {
         lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness(); recordingQRAnnotate()
         appVolume()
+        battery()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -789,6 +790,32 @@ enum SelfTest {
     }
 }
 
+extension SelfTest {
+    static func battery() {
+        let now = Date()
+        func at(_ min: Double, _ level: Int, _ ch: Bool = false) -> BatterySample { BatterySample(t: now.addingTimeInterval(-min * 60), level: level, charging: ch) }
+        let h = BatteryMath.trimmed([at(10, 50), at(49 * 60, 90), at(5, 49), at(47 * 60, 80), at(-30, 10)], now: now)
+        check("battery history: keeps 48 h, oldest first, drops the future", h.map(\.level) == [80, 50, 49], "\(h.map(\.level))")
+        check("battery drain: points lost per 10 min off the charger", BatteryMath.drainPer10Min([at(12, 60), at(6, 57), at(0, 54)], now: now) == 5)
+        check("battery drain: only the run since unplugging counts", BatteryMath.drainPer10Min([at(14, 40, true), at(10, 60), at(0, 55)], now: now) == 5)
+        check("battery drain: too little data or charging gives nil", BatteryMath.drainPer10Min([at(3, 60), at(0, 55)], now: now) == nil && BatteryMath.drainPer10Min([at(12, 50, true), at(0, 60, true)], now: now) == nil)
+        check("battery health: Apple Silicon raw mAh, Intel mAh, percentage alone, capped at 100",
+              BatteryMath.healthPercent(rawMax: 4_600, max: 100, design: 5_000) == 92 && BatteryMath.healthPercent(rawMax: nil, max: 4_000, design: 5_000) == 80
+              && BatteryMath.healthPercent(rawMax: nil, max: 88, design: nil) == 88 && BatteryMath.healthPercent(rawMax: 5_200, max: 100, design: 5_000) == 100
+              && BatteryMath.healthPercent(rawMax: nil, max: nil, design: nil) == nil)
+        check("battery: time remaining as h:mm, nil while unknown", BatteryMath.remaining(12_000) == "3:20" && BatteryMath.remaining(-1) == nil && BatteryMath.remaining(59) == "0:00")
+        let sp = BatteryHealth.parse(Data(#"{"SPPowerDataType":[{"sppower_battery_charge_info":{}},{"sppower_battery_health_info":{"sppower_battery_cycle_count":412,"sppower_battery_health_maximum_capacity":"87 %"}}]}"#.utf8))
+        check("battery health: read from System Information as Settings shows it", sp?.percent == 87 && sp?.cycles == 412)
+        check("battery health: a desktop report gives nil", BatteryHealth.parse(Data(#"{"SPPowerDataType":[{"sppower_ac_charger_information":{}}]}"#.utf8)) == nil)
+        _ = BatteryHealth.registry(); _ = BatteryHealth.hasBattery()   // real IOKit reads must not crash, with or without a battery   // real IOKit reads must not crash, with or without a battery
+        var net: [NetSample] = []
+        for i in 0..<400 { net = NetworkRate.appending(net, NetSample(t: now.addingTimeInterval(Double(i * 2)), down: Double(i), up: 0)) }
+        check("network history: keeps the last 10 minutes", net.count == 301 && net.first?.down == 99, "\(net.count)")
+        check("bluetooth island: AirPods symbol and battery line", BluetoothIslands.symbol(for: "Tom's AirPods Pro") == "airpodspro" && BluetoothIslands.symbol(for: "WH-1000XM5") == "headphones"
+              && BluetoothIslands.battery(of: "AirPods Pro", in: ["AirPods Pro: L 85% · R 80%", "Magic Mouse: 42%"]) == "L 85% · R 80%" && BluetoothIslands.battery(of: "AirPods", in: ["AirPods Pro: L 1%"]) == nil)
+    }
+}
+
 /// `--render <dir>` draws the island states to PNG with ImageRenderer: no screen, no permission.
 /// ImageRenderer cannot draw AppKit-backed controls (text fields, pickers), so tabs using them are skipped.
 @MainActor
@@ -844,6 +871,14 @@ enum ViewRenderer {
         model.expanded = false; ScreenRecorder.shared.since = nil
         let qr = Activity(symbol: "qrcode", title: "QR code link", subtitle: "https://example.com/a%20b?q=1", tint: .green, actionTitle: "Open link")
         save("activity-qr", island(ActivityView(activity: qr), CGSize(width: 330, height: 66)), size: CGSize(width: 330, height: 66))
+        let hist = (0..<288).map { i in BatterySample(t: Date().addingTimeInterval(Double(i - 287) * 300), level: 20 + abs(i % 120 - 60), charging: i % 120 > 100) }
+        let gaugeArea = CGSize(width: 280, height: 76)   // the gauge row it replaces on Home
+        save("battery-chart", island(BatteryChartCard(samples: hist, level: 64, remaining: "3:20", health: (92, 312)), gaugeArea), size: gaugeArea)
+        let net = (0..<300).map { i in NetSample(t: Date().addingTimeInterval(Double(i - 299) * 2), down: abs(sin(Double(i) / 9)) * 2e6, up: abs(cos(Double(i) / 13)) * 4e5) }
+        save("network-sparkline", VStack(alignment: .leading) {   // the 190 pt left column of Home, typical and worst case
+            NetworkLine(down: 1_500_000, up: 512, samples: net); NetworkLine(down: 999_900_000, up: 999_900_000, samples: net)
+        }.frame(width: 190, alignment: .leading).background(.black), size: CGSize(width: 190, height: 34))
+        save("battery-chart-empty", island(BatteryChartCard(samples: [], level: 100, health: nil, hasBattery: false), gaugeArea), size: gaugeArea)
         save("snapzones", SnapZonesView(), size: SnapZones.panelSize)
         save("widgets", DesktopWidgetView(), size: CGSize(width: 330, height: 190))
         let appr = Approval(tool: "Bash", detail: "rm -rf ./build && swift build", respond: { _ in })

@@ -80,6 +80,7 @@ final class BatteryService: ObservableObject {
         defer { first = false }
         let wasPlugged = pluggedIn
         level = newLevel; charging = newCharging; pluggedIn = newPlugged
+        BatteryLog.shared.record(level: newLevel, charging: newCharging, pluggedIn: newPlugged)
         guard !first else { return }
 
         let target = UserDefaults.standard.integer(forKey: "fullChargeLevel").nonZeroInt ?? 100
@@ -112,6 +113,7 @@ final class StatsService: ObservableObject {
     @Published private(set) var up: Double = 0
     @Published private(set) var devices: [DeviceBattery] = []
     @Published private(set) var bluetooth: [String] = []
+    @Published private(set) var netHistory: [NetSample] = []
     private var btTimer: Timer?
     private var prevNet: [String: (rx: UInt32, tx: UInt32)] = [:]
     private var prevNetDate = Date()
@@ -138,7 +140,10 @@ final class StatsService: ObservableObject {
 
     private func sample() {
         let net = NetworkRate.counters(), now = Date()
-        if !prevNet.isEmpty { let r = NetworkRate.rate(from: prevNet, to: net, seconds: now.timeIntervalSince(prevNetDate)); down = r.down; up = r.up }
+        if !prevNet.isEmpty {
+            let r = NetworkRate.rate(from: prevNet, to: net, seconds: now.timeIntervalSince(prevNetDate)); down = r.down; up = r.up
+            netHistory = NetworkRate.appending(netHistory, NetSample(t: now, down: r.down, up: r.up))
+        }
         prevNet = net; prevNetDate = now
         devices = DeviceBatteries.scan()
         var info = host_cpu_load_info(); var count = mach_msg_type_number_t(MemoryLayout<host_cpu_load_info>.size / MemoryLayout<integer_t>.size)

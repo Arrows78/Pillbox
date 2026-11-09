@@ -117,6 +117,9 @@
 ### 🔔 Alerts and tools
 
 - **Battery**: plugged in, unplugged, charged at a level you choose (80–100 %), low battery.
+- **Battery history**: tap the battery gauge on Home for the last 24 hours of charge (sampled every 5 minutes, 48 hours kept), with charging periods, time remaining, maximum capacity and cycle count. Time remaining also shows under the gauge on battery.
+- **Fast drain** (opt-in): an island when the level falls faster than 3, 5 or 8 % in 10 minutes on battery.
+- **Bluetooth audio** (opt-in): an island when AirPods or headphones connect, with the battery of each bud and the case when macOS reports it, and when they disconnect. Asks for Bluetooth access when turned on.
 - **Downloads**: the pill shows the size of a download in progress (partial files and Safari's `.download` folders), then an island with a Reveal button when it lands in Downloads, whatever the browser.
 - **Builds**: a stopwatch on the pill while `xcodebuild` or `swift build` runs, and its duration when it ends (no error count).
 - **Break reminder** (opt-in): after 20, 30, 45 or 60 minutes of activity, one minute without input counts as a break.
@@ -135,7 +138,7 @@
 - **Panel size**: a slider in Settings scales the open panel from 80 to 130 %.
 - **Copy stack** (opt-in): copy several things in a row and paste them back in order with `⌃⌥V` (needs Accessibility to type the paste).
 - **Calculation history**: the palette keeps your last ten results and lists them when it is empty; pick one to copy it again.
-- **Home**: clock, weather, next calendar event, CPU, memory and battery gauges, live network speed, the battery of your Magic Mouse, Keyboard and Trackpad, and your AirPods and other Bluetooth accessories (per bud and case).
+- **Home**: clock, weather, next calendar event, CPU, memory and battery gauges, live network speed with a 10-minute sparkline, the battery of your Magic Mouse, Keyboard and Trackpad, and your AirPods and other Bluetooth accessories (per bud and case).
 - **Sound output switcher**: the speaker menu in the island header (and the palette) changes the output device in one tap.
 - **Display options**: choose which display hosts the island, and hide it in full screen.
 - **Hide the notch**: an option that paints the top strip black behind the menu bar, so the notch blends into it.
@@ -218,6 +221,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Accessibility | Hyper key, keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
 | Audio capture (System Audio Recording) | Live audio spectrum, App volume | Read app audio through a Core Audio process tap. Nothing is recorded. |
 | Downloads and Desktop folders | Download and screenshot alerts, screen recording | Notice new files, save recordings to the Desktop. |
+| Bluetooth | Bluetooth audio island (opt-in) | Notice AirPods and headphones connecting. |
 
 ## 🧱 Technology stack
 
@@ -228,7 +232,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | User interface | SwiftUI (island, tabs, settings), AppKit (borderless panel, hover and drag monitors) |
 | Media | AppleScript for Spotify and Music, LRCLIB for lyrics, AVFoundation (camera mirror) |
 | Web data | Open-Meteo (weather), Yahoo Finance (quotes) |
-| System | IOKit (battery, keep awake), Mach (CPU and memory), CoreAudio and CoreMediaIO (volume, mic, camera), EventKit, CoreLocation, Network.framework, Accessibility |
+| System | IOKit (battery, keep awake), IOBluetooth, Swift Charts, Mach (CPU and memory), CoreAudio and CoreMediaIO (volume, mic, camera), EventKit, CoreLocation, Network.framework, Accessibility |
 | Recognition | Vision (clipboard OCR) |
 | Persistence | JSON files in Application Support, `UserDefaults` for settings |
 
@@ -299,6 +303,7 @@ Pillbox/
     ├── Extras4.swift                    # Usage limit alert, GitHub pull requests, edge volume bar
     ├── Extras3.swift                    # Activity queue, themes, pill gestures, quick actions and web mini-apps, notification island
     ├── Features2.swift                  # Shake, break reminder, download and build islands, Bluetooth batteries, quick capture
+    ├── BatteryLog.swift                 # Battery history, health and fast drain, network sparkline, Bluetooth audio islands
     ├── Hyper, MenuBar, SystemWatch      # Hyper key, menu bar items, brightness, Focus, notifications, calls
     ├── Screen, Spectrum, Gestures       # Region picker, window watch, Ask about screen, audio spectrum, snap zones, Lottie, widgets
     ├── Permissions.swift                # Permissions center
@@ -330,7 +335,7 @@ Everything else (OCR, clipboard history, usage scans, notifications, calendars, 
 | --- | --- |
 | Settings | `UserDefaults` (bundle identifier `dev.labs.pillbox`) |
 | Clipboard history and its images | `~/Library/Application Support/Pillbox/clipboard.json` and `Clipboard/` |
-| Shelf, notes, launcher, snippets, quick actions, watchlist, focus sessions, calculation history | `~/Library/Application Support/Pillbox/*.json` |
+| Shelf, notes, launcher, snippets, quick actions, watchlist, focus sessions, calculation history, battery history | `~/Library/Application Support/Pillbox/*.json` |
 | Your Anthropic API key (optional) | The macOS Keychain |
 | Local API token | `UserDefaults` (`devAPIToken`) |
 
