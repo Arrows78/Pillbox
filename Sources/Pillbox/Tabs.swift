@@ -359,8 +359,21 @@ struct TimerTab: View {
                     .padding(.horizontal, 10).padding(.vertical, 5).background(DS.card, in: Capsule())
                     .disabled(t.mode == .stopwatch || t.running).opacity(t.mode == .stopwatch || t.running ? 0.4 : 1)
                 }
-                TextField("Name this timer", text: $t.label).textFieldStyle(.plain).font(.system(size: 12))
-                    .padding(.horizontal, 10).padding(.vertical, 6).background(DS.card, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                HStack(spacing: 6) {
+                    ForEach(t.mode.presets, id: \.self) { m in
+                        let on = stepBinding.wrappedValue == m
+                        Button { stepBinding.wrappedValue = m } label: {
+                            Text("\(m) min").font(.system(size: 11, weight: .medium)).monospacedDigit()
+                                .foregroundStyle(on ? .white : .white.opacity(0.7))
+                                .padding(.horizontal, 10).padding(.vertical, 5)
+                                .background(on ? Color.orange.opacity(0.35) : DS.card, in: Capsule())
+                                .overlay(Capsule().strokeBorder(on ? Color.orange.opacity(0.7) : DS.hairline, lineWidth: 0.5))
+                        }.buttonStyle(.plain).disabled(t.running)
+                    }
+                    if t.mode == .stopwatch { Text("Counts up until you stop it").font(.system(size: 11)).foregroundStyle(DS.secondary) }
+                    Spacer(minLength: 0)
+                }.opacity(t.running ? 0.6 : 1)
+                TextField("Name this timer", text: $t.label).pillField()
                 HStack(spacing: 10) {
                     Toggle("Chain", isOn: $t.chain).toggleStyle(.switch).controlSize(.mini).tint(.orange).font(.system(size: 11))
                     Label("\(t.streak) day streak", systemImage: "flame.fill").font(.system(size: 11)).foregroundStyle(.orange)
@@ -370,7 +383,7 @@ struct TimerTab: View {
                             Capsule().fill(d.count > 0 ? Color.orange : .white.opacity(0.15))
                                 .frame(width: 5, height: 4 + CGFloat(min(d.count, 6)) * 3)
                         }
-                    }.frame(height: 24, alignment: .bottom).help("Focus sessions, last 7 days")
+                    }.frame(height: 24, alignment: .bottom).hoverTip(L("Focus sessions, last 7 days"))
                 }
             }
         }

@@ -7,6 +7,15 @@ final class TimerService: ObservableObject {
     enum Mode: String, CaseIterable, Identifiable {
         case focus = "Focus", rest = "Break", countdown = "Countdown", stopwatch = "Stopwatch"
         var id: String { rawValue }
+        /// One-click lengths in minutes, shown as capsules.
+        var presets: [Int] {
+            switch self {
+            case .focus: [15, 25, 45, 60]
+            case .rest: [5, 10, 15]
+            case .countdown: [1, 3, 5, 10, 30]
+            case .stopwatch: []
+            }
+        }
     }
 
     @Published var mode: Mode = .focus { didSet { if oldValue != mode { reset() } } }
@@ -14,7 +23,7 @@ final class TimerService: ObservableObject {
     @Published private(set) var now = Date()
     @Published var label = ""
     @Published var focusMinutes = 25 { didSet { if mode == .focus && !running { reset() } } }
-    @Published var breakMinutes = 5
+    @Published var breakMinutes = 5 { didSet { if mode == .rest && !running { reset() } } }
     @Published var countdownMinutes = 10 { didSet { if mode == .countdown && !running { reset() } } }
     @Published var chain = true
     @Published var sessions: [String: Int] = Store.load("sessions.json", as: [String: Int].self) ?? [:]

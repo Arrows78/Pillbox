@@ -599,3 +599,4 @@
 "Reset the counts" = "Poner los contadores a cero";
 "Keystroke display and activity counter." = "Visualización de teclas y contador de actividad.";
 "Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone." = "Habla y vuelve a pulsarlo o pulsa Escape: el texto se pega y se copia. Necesita el micrófono.";
+"Counts up until you stop it" = "Cuenta hasta que lo detengas";

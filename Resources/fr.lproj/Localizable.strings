@@ -650,3 +650,4 @@
 "Reset the counts" = "Remettre les compteurs à zéro";
 "Keystroke display and activity counter." = "Affichage des frappes et compteur d'activité.";
 "Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone." = "Parlez, puis appuyez de nouveau ou sur Échap : le texte est collé et copié. Requiert le micro.";
+"Counts up until you stop it" = "Compte jusqu'à ce que vous l'arrêtiez";
