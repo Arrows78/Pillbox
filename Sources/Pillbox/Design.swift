@@ -5,6 +5,93 @@ enum DS {
     static let card = Color.white.opacity(0.07)
     static let hairline = Color.white.opacity(0.08)
     static let radius: CGFloat = 12
+    static let cardHover = Color.white.opacity(0.12)
+    static let rowRadius: CGFloat = 8
+    static let gap: CGFloat = 8
+    static let secondary = Color.white.opacity(0.55)
+    static let tertiary = Color.white.opacity(0.35)
+}
+
+/// What a tab shows when it has nothing yet: an icon, one line, an optional hint and the next action.
+struct EmptyState: View {
+    let symbol: String
+    let title: LocalizedStringKey
+    var message: LocalizedStringKey?
+    var actionTitle: LocalizedStringKey?
+    var tint: Color = .white
+    var action: (() -> Void)?
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: symbol).font(.system(size: 24, weight: .medium)).foregroundStyle(DS.secondary).frame(height: 28)
+            Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(.white.opacity(0.8))
+            if let message { Text(message).font(.system(size: 11)).foregroundStyle(DS.secondary) }
+            if let actionTitle, let action {
+                Button(actionTitle, action: action).buttonStyle(PillButtonStyle(tint: tint == .white ? nil : tint.opacity(0.85))).padding(.top, 4)
+            }
+        }
+        .multilineTextAlignment(.center).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Card behind a list row or tile: soft fill, hairline edge, brighter under the pointer.
+struct RowCard: ViewModifier {
+    var radius: CGFloat = DS.rowRadius
+    var selected: Color?
+    @State private var hovering = false
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        content
+            .background(selected ?? (hovering ? DS.cardHover : DS.card), in: shape)
+            .overlay(shape.strokeBorder(DS.hairline, lineWidth: 0.5))
+            .contentShape(shape)
+            .onHover { hovering = $0 }
+            .animation(.easeOut(duration: 0.12), value: hovering)
+    }
+}
+
+/// Small round icon button that lights up under the pointer; `label` is already localized (`L`).
+struct IconButton: View {
+    let symbol: String
+    let label: String
+    var tint: Color = .white
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(hovering ? tint : tint.opacity(0.6))
+                .frame(width: 24, height: 24)
+                .background(.white.opacity(hovering ? 0.12 : 0), in: Circle())
+        }
+        .buttonStyle(.plain).onHover { hovering = $0 }
+        .hoverTip(label).accessibilityLabel(Text(verbatim: label))
+    }
+}
+
+/// Capsule filter: icon only, tinted when selected.
+struct FilterChip: View {
+    let symbol: String
+    let label: String
+    let selected: Bool
+    var tint: Color = .accentColor
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(selected ? tint : .white.opacity(hovering ? 0.9 : 0.55))
+                .frame(width: 28, height: 22)
+                .background(selected ? tint.opacity(0.22) : .white.opacity(hovering ? 0.08 : 0), in: Capsule())
+        }
+        .buttonStyle(.plain).onHover { hovering = $0 }
+        .hoverTip(label).accessibilityLabel(Text(verbatim: label)).accessibilityAddTraits(selected ? .isSelected : [])
+    }
 }
 
 extension Tab {
@@ -167,6 +254,21 @@ struct PillSegmented<T: Hashable>: View {
 }
 
 extension View {
+    func rowCard(radius: CGFloat = DS.rowRadius, selected: Color? = nil) -> some View { modifier(RowCard(radius: radius, selected: selected)) }
+
+    /// Plain text field on a soft rounded fill, the island's input look.
+    func pillField() -> some View {
+        self.textFieldStyle(.plain).font(.system(size: 12))
+            .padding(.horizontal, 10).padding(.vertical, 6)
+            .background(DS.card, in: RoundedRectangle(cornerRadius: DS.rowRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DS.rowRadius, style: .continuous).strokeBorder(DS.hairline, lineWidth: 0.5))
+    }
+
+    /// Fades the trailing edge of a horizontal scroller, so a cut card reads as "more to the right".
+    func trailingFade(_ width: CGFloat = 24) -> some View {
+        mask(HStack(spacing: 0) { Rectangle(); LinearGradient(colors: [.black, .clear], startPoint: .leading, endPoint: .trailing).frame(width: width) })
+    }
+
     /// Rounded surface with a hairline edge, the island's "card".
     func surface(padding: CGFloat = 10, radius: CGFloat = DS.radius) -> some View {
         self.padding(padding)
