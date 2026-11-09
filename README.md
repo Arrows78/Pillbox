@@ -137,6 +137,7 @@
 - **Colour eyedropper** (HEX copied), **area screenshot** to the clipboard.
 - **Panel size**: a slider in Settings scales the open panel from 80 to 130 %.
 - **Copy stack** (opt-in): copy several things in a row and paste them back in order with `⌃⌥V` (needs Accessibility to type the paste).
+- **Dictation** (opt-in, Settings › Shortcuts): `⌃⌥D` starts listening, the pill shows a microphone with the live level and your words, `⌃⌥D` again or Escape pastes the text in the front app and copies it (just copies without Accessibility), ✕ throws it away. `Dictate` in the palette too. Recognition runs on the Mac when it can.
 - **Calculation history**: the palette keeps your last ten results and lists them when it is empty; pick one to copy it again.
 - **Home**: clock, weather, next calendar event, CPU, memory and battery gauges, live network speed with a 10-minute sparkline, the battery of your Magic Mouse, Keyboard and Trackpad, and your AirPods and other Bluetooth accessories (per bud and case).
 - **Sound output switcher**: the speaker menu in the island header (and the palette) changes the output device in one tap.
@@ -174,6 +175,7 @@ curl -X POST http://127.0.0.1:9998/notify \
 | `⌃⌥K` | Command palette |
 | `⌃⌥N` | Toggle the notch |
 | `⌃⌥V` | Paste the next item of the copy stack |
+| `⌃⌥D` | Dictate (off until you turn it on in Settings › Shortcuts) |
 | `⌘1`–`⌘9` | Switch tab while the notch is open |
 
 The palette also takes `yt`, `gh`, `w`, `ddg`, `b`, `br`, `e`, `map` search bangs and `tr` to translate.
@@ -214,7 +216,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Automation (Notes) | `note` in the palette | Create an Apple Note. |
 | Location | Home | Local weather. |
 | Camera | Camera mirror | Show the preview. |
-| Microphone, Speech Recognition | Prompter (voice following) | Follow your reading. Asked only when you turn it on; recognition runs on the Mac when it can. |
+| Microphone, Speech Recognition | Prompter (voice following), Dictation | Follow your reading, turn speech into text. Asked only when you first use them; recognition runs on the Mac when it can. |
 | Input Monitoring | Keystroke display, double-press Control | Observe key presses system-wide. |
 | Screen Recording | Window watch, Ask about screen, screen recording, Read QR code | Read the pixels of an area you pick, record the screen, find QR codes. |
 | Full Disk Access | Notification mirror, Focus island | Read Notification Center and Do Not Disturb files. |
@@ -298,6 +300,7 @@ Pillbox/
     ├── Terminal, Keystrokes             # Shell tab, keystroke display
     ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
     ├── Overlays.swift                   # Hidden notch, teleprompter
+    ├── Dictation.swift                  # Speech listener, dictation
     ├── Mcp.swift                        # MCP server, agent actions, turn tokens
     ├── Player.swift                     # Floating player, full-screen lyrics, copy stack, calculation history
     ├── Extras4.swift                    # Usage limit alert, GitHub pull requests, edge volume bar

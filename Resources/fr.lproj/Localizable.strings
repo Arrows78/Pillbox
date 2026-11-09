@@ -624,3 +624,14 @@
 "Time" = "Heure";
 "Level" = "Niveau";
 "Battery history" = "Historique de la batterie";
+"Dictate" = "Dicter";
+"Stop dictation" = "Arrêter la dictée";
+"Microphone access needed" = "Accès au micro requis";
+"Dictation also needs speech recognition" = "La dictée requiert aussi la reconnaissance vocale";
+"Speech recognition is not available" = "La reconnaissance vocale n'est pas disponible";
+"Nothing was heard" = "Rien n'a été entendu";
+"Dictation copied" = "Dictée copiée";
+"Allow Accessibility to paste it for you" = "Autorisez l'Accessibilité pour qu'elle soit collée";
+"Listening…" = "À l'écoute…";
+"Done" = "Terminé";
+"Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone." = "Parlez, puis appuyez de nouveau ou sur Échap : le texte est collé et copié. Requiert le micro.";

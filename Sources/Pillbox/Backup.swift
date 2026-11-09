@@ -18,7 +18,7 @@ enum SettingsBackup {
                     "hyperKey", "hyperEscape", "hideMenuBarIcons", "menuBarCalendar", "liveSpectrum", "doubleTapOpen", "snapZones", "peekOnHover",
                     "desktopWidgets", "brightnessHUD", "focusIsland", "callIsland", "copyStack", "notificationIsland", "shakeToOpen", "buildIsland",
                     "hideInFullScreen", "screenshotShelf", "driveEject", "shortcutsOnly", "showMenuBarIcon"] { k[key] = .bool }
-        for key in ["focusBlocking", "spaceIsland", "cameraGuard"] { k[key] = .bool }
+        for key in ["dictationShortcut", "focusBlocking", "spaceIsland", "cameraGuard"] { k[key] = .bool }
         k["hoverDelay"] = .number(0.05...0.6)
         k["panelScale"] = .number(0.8...1.3)
         k["pillWidth"] = .number(120...260)

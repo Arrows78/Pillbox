@@ -48,6 +48,7 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Record an area of the screen", symbol: "rectangle.dashed.badge.record") { ScreenRecorder.shared.recordArea() },
             PaletteCommand(title: "Read QR code on screen", symbol: "qrcode.viewfinder") { QRReader.scanScreen() },
             PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
+            PaletteCommand(title: DictationService.shared.active ? "Stop dictation" : "Dictate", symbol: "mic.fill") { DictationService.shared.toggle() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
         if AppVolumeService.supported { list.append(PaletteCommand(title: "App volume", symbol: "slider.horizontal.3") { AppVolumeService.shared.show() }) }
@@ -215,7 +216,7 @@ final class PaletteController {
 /// The app's global shortcuts. They are registered at launch and listed in Settings from this one table,
 /// so the Shortcuts page can never show a key that does nothing.
 enum GlobalShortcut: UInt32, CaseIterable {
-    case palette = 1, toggleNotch, pasteNext
+    case palette = 1, toggleNotch, pasteNext, dictate
 
     /// English text of the action (a localisation key).
     var title: String {
@@ -223,15 +224,20 @@ enum GlobalShortcut: UInt32, CaseIterable {
         case .palette: "Command palette"
         case .toggleNotch: "Toggle Notch"
         case .pasteNext: "Paste next from the copy stack"
+        case .dictate: "Dictate"
         }
     }
 
+    /// UserDefaults switch of an opt-in shortcut; nil means always on.
+    var setting: String? { self == .dictate ? "dictationShortcut" : nil }
+    var isEnabled: Bool { setting.map { UserDefaults.standard.bool(forKey: $0) } ?? true }
+
     var key: String {
-        switch self { case .palette: "K"; case .toggleNotch: "N"; case .pasteNext: "V" }
+        switch self { case .palette: "K"; case .toggleNotch: "N"; case .pasteNext: "V"; case .dictate: "D" }
     }
 
     var keyCode: UInt32 {
-        switch self { case .palette: UInt32(kVK_ANSI_K); case .toggleNotch: UInt32(kVK_ANSI_N); case .pasteNext: UInt32(kVK_ANSI_V) }
+        switch self { case .palette: UInt32(kVK_ANSI_K); case .toggleNotch: UInt32(kVK_ANSI_N); case .pasteNext: UInt32(kVK_ANSI_V); case .dictate: UInt32(kVK_ANSI_D) }
     }
 
     static let modifiers = UInt32(controlKey | optionKey)
@@ -242,6 +248,7 @@ enum GlobalShortcut: UInt32, CaseIterable {
         case .palette: PaletteController.shared.toggle()
         case .toggleNotch: NotchModel.shared.toggle()
         case .pasteNext: CopyStackStore.shared.pasteNext()
+        case .dictate: DictationService.shared.toggle()
         }
     }
 }
@@ -250,6 +257,7 @@ enum GlobalShortcut: UInt32, CaseIterable {
 @MainActor
 final class HotKey {
     private var ref: EventHotKeyRef?
+    private let id: UInt32
     private static var handlers: [UInt32: () -> Void] = [:]
     private static var installed = false
 
@@ -264,7 +272,13 @@ final class HotKey {
                 return noErr
             }, 1, &spec, nil, nil)
         }
+        self.id = id
         Self.handlers[id] = handler
         RegisterEventHotKey(keyCode, modifiers, EventHotKeyID(signature: OSType(0x50424F58), id: id), GetApplicationEventTarget(), 0, &ref)
+    }
+
+    func unregister() {
+        if let ref { UnregisterEventHotKey(ref) }
+        ref = nil; Self.handlers[id] = nil
     }
 }

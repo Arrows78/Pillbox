@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness(); recordingQRAnnotate()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness(); recordingQRAnnotate(); dictation()
         appVolume()
         battery()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
@@ -788,6 +788,19 @@ enum SelfTest {
         check("annotate: arrows have a head, a zero-length arrow draws nothing",
               Annotator.paths(marks[3], lineWidth: 3).fill != nil && Annotator.paths(Mark(kind: .arrow, color: red, points: [.zero, .zero]), lineWidth: 3).stroke == nil)
     }
+
+    private static func dictation() {
+        var t = DictationText(); t.update("hello", finished: false); t.update("hello world", finished: true); t.update("again", finished: false)
+        check("dictation: text survives the recogniser's restarts", t.full == "hello world again", t.full)
+        t.update("", finished: true)
+        check("dictation: a request ending in an error keeps what it heard", t.full == "hello world again" && t.partial.isEmpty, t.full)
+        check("dictation: nothing heard is empty", DictationText().full.isEmpty)
+        check("dictation: level meter stays in range", SpeechListener.level(UnsafeBufferPointer(start: nil, count: 0)) == 0
+              && [Float](repeating: 1, count: 64).withUnsafeBufferPointer { SpeechListener.level($0) } == 1
+              && [Float](repeating: 0.001, count: 64).withUnsafeBufferPointer { SpeechListener.level($0) } < 0.5)
+        check("dictation: its shortcut is opt-in", GlobalShortcut.dictate.setting == "dictationShortcut" && GlobalShortcut.palette.isEnabled && GlobalShortcut.dictate.keycaps == "⌃⌥D")
+
+    }
 }
 
 extension SelfTest {
@@ -887,6 +900,14 @@ enum ViewRenderer {
                   Activity(symbol: "hand.raised.fill", title: L("Blocked while focusing"), subtitle: "Discord", tint: .orange, image: BlockedAppsStore.bitmap(NSWorkspace.shared.icon(forFile: "/System/Applications/Messages.app")), actionTitle: L("Allow 5 min")),
                   Activity(symbol: "video.fill", title: L("Camera turned on"), subtitle: L("Probably %@", "Microsoft Teams (work or school)"), tint: .green)]
         for (i, a) in aw.enumerated() { save("awareness-\(i)", island(ActivityView(activity: a), CGSize(width: 330, height: 66)), size: CGSize(width: 330, height: 66)) }
+        let dic = DictationService.shared
+        dic.text = DictationText(); dic.forceActive(true)
+        let dsize = model.size(hasWings: false)
+        save("dictation-empty", island(DictationView(), dsize), size: dsize)
+        dic.text.update("Remind me to send the quarterly report to the whole team before Friday noon", finished: false)
+        dic.meter.level = 0.7
+        save("dictation-text", island(DictationView(), dsize), size: dsize)
+        dic.forceActive(false)
         return ok ? 0 : 1
     }
 }

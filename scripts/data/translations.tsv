@@ -571,3 +571,14 @@ AirPods and headphones connecting, with their battery. Asks for Bluetooth access
 Time	Hora	Uhrzeit
 Level	Nivel	Ladestand
 Battery history	Historial de la batería	Akkuverlauf
+Dictate	Dictar	Diktieren
+Stop dictation	Detener el dictado	Diktat beenden
+Microphone access needed	Se necesita acceso al micrófono	Mikrofonzugriff erforderlich
+Dictation also needs speech recognition	El dictado también necesita el reconocimiento de voz	Das Diktat braucht auch die Spracherkennung
+Speech recognition is not available	El reconocimiento de voz no está disponible	Die Spracherkennung ist nicht verfügbar
+Nothing was heard	No se ha oído nada	Es wurde nichts gehört
+Dictation copied	Dictado copiado	Diktat kopiert
+Allow Accessibility to paste it for you	Permite Accesibilidad para pegarlo automáticamente	Erlaube Bedienungshilfen, damit es eingefügt wird
+Listening…	Escuchando…	Hört zu…
+Done	Listo	Fertig
+Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone.	Habla y vuelve a pulsarlo o pulsa Escape: el texto se pega y se copia. Necesita el micrófono.	Sprich, dann drücke es erneut oder Escape: Der Text wird eingefügt und kopiert. Braucht das Mikrofon.

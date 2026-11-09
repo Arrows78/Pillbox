@@ -24,6 +24,7 @@ struct NotchRootView: View {
     @ObservedObject var downloads = DownloadProgress.shared
     @ObservedObject var build = BuildWatcher.shared
     @ObservedObject var recorder = ScreenRecorder.shared
+    @ObservedObject var dictation = DictationService.shared
 
     private var wings: Bool { recorder.recording || timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil }
     private var size: CGSize { model.size(hasWings: wings) }
@@ -39,6 +40,7 @@ struct NotchRootView: View {
                     ExpandedView().frame(width: base.width, height: base.height).scaleEffect(NotchModel.scale, anchor: .top)
                         .frame(width: size.width, height: size.height, alignment: .top)
                 }
+                else if dictation.active { DictationView() }
                 else if let a = model.activity { ActivityView(activity: a) }
                 else if wings { CollapsedWings() }
             }
@@ -46,7 +48,7 @@ struct NotchRootView: View {
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28))
         }
         .frame(width: size.width, height: size.height)
-        .overlay { if !model.expanded && model.activity == nil && model.approval == nil { PillGestures() } }
+        .overlay { if !model.expanded && model.activity == nil && model.approval == nil && !dictation.active { PillGestures() } }
         .overlay(alignment: .bottom) {
             if model.dropTargeted && model.expanded {
                 RoundedRectangle(cornerRadius: 22).strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [6]))

@@ -5,7 +5,7 @@ import Carbon.HIToolbox
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchWindowController!
     private var statusItem: NSStatusItem!
-    private var hotKeys: [HotKey] = []
+    private var hotKeys: [GlobalShortcut: HotKey] = [:]
     private var hoverTask: Task<Void, Never>?
     private var leaveTask: Task<Void, Never>?
     private var monitors: [Any] = []
@@ -49,6 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 HyperKey.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
                 AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
                 SettingsWindow.applyTheme(); self?.applyStatusItemVisibility()
+                self?.applyHotKeys()
             }
         }
         DevAPI.shared.apply()
@@ -86,9 +87,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         setupHover()
         setupDragToShelf()
-        hotKeys = GlobalShortcut.allCases.map { s in
-            HotKey(keyCode: s.keyCode, modifiers: GlobalShortcut.modifiers, id: s.rawValue) { s.run() }
-        }
+        applyHotKeys()
         // ⌘1–9 switches tabs while the notch is open.
         monitors.append(NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
             guard NotchModel.shared.expanded, e.modifierFlags.contains(.command),
@@ -111,6 +110,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     /// Caps Lock must never stay remapped after Pillbox quits.
     func applicationWillTerminate(_ notification: Notification) { HyperKey.shared.disable(); AudioSpectrum.shared.stop(); AppVolumeService.shared.stopAll() }
+
+    /// Registers the enabled global shortcuts and releases the opt-in ones that were turned off.
+    private func applyHotKeys() {
+        for s in GlobalShortcut.allCases {
+            if s.isEnabled, hotKeys[s] == nil {
+                hotKeys[s] = HotKey(keyCode: s.keyCode, modifiers: GlobalShortcut.modifiers, id: s.rawValue) { s.run() }
+            } else if !s.isEnabled, let h = hotKeys.removeValue(forKey: s) { h.unregister() }
+        }
+    }
 
     /// Launching Pillbox again opens Settings, which is the way back in when the menu bar icon is hidden.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

@@ -70,55 +70,25 @@ enum PrompterText {
     }
 }
 
-/// Listens to the microphone and moves the teleprompter to where you are reading. Recognition runs on the Mac when it can.
+/// Listens to the microphone and moves the teleprompter to where you are reading.
 @MainActor
 final class VoiceFollower {
-    private let engine = AVAudioEngine()
-    private var request: SFSpeechAudioBufferRecognitionRequest?
-    private var task: SFSpeechRecognitionTask?
+    private let listener = SpeechListener()
     private var words: [String] = []
     private var starts: [Int] = []
     private var total = 1
     private var position = 0
     private var onMove: ((Double) -> Void)?
 
-    static func requestAccess(_ done: @escaping @MainActor (Bool) -> Void) {
-        SFSpeechRecognizer.requestAuthorization { speech in
-            AVCaptureDevice.requestAccess(for: .audio) { mic in
-                DispatchQueue.main.async { MainActor.assumeIsolated { done(speech == .authorized && mic) } }
-            }
-        }
-    }
+    static func requestAccess(_ done: @escaping @MainActor (Bool) -> Void) { SpeechListener.requestAccess(done) }
 
     /// `onMove` receives the read fraction of the script, 0...1.
     func start(script: String, onMove: @escaping (Double) -> Void) -> Bool {
-        stop()
-        guard let rec = SFSpeechRecognizer(locale: Locale.current) ?? SFSpeechRecognizer(), rec.isAvailable else { return false }
         let parsed = PrompterText.words(script)
         words = parsed.map(\.word); starts = parsed.map(\.start); total = max(script.count, 1); position = 0
         self.onMove = onMove
-        let req = SFSpeechAudioBufferRecognitionRequest()
-        req.shouldReportPartialResults = true
-        if rec.supportsOnDeviceRecognition { req.requiresOnDeviceRecognition = true }
-        request = req
-        let input = engine.inputNode
-        input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 2048, format: input.outputFormat(forBus: 0)) { buf, _ in req.append(buf) }
-        engine.prepare()
-        do { try engine.start() } catch { request = nil; return false }
-        task = rec.recognitionTask(with: req) { [weak self] result, error in
-            let heard = result?.bestTranscription.segments.map(\.substring) ?? []
-            let finished = error != nil || result?.isFinal == true
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated {
-                    guard let self, self.request === req else { return }
-                    if !heard.isEmpty { self.consume(heard) }
-                    // The recogniser ends a request after about a minute: start a new one right away.
-                    if finished { self.restart(script: self.words.joined(separator: " ")) }
-                }
-            }
-        }
-        return true
+        // Each new recognition request starts from the words heard so far, so `position` carries over.
+        return listener.start { [weak self] heard, _, _ in if !heard.isEmpty { self?.consume(heard) } }
     }
 
     private func consume(_ heard: [String]) {
@@ -129,19 +99,7 @@ final class VoiceFollower {
         onMove?(starts.isEmpty ? 0 : Double(starts[i]) / Double(total))
     }
 
-    private func restart(script: String) {
-        guard let onMove else { return }
-        let keep = position
-        _ = start(script: script, onMove: onMove)
-        position = keep
-    }
-
-    func stop() {
-        task?.cancel(); task = nil
-        request?.endAudio(); request = nil
-        if engine.isRunning { engine.stop() }
-        engine.inputNode.removeTap(onBus: 0)
-    }
+    func stop() { listener.stop() }
 }
 
 @MainActor

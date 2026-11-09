@@ -573,3 +573,14 @@
 "Time" = "Uhrzeit";
 "Level" = "Ladestand";
 "Battery history" = "Akkuverlauf";
+"Dictate" = "Diktieren";
+"Stop dictation" = "Diktat beenden";
+"Microphone access needed" = "Mikrofonzugriff erforderlich";
+"Dictation also needs speech recognition" = "Das Diktat braucht auch die Spracherkennung";
+"Speech recognition is not available" = "Die Spracherkennung ist nicht verfügbar";
+"Nothing was heard" = "Es wurde nichts gehört";
+"Dictation copied" = "Diktat kopiert";
+"Allow Accessibility to paste it for you" = "Erlaube Bedienungshilfen, damit es eingefügt wird";
+"Listening…" = "Hört zu…";
+"Done" = "Fertig";
+"Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone." = "Sprich, dann drücke es erneut oder Escape: Der Text wird eingefügt und kopiert. Braucht das Mikrofon.";

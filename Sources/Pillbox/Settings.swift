@@ -52,6 +52,7 @@ struct SettingsView: View {
     @AppStorage("devAPIEnabled") private var devAPI = false
     @AppStorage("appearance") private var appearance = "system"
     @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
+    @AppStorage("dictationShortcut") private var dictationShortcut = false
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     @State private var pane: SettingsPane
@@ -348,7 +349,16 @@ struct SettingsView: View {
         SettingsPage(pane: .shortcuts) {
             SettingsCard(title: "Anywhere") {
                 ForEach(GlobalShortcut.allCases, id: \.self) { s in
-                    SettingsRow(title: LocalizedStringKey(s.title), subtitle: s == .pasteNext && !copyStack ? "Turn on Copy stack in Island first." : nil) { Keycaps(s.keycaps) }
+                    if s == .dictate {
+                        SettingsRow(title: LocalizedStringKey(s.title), subtitle: "Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone.") {
+                            HStack(spacing: 10) {
+                                Keycaps(s.keycaps).opacity(dictationShortcut ? 1 : 0.4)
+                                Toggle("", isOn: $dictationShortcut).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(SettingsStyle.accent)
+                            }
+                        }
+                    } else {
+                        SettingsRow(title: LocalizedStringKey(s.title), subtitle: s == .pasteNext && !copyStack ? "Turn on Copy stack in Island first." : nil) { Keycaps(s.keycaps) }
+                    }
                 }
                 if doubleTapOpen { SettingsRow(title: "Open the notch", subtitle: "Press Control twice quickly.") { Keycaps("⌃⌃") } }
             }

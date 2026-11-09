@@ -44,9 +44,9 @@
 	<key>NSLocationUsageDescription</key>
 	<string>Pillbox uses your location for the local weather on the Home tab.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Pillbox listens only while the teleprompter follows your voice.</string>
+	<string>Pillbox listens only while the teleprompter follows your voice or while you dictate.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Pillbox turns your speech into text on the Mac so the teleprompter can follow your reading.</string>
+	<string>Pillbox turns your speech into text on the Mac so the teleprompter can follow your reading and so you can dictate into any app.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Pillbox shows an island when AirPods or headphones connect, with their battery.</string>
 	<key>NSCameraUsageDescription</key>

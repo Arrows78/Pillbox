@@ -117,7 +117,7 @@ final class NotchModel: ObservableObject {
     func size(hasWings: Bool) -> CGSize {
         if approval != nil { return CGSize(width: 520, height: geometry.height + 92) }
         if expanded { let b = Self.baseExpanded(tab); return CGSize(width: b.width * Self.scale, height: b.height * Self.scale) }
-        if activity != nil { return CGSize(width: max(geometry.width + 150, 330), height: geometry.height + 34) }
+        if activity != nil || DictationService.shared.active { return CGSize(width: max(geometry.width + 150, 330), height: geometry.height + 34) }
         let extra = hasWings ? Self.wing * 2 : 0
         return CGSize(width: geometry.width + extra, height: geometry.height)
     }
