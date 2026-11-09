@@ -33,6 +33,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         BuildWatcher.shared.start()
         FocusMonitor.shared.start()
         CallMonitor.shared.start()
+        FocusGuard.shared.start()
+        SpaceWatcher.shared.start()
         HyperKey.shared.apply()
         MenuBarHider.shared.apply()
         MenuBarDetach.shared.apply()

@@ -48,14 +48,19 @@ final class PrivacyService: ObservableObject {
         }
     }
 
+    private var cameraWasLive: Bool?   // nil until the first poll, so a camera already on at launch is not announced
+
     private func poll() {
-        guard UserDefaults.standard.object(forKey: "privacyIndicator") as? Bool ?? true else {
+        let indicator = UserDefaults.standard.object(forKey: "privacyIndicator") as? Bool ?? true, camGuard = UserDefaults.standard.bool(forKey: "cameraGuard")
+        let cam = indicator || camGuard ? Self.cameraRunning() : false
+        if cam && cameraWasLive == false && camGuard { CameraGuard.cameraStarted() }
+        cameraWasLive = cam
+        guard indicator else {
             micLive = false; cameraLive = false; return
         }
         let mic = defaultDevice(input: true).flatMap { readUInt32($0, audioAddress(kAudioDevicePropertyDeviceIsRunningSomewhere)) } == 1
-        let cam = Self.cameraRunning()
         if mic != micLive { micLive = mic; if mic { announce("mic.fill", "Microphone in use", .orange) } }
-        if cam != cameraLive { cameraLive = cam; if cam { announce("video.fill", "Camera in use", .green) } }
+        if cam != cameraLive { cameraLive = cam; if cam && !camGuard { announce("video.fill", "Camera in use", .green) } }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
     }
 

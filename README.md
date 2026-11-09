@@ -49,6 +49,7 @@
 
 - **Focus, break, countdown and stopwatch**, all wall-clock based so they never drift.
 - **Chaining** focus into break, named timers, repeat, daily streak and a 7-day chart.
+- **Block distracting apps** (opt-in, Settings › Alerts): while a Focus timer runs, the apps you pick are hidden as soon as they launch or come to the front, with an island that offers **Allow 5 min**. Breaks, countdowns and the stopwatch never block.
 
 ### 📋 Clipboard
 
@@ -66,6 +67,7 @@
 - **Volume and brightness style**: bar in the island, a slim **edge bar** on the right of the screen, or a circle. **Brightness island** for the built-in display (private DisplayServices API: silently absent where unavailable).
 - **Live audio spectrum** (opt-in): the pill's equalizer follows real system audio through a Core Audio process tap (macOS 14.4+, asks for audio capture).
 - **Focus mode island** and **notification mirror** tab: both read system files and need **Full Disk Access**. Everything stays on the Mac. An opt-in setting also shows each new notification as an island.
+- **Desktop name island** (opt-in): switching Spaces briefly shows *Desktop 3*, or the app's name in a full-screen space (private CGS API: silently absent where unavailable).
 - **Call island**: while Zoom, Teams, FaceTime, WhatsApp, Slack, Discord or Skype is open and the microphone is live, the pill shows the call and its duration.
 - **Timer mascots**: pick an emoji companion for the timer (the plant grows as the session goes on).
 - **Idle animation**: choose your own Lottie JSON for the pill (Settings › Island).
@@ -115,6 +117,7 @@
 - **Builds**: a stopwatch on the pill while `xcodebuild` or `swift build` runs, and its duration when it ends (no error count).
 - **Break reminder** (opt-in): after 20, 30, 45 or 60 minutes of activity, one minute without input counts as a break.
 - **Privacy indicator**: dots on the pill while any app uses the microphone or the camera.
+- **Camera island** (opt-in): an island the moment an app turns the camera on. macOS does not say which app it is, so the app in front is named as the likely one. Pillbox's own mirror never triggers it.
 - **Volume** island with a level bar, **Caps Lock** island.
 - **Keystrokes** (off by default): shows the shortcuts you press, or everything you type if you turn *Shortcuts only* off. Never shown while macOS secure input is on (password fields), never stored.
 - **Mic mute**: one switch mutes the input device itself, so every call app goes silent.

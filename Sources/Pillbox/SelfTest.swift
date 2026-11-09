@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -694,6 +694,33 @@ enum SelfTest {
         check("calc history: capped", h.entries.count == CalcHistory.cap)
         check("calc history: gets the result back", CalcHistory.result(of: "2+2 = 4") == "4")
     }
+
+    private static func awareness() {
+        let now = Date(), apps: Set<String> = ["com.hnc.Discord"]
+        check("focus guard: blocks a listed app only while a Focus timer runs",
+              FocusGuard.shouldBlock(bundleID: "com.hnc.Discord", blocked: apps, mode: .focus, running: true, allowedUntil: [:], now: now)
+              && !FocusGuard.shouldBlock(bundleID: "com.hnc.Discord", blocked: apps, mode: .focus, running: false, allowedUntil: [:], now: now)
+              && !FocusGuard.shouldBlock(bundleID: "com.hnc.Discord", blocked: apps, mode: .rest, running: true, allowedUntil: [:], now: now)
+              && !FocusGuard.shouldBlock(bundleID: "com.hnc.Discord", blocked: apps, mode: .stopwatch, running: true, allowedUntil: [:], now: now)
+              && !FocusGuard.shouldBlock(bundleID: "com.apple.Safari", blocked: apps, mode: .focus, running: true, allowedUntil: [:], now: now)
+              && !FocusGuard.shouldBlock(bundleID: nil, blocked: apps, mode: .focus, running: true, allowedUntil: [:], now: now))
+        check("focus guard: Allow 5 min lets it through until the allowance ends",
+              !FocusGuard.shouldBlock(bundleID: "com.hnc.Discord", blocked: apps, mode: .focus, running: true, allowedUntil: ["com.hnc.Discord": now.addingTimeInterval(60)], now: now)
+              && FocusGuard.shouldBlock(bundleID: "com.hnc.Discord", blocked: apps, mode: .focus, running: true, allowedUntil: ["com.hnc.Discord": now.addingTimeInterval(-1)], now: now))
+        let fs: [String: Any] = ["ManagedSpaceID": 40, "type": 4, "TileLayoutManager": ["TileSpaces": [["appName": "Safari"]]]]
+        let displays: [[String: Any]] = [["Spaces": [["ManagedSpaceID": 1, "type": 0], fs, ["ManagedSpaceID": 7, "type": 0], ["ManagedSpaceID": 41, "type": 4]]],
+                                         ["Spaces": [["ManagedSpaceID": 90, "type": 0], ["ManagedSpaceID": 91, "type": 0]]]]
+        check("spaces: desktops are numbered per display, skipping full-screen spaces",
+              SpaceInfo.kind(displays: displays, active: 7) == .desktop(2) && SpaceInfo.kind(displays: displays, active: 1) == .desktop(1) && SpaceInfo.kind(displays: displays, active: 91) == .desktop(2))
+        check("spaces: a full-screen space is named after its app, unknown ids give nothing",
+              SpaceInfo.kind(displays: displays, active: 40) == .fullScreen("Safari") && SpaceInfo.kind(displays: displays, active: 41) == .fullScreen(nil) && SpaceInfo.kind(displays: displays, active: 5) == nil && SpaceInfo.kind(displays: [], active: 1) == nil)
+        check("spaces: labels", SpaceInfo.label(.desktop(3), frontApp: "X") == L("Desktop %d", 3) && SpaceInfo.label(.fullScreen(nil), frontApp: "Keynote") == "Keynote"
+              && SpaceInfo.label(.fullScreen("Safari"), frontApp: "Keynote") == "Safari" && SpaceInfo.label(.fullScreen(nil), frontApp: nil) == L("Full screen"))
+        check("camera guard: never for Pillbox's own mirror", CameraGuard.island(mirrorOpen: true, frontName: "Zoom", frontBundle: "us.zoom.xos", own: "dev.labs.pillbox") == nil)
+        check("camera guard: names the front app, but not Pillbox itself",
+              CameraGuard.island(mirrorOpen: false, frontName: "Zoom", frontBundle: "us.zoom.xos", own: "dev.labs.pillbox") == .some("Zoom")
+              && CameraGuard.island(mirrorOpen: false, frontName: "Pillbox", frontBundle: "dev.labs.pillbox", own: "dev.labs.pillbox") == .some(nil))
+    }
 }
 
 /// `--render <dir>` draws the island states to PNG with ImageRenderer: no screen, no permission.
@@ -739,6 +766,10 @@ enum ViewRenderer {
         save("widgets", DesktopWidgetView(), size: CGSize(width: 330, height: 190))
         let appr = Approval(tool: "Bash", detail: "rm -rf ./build && swift build", respond: { _ in })
         save("approval", island(ApprovalView(approval: appr), CGSize(width: 520, height: 124)), size: CGSize(width: 520, height: 124))
+        let aw = [Activity(symbol: SpaceWatcher.symbol, title: L("Desktop %d", 3), tint: .cyan),
+                  Activity(symbol: "hand.raised.fill", title: L("Blocked while focusing"), subtitle: "Discord", tint: .orange, image: BlockedAppsStore.bitmap(NSWorkspace.shared.icon(forFile: "/System/Applications/Messages.app")), actionTitle: L("Allow 5 min")),
+                  Activity(symbol: "video.fill", title: L("Camera turned on"), subtitle: L("Probably %@", "Microsoft Teams (work or school)"), tint: .green)]
+        for (i, a) in aw.enumerated() { save("awareness-\(i)", island(ActivityView(activity: a), CGSize(width: 330, height: 66)), size: CGSize(width: 330, height: 66)) }
         return ok ? 0 : 1
     }
 }

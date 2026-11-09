@@ -248,6 +248,7 @@ struct SettingsView: View {
                     }.labelsHidden().frame(width: 170)
                 }
             }
+            AwarenessSettings()
             SettingsCard(title: "Presentations") {
                 SettingsToggle("Show keystrokes", "For demos and screen sharing. Needs Input Monitoring. Nothing is stored.", isOn: $keystrokeHUD)
                 if keystrokeHUD { SettingsToggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }

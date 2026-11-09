@@ -50,6 +50,7 @@ struct Activity: Identifiable {
     var title: String
     var subtitle: String? = nil
     var tint: Color = .white
+    var image: NSImage? = nil   // an app icon drawn instead of the symbol
     var progress: Double? = nil
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
