@@ -599,6 +599,17 @@
 "Reset the counts" = "Zähler zurücksetzen";
 "Keystroke display and activity counter." = "Tastenanzeige und Aktivitätszähler.";
 "Speak, then press it again or Escape: the text is pasted and copied. Needs the microphone." = "Sprich, dann drücke es erneut oder Escape: Der Text wird eingefügt und kopiert. Braucht das Mikrofon.";
+"All" = "Alle";
+"Links" = "Links";
+"Images" = "Bilder";
+"Colors" = "Farben";
+"Clear search" = "Suche löschen";
+"Clear history (pinned items stay)" = "Verlauf leeren (Angeheftetes bleibt)";
+"Clipboard history is empty" = "Der Zwischenablageverlauf ist leer";
+"Copy text or an image and it shows up here" = "Kopiere Text oder ein Bild, es erscheint hier";
+"No matches" = "Keine Treffer";
+"Show all" = "Alle anzeigen";
+"No snippets yet" = "Noch keine Textbausteine";
 "They stay here, ready to drag out or send" = "Sie bleiben hier, bereit zum Herausziehen oder Senden";
 "Add files…" = "Dateien hinzufügen…";
 "Clear the shelf" = "Ablage leeren";

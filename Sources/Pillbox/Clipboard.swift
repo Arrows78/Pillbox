@@ -14,6 +14,39 @@ struct ClipItem: Identifiable, Codable, Equatable {
 
 enum SmartKind { case url(URL), color(NSColor, String), email(String), plain }
 
+/// Type filter of the clipboard history.
+enum ClipFilter: String, CaseIterable, Identifiable {
+    case all, text, links, images, colors
+    var id: String { rawValue }
+    var symbol: String {
+        switch self {
+        case .all: "square.grid.2x2"
+        case .text: "text.alignleft"
+        case .links: "link"
+        case .images: "photo"
+        case .colors: "paintpalette"
+        }
+    }
+    var label: String {
+        switch self {
+        case .all: "All"
+        case .text: "Text"
+        case .links: "Links"
+        case .images: "Images"
+        case .colors: "Colors"
+        }
+    }
+
+    func matches(_ item: ClipItem) -> Bool {
+        guard let t = item.text else { return self == .all || self == .images }
+        switch (self, ClipboardService.kind(of: t)) {
+        case (.all, _), (.links, .url), (.colors, .color): return true
+        case (.text, .plain), (.text, .email): return true
+        default: return false
+        }
+    }
+}
+
 @MainActor
 final class ClipboardService: ObservableObject {
     static let shared = ClipboardService()
@@ -21,6 +54,7 @@ final class ClipboardService: ObservableObject {
 
     @Published var items: [ClipItem] = Store.load("clipboard.json", as: [ClipItem].self) ?? []
     @Published var query = ""
+    @Published var filter = ClipFilter.all
 
     private var lastChange = NSPasteboard.general.changeCount
     private var timer: Timer?
@@ -34,7 +68,7 @@ final class ClipboardService: ObservableObject {
     }
 
     var filtered: [ClipItem] {
-        let sorted = items.sorted { ($0.pinned ? 1 : 0, $0.date) > ($1.pinned ? 1 : 0, $1.date) }
+        let sorted = items.sorted { ($0.pinned ? 1 : 0, $0.date) > ($1.pinned ? 1 : 0, $1.date) }.filter(filter.matches)
         guard !query.isEmpty else { return sorted }
         return sorted.filter { $0.searchable.localizedCaseInsensitiveContains(query) }
     }
@@ -127,7 +161,7 @@ final class ClipboardService: ObservableObject {
         for i in items where !i.pinned { remove(i) }
     }
 
-    static func kind(of text: String) -> SmartKind {
+    nonisolated static func kind(of text: String) -> SmartKind {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if let u = URL(string: t), let s = u.scheme, ["http", "https"].contains(s), u.host != nil { return .url(u) }
         if t.range(of: #"^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$"#, options: .regularExpression) != nil,

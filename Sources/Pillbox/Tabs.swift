@@ -441,19 +441,36 @@ struct ClipboardHistory: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("Search text and screenshots", text: $clip.query).textFieldStyle(.plain).focused($focused)
-                Button("Clear") { clip.clearUnpinned() }.controlSize(.small)
+        VStack(spacing: DS.gap) {
+            HStack(spacing: DS.gap) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(DS.secondary)
+                    TextField("Search text and screenshots", text: $clip.query).textFieldStyle(.plain).font(.system(size: 12)).focused($focused)
+                    if !clip.query.isEmpty {
+                        Button { clip.query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(DS.secondary) }.buttonStyle(.plain).accessibilityLabel("Clear search")
+                    }
+                }
+                .padding(.horizontal, 10).frame(height: 28)
+                .background(DS.card, in: Capsule()).overlay(Capsule().strokeBorder(DS.hairline, lineWidth: 0.5))
+                HStack(spacing: 2) {
+                    ForEach(ClipFilter.allCases) { f in
+                        FilterChip(symbol: f.symbol, label: L(f.label), selected: clip.filter == f, tint: .mint) { clip.filter = f }
+                    }
+                }
+                IconButton(symbol: "trash", label: L("Clear history (pinned items stay)")) { clip.clearUnpinned() }
                 ClipboardModePicker(mode: $mode)
             }
-            .padding(6).background(card, in: RoundedRectangle(cornerRadius: 8))
             .onChange(of: focused) { model.pinnedOpen = $0 }
-            ScrollView(.horizontal) {
-                LazyHStack(spacing: 8) {
-                    ForEach(clip.filtered) { item in ClipCard(item: item) }
-                }
+            let items = clip.filtered
+            if items.isEmpty {
+                if clip.items.isEmpty { EmptyState(symbol: "doc.on.clipboard", title: "Clipboard history is empty", message: "Copy text or an image and it shows up here") }
+                else { EmptyState(symbol: "magnifyingglass", title: "No matches", actionTitle: "Show all") { clip.query = ""; clip.filter = .all } }
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    LazyHStack(spacing: DS.gap) {
+                        ForEach(items) { item in ClipCard(item: item) }
+                    }.padding(.trailing, 24)
+                }.trailingFade()
             }
         }
     }
@@ -469,8 +486,7 @@ struct ClipboardTab: View {
 struct ClipboardModePicker: View {
     @Binding var mode: Int
     var body: some View {
-        Picker("", selection: $mode) { Text("History").tag(0); Text("Snippets").tag(1) }
-            .pickerStyle(.segmented).labelsHidden().controlSize(.small).frame(width: 170)
+        PillSegmented(options: [0, 1], selection: $mode, tint: .mint.opacity(0.45)) { $0 == 0 ? "History" : "Snippets" }.frame(width: 190)
     }
 }
 
@@ -481,31 +497,37 @@ struct SnippetsView: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            VStack(spacing: 6) {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(spacing: DS.gap) {
                 ClipboardModePicker(mode: $mode)
-                TextField("Name", text: $store.draftName).textFieldStyle(.roundedBorder).focused($focused)
-                TextField("Text to paste", text: $store.draftText, axis: .vertical).lineLimit(2, reservesSpace: true).textFieldStyle(.roundedBorder).focused($focused)
-                Button("Save snippet") { store.add() }.controlSize(.small)
+                TextField("Name", text: $store.draftName).pillField().focused($focused)
+                TextField("Text to paste", text: $store.draftText, axis: .vertical).lineLimit(2, reservesSpace: true).pillField().focused($focused)
+                Button("Save snippet") { store.add() }.buttonStyle(PillButtonStyle(tint: .mint.opacity(0.45)))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .frame(width: 220)
             .onChange(of: focused) { model.pinnedOpen = $0 }
-            ScrollView {
-                VStack(spacing: 4) {
-                    if store.snippets.isEmpty {
-                        Text("Save text you paste often, then paste it from the palette").font(.system(size: 11)).foregroundStyle(.tertiary)
-                    }
-                    ForEach(store.snippets) { sn in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text(sn.name).font(.system(size: 12, weight: .medium))
-                                Text(sn.text).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+            if store.snippets.isEmpty {
+                EmptyState(symbol: "text.quote", title: "No snippets yet", message: "Save text you paste often, then paste it from the palette")
+            } else {
+                ScrollView {
+                    VStack(spacing: 4) {
+                        ForEach(store.snippets) { sn in
+                            HStack {
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(sn.name).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                                    Text(sn.text).font(.system(size: 10)).foregroundStyle(DS.secondary).lineLimit(1)
+                                }
+                                Spacer()
+                                IconButton(symbol: "trash", label: L("Delete")) { store.remove(sn) }
                             }
-                            Spacer()
-                            Button { store.remove(sn) } label: { Image(systemName: "trash").foregroundStyle(.secondary) }.buttonStyle(.plain).accessibilityLabel("Delete")
+                            .padding(.leading, 10).padding(.trailing, 4).padding(.vertical, 4).rowCard()
+                            .onTapGesture { store.paste(sn) }
+                            .contextMenu {
+                                Button("Paste") { store.paste(sn) }
+                                Button("Delete") { store.remove(sn) }
+                            }
                         }
-                        .padding(.horizontal, 8).padding(.vertical, 5).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
-                        .contentShape(Rectangle()).onTapGesture { store.paste(sn) }
                     }
                 }
             }
@@ -516,44 +538,78 @@ struct SnippetsView: View {
 struct ClipCard: View {
     let item: ClipItem
     @ObservedObject var clip = ClipboardService.shared
+    @State private var hovering = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            content.frame(width: 130, height: 60, alignment: .topLeading).clipped()
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 6) {
+            content.frame(width: 156, alignment: .topLeading).frame(maxHeight: .infinity, alignment: .topLeading).clipped()
+            HStack(spacing: 5) {
+                Image(systemName: kindSymbol).foregroundStyle(DS.secondary)
                 if item.pinned { Image(systemName: "pin.fill").foregroundStyle(.orange) }
-                Text(item.date, style: .relative).foregroundStyle(.secondary)
-                Spacer()
-                if let t = item.text, case .url(let u) = ClipboardService.kind(of: t) {
-                    Button { NSWorkspace.shared.open(u) } label: { Image(systemName: "safari") }.buttonStyle(.plain).accessibilityLabel("Open link")
+                Text(item.date, style: .relative).foregroundStyle(DS.secondary).lineLimit(1)
+                Spacer(minLength: 0)
+                if hovering {
+                    if let u = link { cardButton("safari", L("Open link")) { NSWorkspace.shared.open(u) } }
+                    cardButton(item.pinned ? "pin.slash" : "pin", L(item.pinned ? "Unpin" : "Pin")) { clip.togglePin(item) }
+                    cardButton("trash", L("Delete")) { clip.remove(item) }
                 }
-                if let t = item.text, case .email(let e) = ClipboardService.kind(of: t), let u = URL(string: "mailto:\(e)") {
-                    Button { NSWorkspace.shared.open(u) } label: { Image(systemName: "envelope") }.buttonStyle(.plain).accessibilityLabel("Send email")
-                }
-            }.font(.system(size: 9))
+            }.font(.system(size: 9)).frame(height: 14)
         }
-        .padding(8).background(card, in: RoundedRectangle(cornerRadius: 10))
-        .contentShape(Rectangle())
-        .onTapGesture { clip.copy(item); NotchModel.shared.show(Activity(symbol: "doc.on.doc.fill", title: "Copied", duration: 1.2)) }
+        .padding(10).rowCard(radius: 10)
+        .onHover { hovering = $0 }
         .onTapGesture(count: 2) { clip.paste(item) }
+        .onTapGesture { clip.copy(item); NotchModel.shared.show(Activity(symbol: "doc.on.doc.fill", title: "Copied", duration: 1.2)) }
         .contextMenu {
-            Button(LocalizedStringKey(item.pinned ? "Unpin" : "Pin")) { clip.togglePin(item) }
+            Button("Copy") { clip.copy(item) }
             Button("Paste") { clip.paste(item) }
-            Button("Delete") { clip.remove(item) }
+            if let u = link { Button("Open link") { NSWorkspace.shared.open(u) } }
+            if let t = item.text, case .email(let e) = ClipboardService.kind(of: t), let u = URL(string: "mailto:\(e)") {
+                Button("Send email") { NSWorkspace.shared.open(u) }
+            }
+            Divider()
+            Button(LocalizedStringKey(item.pinned ? "Unpin" : "Pin")) { clip.togglePin(item) }
+            Button("Delete", role: .destructive) { clip.remove(item) }
         }
+    }
+
+    private var link: URL? {
+        if let t = item.text, case .url(let u) = ClipboardService.kind(of: t) { return u }
+        return nil
+    }
+
+    private var kindSymbol: String {
+        guard let t = item.text else { return ClipFilter.images.symbol }
+        switch ClipboardService.kind(of: t) {
+        case .url: return ClipFilter.links.symbol
+        case .color: return ClipFilter.colors.symbol
+        case .email: return "envelope"
+        case .plain: return ClipFilter.text.symbol
+        }
+    }
+
+    private func cardButton(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) { Image(systemName: symbol).frame(width: 14, height: 14) }.buttonStyle(.plain).foregroundStyle(.white.opacity(0.8))
+            .accessibilityLabel(Text(verbatim: label))
     }
 
     @ViewBuilder private var content: some View {
         if let img = clip.image(for: item) {
-            Image(nsImage: img).resizable().scaledToFill().clipShape(RoundedRectangle(cornerRadius: 6))
+            Image(nsImage: img).resizable().scaledToFill().frame(width: 156).frame(maxHeight: .infinity).clipShape(RoundedRectangle(cornerRadius: 6))
         } else if let t = item.text {
             switch ClipboardService.kind(of: t) {
             case .color(let c, let hex):
-                VStack(alignment: .leading) { RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: c)).frame(height: 36); Text(hex.uppercased()).font(.system(size: 10, design: .monospaced)) }
+                VStack(alignment: .leading, spacing: 4) {
+                    RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: c)).overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(DS.hairline, lineWidth: 0.5))
+                        .frame(maxHeight: 96)
+                    Text(hex.uppercased()).font(.system(size: 11, weight: .medium, design: .monospaced))
+                    let rgb = c.usingColorSpace(.sRGB) ?? c
+                    Text(verbatim: "rgb(\(Int(rgb.redComponent * 255)), \(Int(rgb.greenComponent * 255)), \(Int(rgb.blueComponent * 255)))")
+                        .font(.system(size: 10, design: .monospaced)).foregroundStyle(DS.secondary)
+                }
             default:
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(t).font(.system(size: 10)).lineLimit(4)
-                    if t.count > 140 { Text("\(t.count) chars · \(t.split(whereSeparator: \.isWhitespace).count) words").font(.system(size: 8)).foregroundStyle(.secondary) }
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(t.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 11)).lineLimit(9)
+                    if t.count > 140 { Text("\(t.count) chars · \(t.split(whereSeparator: \.isWhitespace).count) words").font(.system(size: 9)).foregroundStyle(DS.secondary) }
                 }
             }
         }

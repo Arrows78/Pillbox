@@ -195,6 +195,13 @@ enum SelfTest {
         var withOCR = ClipItem(imageFile: "x.png"); withOCR.ocr = "invoice total 42"
         clip.items.append(withOCR); clip.query = "invoice"
         check("clipboard: search finds text inside images", clip.filtered.count == 1)
+        clip.query = ""
+        clip.items = [ClipItem(text: "hello"), ClipItem(text: "https://apple.com"), ClipItem(text: "#FF8800"), ClipItem(text: "a@b.co"), ClipItem(imageFile: "x.png")]
+        let kinds = { (f: ClipFilter) in clip.items.filter(f.matches).count }
+        check("clipboard: type filters", kinds(.all) == 5 && kinds(.text) == 2 && kinds(.links) == 1 && kinds(.colors) == 1 && kinds(.images) == 1,
+              "\(ClipFilter.allCases.map(kinds))")
+        clip.filter = .links
+        check("clipboard: the filter applies to the list", clip.filtered.map(\.text) == ["https://apple.com"])
         check("shelf: summary counts items and selection", ShelfService.summary(count: 1, selected: 0) == L("1 item")
               && ShelfService.summary(count: 3, selected: 2) == L("%lld items", 3) + " · " + L("%lld selected", 2))
         check("timer: presets are sorted, none for the stopwatch", TimerService.Mode.allCases.allSatisfy { $0.presets == $0.presets.sorted() }
