@@ -17,8 +17,30 @@ enum SelfTest {
 
     static func run() -> Int32 {
         lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness()
+        appVolume()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
+    }
+
+    private static func appVolume() {
+        let apps = ["com.google.Chrome", "com.google.Chrome.canary", "com.apple.Safari", "com.spotify.client"]
+        check("app volume: helpers belong to their app", AppVolumeMath.owner(of: "com.google.Chrome.helper", among: apps) == "com.google.Chrome"
+              && AppVolumeMath.owner(of: "com.google.Chrome.canary.helper", among: apps) == "com.google.Chrome.canary"
+              && AppVolumeMath.owner(of: "com.spotify.client", among: apps) == "com.spotify.client")
+        check("app volume: WebKit audio goes to Safari, strangers to nobody", AppVolumeMath.owner(of: "com.apple.WebKit.GPU", among: apps) == "com.apple.Safari"
+              && AppVolumeMath.owner(of: "com.apple.WebKit.GPU", among: ["com.spotify.client"]) == nil && AppVolumeMath.owner(of: "com.google.Chromebook", among: apps) == nil)
+        check("app volume: a tap only below 100 % or muted", !AppVolumeMath.needsTap(gain: 1, muted: false) && AppVolumeMath.needsTap(gain: 0.5, muted: false) && AppVolumeMath.needsTap(gain: 1, muted: true))
+        check("app volume: channel mapping", AppVolumeMath.source(for: 1, inputs: 2) == 1 && AppVolumeMath.source(for: 1, inputs: 1) == 0 && AppVolumeMath.source(for: 3, inputs: 2) == nil)
+        let list = AudioBufferList.allocate(maximumBuffers: 3); defer { free(list.unsafeMutablePointer) }
+        let a = UnsafeMutablePointer<Float>.allocate(capacity: 8), b = UnsafeMutablePointer<Float>.allocate(capacity: 4), c = UnsafeMutablePointer<Float>.allocate(capacity: 4)
+        defer { a.deallocate(); b.deallocate(); c.deallocate() }
+        list[0] = AudioBuffer(mNumberChannels: 2, mDataByteSize: 32, mData: a)
+        list[1] = AudioBuffer(mNumberChannels: 1, mDataByteSize: 16, mData: b)
+        list[2] = AudioBuffer(mNumberChannels: 1, mDataByteSize: 16, mData: c)
+        let ch = AppVolumeMath.channel(list, from: 1, 1)
+        check("app volume: planar and interleaved buffers read alike", AppVolumeMath.channelCount(list, from: 0) == 4 && AppVolumeMath.channelCount(list, from: 1) == 2
+              && ch?.0 == c && ch?.1 == 0 && ch?.2 == 1 && ch?.3 == 4 && AppVolumeMath.channel(list, from: 0, 1).map { $0.0 == a && $0.1 == 1 && $0.2 == 2 && $0.3 == 4 } == true
+              && AppVolumeMath.channel(list, from: 1, 2) == nil)
     }
 
     private static func lyrics() {
@@ -754,6 +776,15 @@ enum ViewRenderer {
             let size = NotchModel.baseExpanded(tab)
             save("tab-\(tab.rawValue)", island(ExpandedView(), size), size: size)
         }
+        let mixer = AppVolumeService.shared
+        mixer.preview = true
+        mixer.apps = [AppAudio(id: "com.spotify.client", name: "Spotify", icon: nil, processes: [], playing: true),
+                      AppAudio(id: "com.google.Chrome", name: "Google Chrome with a long name", icon: nil, processes: [], playing: true),
+                      AppAudio(id: "com.apple.Safari", name: "Safari", icon: nil, processes: [], playing: true),
+                      AppAudio(id: "us.zoom.xos", name: "zoom.us", icon: nil, processes: [], playing: true)]
+        mixer.showing = true; model.tab = .music
+        save("tab-music-mixer", island(ExpandedView(), NotchModel.expandedSize), size: NotchModel.expandedSize)
+        mixer.showing = false; mixer.apps = []; mixer.preview = false
         model.expanded = false
         let acts = [Activity(symbol: "hammer.fill", title: "Build done", subtitle: "main passed in 42s", tint: .green),
                     Activity(symbol: "speaker.wave.2.fill", title: "Volume", progress: 0.6),

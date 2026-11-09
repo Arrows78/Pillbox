@@ -521,3 +521,9 @@ Desktop name island	Isla con el nombre del escritorio	Insel mit dem Schreibtisch
 Shows the desktop number, or the app in full screen, when you switch Spaces.	Muestra el número del escritorio, o la app a pantalla completa, al cambiar de espacio.	Zeigt beim Wechseln des Space die Schreibtischnummer oder die App im Vollbild.
 Camera island	Isla de la cámara	Kamera-Insel
 Shows when an app turns the camera on, with the app in front as the likely one.	Aparece cuando una app enciende la cámara, indicando la app en primer plano como la más probable.	Erscheint, wenn eine App die Kamera einschaltet, mit der App im Vordergrund als wahrscheinlichster.
+App volume	Volumen por app	Lautstärke pro App
+No app is playing sound	Ninguna app está reproduciendo sonido	Keine App spielt Ton ab
+Unmute	Activar sonido	Ton einschalten
+Could not change this app's volume	No se pudo cambiar el volumen de esta app	Die Lautstärke dieser App konnte nicht geändert werden
+Allow audio capture for Pillbox	Permite la captura de audio para Pillbox	Erlaube die Audioaufnahme für Pillbox
+Privacy & Security › Screen & System Audio Recording	Privacidad y seguridad › Grabación de pantalla y audio del sistema	Datenschutz & Sicherheit › Bildschirm- & Systemaudioaufnahme

@@ -523,3 +523,9 @@
 "Shows the desktop number, or the app in full screen, when you switch Spaces." = "Muestra el número del escritorio, o la app a pantalla completa, al cambiar de espacio.";
 "Camera island" = "Isla de la cámara";
 "Shows when an app turns the camera on, with the app in front as the likely one." = "Aparece cuando una app enciende la cámara, indicando la app en primer plano como la más probable.";
+"App volume" = "Volumen por app";
+"No app is playing sound" = "Ninguna app está reproduciendo sonido";
+"Unmute" = "Activar sonido";
+"Could not change this app's volume" = "No se pudo cambiar el volumen de esta app";
+"Allow audio capture for Pillbox" = "Permite la captura de audio para Pillbox";
+"Privacy & Security › Screen & System Audio Recording" = "Privacidad y seguridad › Grabación de pantalla y audio del sistema";

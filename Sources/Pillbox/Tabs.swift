@@ -161,13 +161,20 @@ struct HomeUpNext: View {
 
 struct MusicTab: View {
     @ObservedObject var music = MusicService.shared
+    @ObservedObject var mixer = AppVolumeService.shared
 
     var body: some View {
-        if !music.hasTrack {
+        if mixer.showing {
+            AppVolumeView()
+        } else if !music.hasTrack {
             VStack(spacing: 6) {
                 Image(systemName: "music.note.list").font(.system(size: 26)).foregroundStyle(.secondary)
                 Text("Nothing playing").foregroundStyle(.secondary)
                 Text("Start Spotify or Apple Music").font(.system(size: 11)).foregroundStyle(.tertiary)
+                if AppVolumeService.supported {
+                    Button { mixer.showing = true } label: { Label("App volume", systemImage: "slider.horizontal.3").font(.system(size: 11)) }
+                        .buttonStyle(.plain).foregroundStyle(.white.opacity(0.6)).padding(.top, 4)
+                }
             }
         } else {
             HStack(spacing: 14) {
@@ -203,10 +210,79 @@ struct MusicTab: View {
                         Button { music.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(music.shuffling ? Color.accentColor : .white.opacity(0.6)) }.accessibilityLabel("Shuffle").accessibilityAddTraits(music.shuffling ? .isSelected : [])
                         Button { music.toggleRepeat() } label: { Image(systemName: "repeat").foregroundStyle(music.repeating ? Color.accentColor : .white.opacity(0.6)) }.accessibilityLabel("Repeat").accessibilityAddTraits(music.repeating ? .isSelected : [])
                         if music.player == .music { Button { music.favorite() } label: { Image(systemName: "heart").foregroundStyle(.white.opacity(0.6)) }.accessibilityLabel("Favorite") }
+                        if AppVolumeService.supported { Button { mixer.showing = true } label: { Image(systemName: "slider.horizontal.3").foregroundStyle(.white.opacity(0.6)) }.accessibilityLabel("App volume").hoverTip(L("App volume")) }
                     }.buttonStyle(.plain).font(.system(size: 16))
                 }
             }
         }
+    }
+}
+
+/// Per-app volume: every app playing sound, with a mute button and a volume bar.
+struct AppVolumeView: View {
+    @ObservedObject var mixer = AppVolumeService.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Label("App volume", systemImage: "slider.horizontal.3").font(.system(size: 12, weight: .semibold))
+                Spacer()
+                Button { mixer.showing = false } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.white.opacity(0.5)) }
+                    .buttonStyle(.plain).accessibilityLabel("Close").hoverTip(L("Close"))
+            }
+            if mixer.apps.isEmpty {
+                Text("No app is playing sound").font(.system(size: 11)).foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                let rows = VStack(spacing: 4) { ForEach(mixer.apps) { AppVolumeRow(app: $0) } }
+                if mixer.apps.count > 4 { ScrollView { rows }.scrollIndicators(.never) } else { rows; Spacer(minLength: 0) }
+            }
+        }
+        .onAppear { mixer.watch(true) }
+        .onDisappear { mixer.watch(false) }
+    }
+}
+
+struct AppVolumeRow: View {
+    let app: AppAudio
+    @ObservedObject var mixer = AppVolumeService.shared
+
+    var body: some View {
+        let muted = mixer.isMuted(app.id), g = mixer.gain(app.id)
+        HStack(spacing: 8) {
+            Group {
+                if let i = app.icon { Image(nsImage: i).resizable() } else { Image(systemName: "app.fill").resizable() }
+            }.frame(width: 18, height: 18)
+            Text(verbatim: app.name).font(.system(size: 11, weight: .medium)).lineLimit(1).frame(width: 120, alignment: .leading)
+            Button { mixer.toggleMute(app.id) } label: {
+                Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").foregroundStyle(muted ? Color.red : .white.opacity(0.7))
+                    .frame(width: 18)
+            }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey(muted ? "Unmute" : "Mute")).hoverTip(L(muted ? "Unmute" : "Mute"))
+            VolumeBar(value: Double(muted ? 0 : g)) { mixer.setGain(Float($0), for: app.id) }
+                .opacity(muted ? 0.4 : 1).accessibilityLabel(Text(verbatim: app.name))
+            Text(verbatim: "\(Int((muted ? 0 : g) * 100)) %").font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                .frame(width: 40, alignment: .trailing)
+        }
+        .padding(.horizontal, 8).frame(height: 26).background(card, in: RoundedRectangle(cornerRadius: 7))
+    }
+}
+
+/// A drag bar that reports while dragging (ProgressBar seeks on release).
+struct VolumeBar: View {
+    let value: Double
+    let onChange: (Double) -> Void
+    var body: some View {
+        GeometryReader { g in
+            ZStack(alignment: .leading) {
+                Capsule().fill(.white.opacity(0.18))
+                Capsule().fill(.white).frame(width: g.size.width * min(max(value, 0), 1))
+            }
+            .frame(height: 5).frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { onChange(min(max($0.location.x / g.size.width, 0), 1)) })
+        }.frame(height: 18)
+        .accessibilityValue(Text(verbatim: "\(Int(value * 100)) %"))
+        .accessibilityAdjustableAction { dir in onChange(min(max(value + (dir == .increment ? 0.1 : -0.1), 0), 1)) }
     }
 }
 

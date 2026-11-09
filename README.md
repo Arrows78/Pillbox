@@ -65,6 +65,7 @@
 - **Double-press Control** (opt-in) opens the notch on any Mac.
 - **Snap zones** (opt-in): drag a window to the notch and four zones appear (left half, right half, full screen, centre); release over one to snap. A real file drag is told apart from a window drag through the drag pasteboard's change count.
 - **Volume and brightness style**: bar in the island, a slim **edge bar** on the right of the screen, or a circle. **Brightness island** for the built-in display (private DisplayServices API: silently absent where unavailable).
+- **App volume** (macOS 14.4+): the Music tab (slider button, or "App volume" in the palette) lists the apps playing sound, with a volume bar and a mute button each. Muting uses a Core Audio process tap; a lower volume taps the app and plays it back at that level through a private aggregate device. Nothing runs while every app is at 100 %, settings last until quit, and changing the output device rebuilds the taps. Asks for audio capture.
 - **Live audio spectrum** (opt-in): the pill's equalizer follows real system audio through a Core Audio process tap (macOS 14.4+, asks for audio capture).
 - **Focus mode island** and **notification mirror** tab: both read system files and need **Full Disk Access**. Everything stays on the Mac. An opt-in setting also shows each new notification as an island.
 - **Desktop name island** (opt-in): switching Spaces briefly shows *Desktop 3*, or the app's name in a full-screen space (private CGS API: silently absent where unavailable).
@@ -212,6 +213,7 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Screen Recording | Window watch, Ask about screen | Read the pixels of an area you pick. |
 | Full Disk Access | Notification mirror, Focus island | Read Notification Center and Do Not Disturb files. |
 | Accessibility | Hyper key, keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
+| Audio capture (System Audio Recording) | Live audio spectrum, App volume | Read app audio through a Core Audio process tap. Nothing is recorded. |
 | Downloads and Desktop folders | Download and screenshot alerts | Notice new files. |
 
 ## 🧱 Technology stack
@@ -336,7 +338,8 @@ Deleting `~/Library/Application Support/Pillbox` and the preferences resets the 
 Not done yet, or not verifiable without hardware or accounts:
 
 - **Phone and message islands**: answering calls and replying to messages from the island.
-- **Audio and displays**: per-app sound mixer, keyboard backlight, external display brightness, extra brightness.
+- **Song identification**: ShazamKit refuses a self-signed build (error 202, "Missing entitlements": it needs an App ID with the ShazamKit service).
+- **Audio and displays**: keyboard backlight, external display brightness, extra brightness.
 - **Widgets**: lock-screen and WidgetKit widgets (they need an Xcode project).
 - **Distribution**: automatic updates, notarised releases, and a native review of the Spanish and German texts.
 - **Smaller ones**: in-app translation (Apple's Translation framework), connecting AirPods from the island, browser video speed, importing other clipboard managers' history, knock to control, Cursor and Copilot usage.
