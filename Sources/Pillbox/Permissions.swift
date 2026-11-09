@@ -27,7 +27,7 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         switch self {
         case .accessibility: L("Keyboard lock, window snapping and paste from the clipboard.")
         case .inputMonitoring: L("Keystroke display.")
-        case .screenRecording: L("Window watch and Ask about screen.")
+        case .screenRecording: L("Window watch, Ask about screen, screen recording and QR codes.")
         case .fullDisk: L("Notification mirror and Focus island.")
         case .calendar: L("Next event on Home.")
         case .reminders: L("Reminders tab.")

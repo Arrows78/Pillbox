@@ -44,6 +44,9 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Clear the copy stack", symbol: "square.stack.3d.up.slash") { CopyStackStore.shared.clear() },
             PaletteCommand(title: "Ask about screen", symbol: "text.viewfinder") { AskAboutScreen.start() },
             PaletteCommand(title: WindowWatch.shared.watching ? "Stop watching the screen area" : "Watch a screen area", symbol: "eye") { WindowWatch.shared.watching ? WindowWatch.shared.stop() : WindowWatch.shared.choose() },
+            PaletteCommand(title: ScreenRecorder.shared.recording ? "Stop screen recording" : "Record the screen", symbol: "record.circle") { ScreenRecorder.shared.toggle() },
+            PaletteCommand(title: "Record an area of the screen", symbol: "rectangle.dashed.badge.record") { ScreenRecorder.shared.recordArea() },
+            PaletteCommand(title: "Read QR code on screen", symbol: "qrcode.viewfinder") { QRReader.scanScreen() },
             PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]

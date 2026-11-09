@@ -95,6 +95,7 @@ struct PillGestures: View {
             .onTapGesture(count: 3) { PillAction.configured("tripleClickAction").run() }
             .onTapGesture(count: 2) { PillAction.configured("doubleClickAction").run() }
             .contextMenu {
+                if ScreenRecorder.shared.recording { Button("Stop recording") { ScreenRecorder.shared.stop() } }
                 Button("Command palette") { PaletteController.shared.toggle() }
                 Button("Toggle keep awake") { CaffeineService.shared.toggle() }
                 Button("Play / pause music") { MusicService.shared.playPause() }

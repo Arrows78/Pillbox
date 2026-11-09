@@ -77,6 +77,8 @@
 - **Desktop widgets** (opt-in): clock, world clocks, weather and now playing, draggable, sitting under your windows.
 - **Window watch**: watch a part of the screen (a percentage, a build status, a price) and get an island when its text changes. Needs Screen Recording.
 - **Ask about screen**: pick an area, read its text on device (Vision), then copy it, search it, translate it, open its links, or ask a question with your own Anthropic API key stored in the Keychain. Only the recognised text is sent, never the picture.
+- **Screen recording**: record the display under the pointer or an area you pick, from the palette. The pill shows a red dot and the elapsed time; stop from the pill's right-click menu, the button in the open panel or the palette. The movie (H.264 .mov, no sound) lands on the Desktop and on the shelf, and Pillbox's own windows are left out of it.
+- **Read QR code on screen** (palette): finds QR codes and barcodes on every display with Vision, on device, and shows the content in an island with **Open link** for web links or **Copy** for anything else.
 
 ### 📅 Calendar
 
@@ -90,6 +92,7 @@
 
 - **File shelf**: drop files on the notch, or drag a file toward it, or shake it, and the shelf opens. Drag items back out later. Items survive relaunches.
 - **Shelf actions**: AirDrop, zip and unzip (native `ditto`, archives expand into a new folder and nothing is overwritten), reveal in Finder.
+- **Annotate** an image on the shelf (button or right click): arrows, rectangles, pen, text and a pixelate box to hide personal details, six colours and undo. **Save** writes a copy next to the original (`name annotated.png`, the original is never touched) and stages it on the shelf; **Copy** puts it on the clipboard.
 - **Convert** (offline, system frameworks): images between PNG, JPEG, HEIC, TIFF and PDF, background removal (Vision); video to MP4, HEVC or audio only; audio to AAC, WAV or AIFF.
 - **Screenshots**: a new screenshot (wherever macOS saves them) becomes an island and is staged on the shelf, ready to drag into any app.
 - **Quick actions and web mini-apps**: in **Settings › Quick actions**, add a shell command (run with a 15 s limit and a result island), a link (web and mail only) or a web mini-app that opens in its own small window. They live in the Launcher's **Actions** view and in the palette.
@@ -210,11 +213,11 @@ Pillbox asks for nothing at launch. **Settings › Permissions** (opened on firs
 | Camera | Camera mirror | Show the preview. |
 | Microphone, Speech Recognition | Prompter (voice following) | Follow your reading. Asked only when you turn it on; recognition runs on the Mac when it can. |
 | Input Monitoring | Keystroke display, double-press Control | Observe key presses system-wide. |
-| Screen Recording | Window watch, Ask about screen | Read the pixels of an area you pick. |
+| Screen Recording | Window watch, Ask about screen, screen recording, Read QR code | Read the pixels of an area you pick, record the screen, find QR codes. |
 | Full Disk Access | Notification mirror, Focus island | Read Notification Center and Do Not Disturb files. |
 | Accessibility | Hyper key, keyboard lock, window snapping, clipboard paste | Block keys, move windows, send ⌘V. |
 | Audio capture (System Audio Recording) | Live audio spectrum, App volume | Read app audio through a Core Audio process tap. Nothing is recorded. |
-| Downloads and Desktop folders | Download and screenshot alerts | Notice new files. |
+| Downloads and Desktop folders | Download and screenshot alerts, screen recording | Notice new files, save recordings to the Desktop. |
 
 ## 🧱 Technology stack
 

@@ -527,3 +527,30 @@ Unmute	Activar sonido	Ton einschalten
 Could not change this app's volume	No se pudo cambiar el volumen de esta app	Die Lautstärke dieser App konnte nicht geändert werden
 Allow audio capture for Pillbox	Permite la captura de audio para Pillbox	Erlaube die Audioaufnahme für Pillbox
 Privacy & Security › Screen & System Audio Recording	Privacidad y seguridad › Grabación de pantalla y audio del sistema	Datenschutz & Sicherheit › Bildschirm- & Systemaudioaufnahme
+Could not start recording	No se pudo iniciar la grabación	Aufnahme konnte nicht gestartet werden
+Recording saved	Grabación guardada	Aufnahme gespeichert
+Recording failed	La grabación falló	Aufnahme fehlgeschlagen
+Stop recording	Detener la grabación	Aufnahme stoppen
+No QR code on screen	No hay ningún código QR en pantalla	Kein QR-Code auf dem Bildschirm
+QR code link	Enlace del código QR	Link aus QR-Code
+QR code	Código QR	QR-Code
+Stop screen recording	Detener la grabación de pantalla	Bildschirmaufnahme stoppen
+Record the screen	Grabar la pantalla	Bildschirm aufnehmen
+Record an area of the screen	Grabar una zona de la pantalla	Bildschirmbereich aufnehmen
+Read QR code on screen	Leer un código QR en pantalla	QR-Code auf dem Bildschirm lesen
+Arrow	Flecha	Pfeil
+Rectangle	Rectángulo	Rechteck
+Pen	Lápiz	Stift
+Text	Texto	Text
+Pixelate	Pixelar	Verpixeln
+Annotate %@	Anotar %@	%@ annotieren
+Could not open the image	No se pudo abrir la imagen	Bild konnte nicht geöffnet werden
+Image copied	Imagen copiada	Bild kopiert
+Could not save the image	No se pudo guardar la imagen	Bild konnte nicht gespeichert werden
+Annotated image saved	Imagen anotada guardada	Annotiertes Bild gespeichert
+Tool	Herramienta	Werkzeug
+Text, then click the image	Texto, luego haz clic en la imagen	Text, dann ins Bild klicken
+Undo	Deshacer	Widerrufen
+Save	Guardar	Sichern
+Annotate	Anotar	Annotieren
+Window watch, Ask about screen, screen recording and QR codes.	Vigilar zona, Preguntar a la pantalla, grabación de pantalla y códigos QR.	Bereichsüberwachung, „Frag den Bildschirm“, Bildschirmaufnahme und QR-Codes.

@@ -16,7 +16,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness(); recordingQRAnnotate()
         appVolume()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
@@ -743,6 +743,50 @@ enum SelfTest {
               CameraGuard.island(mirrorOpen: false, frontName: "Zoom", frontBundle: "us.zoom.xos", own: "dev.labs.pillbox") == .some("Zoom")
               && CameraGuard.island(mirrorOpen: false, frontName: "Pillbox", frontBundle: "dev.labs.pillbox", own: "dev.labs.pillbox") == .some(nil))
     }
+
+    private static func recordingQRAnnotate() {
+        let big = ScreenRecorder.outputSize(width: 6016, height: 3384), odd = ScreenRecorder.outputSize(width: 1001, height: 501)
+        check("recording: big displays fit H.264, keeping the ratio, in even sizes", big.width <= 4096 && big.height <= 2304 && big.width % 2 == 0 && big.height % 2 == 0 && abs(Double(big.width) / Double(big.height) - 6016.0 / 3384) < 0.01, "\(big)")
+        check("recording: small sizes are only rounded to even", odd == (1000, 500), "\(odd)")
+        let name = ScreenRecorder.fileName(at: Date(timeIntervalSince1970: 0))
+        check("recording: a dated .mov name", name.hasSuffix(".mov") && name.contains("19") && !name.contains("/") && !name.contains(":"), name)
+
+        check("qr: web links open, anything else is only copied", QRReader.webLink(" https://example.com/a?b=1 ") != nil && QRReader.webLink("HTTP://x.org") != nil
+              && QRReader.webLink("javascript:alert(1)") == nil && QRReader.webLink("example.com") == nil && QRReader.webLink("WIFI:S:home;T:WPA;P:x;;") == nil && QRReader.webLink("https://") == nil)
+        let payload = "https://example.com/pillbox?q=42"
+        if let f = CIFilter(name: "CIQRCodeGenerator", parameters: ["inputMessage": Data(payload.utf8), "inputCorrectionLevel": "M"]), let out = f.outputImage {
+            let img = CIContext().createCGImage(out.transformed(by: CGAffineTransform(scaleX: 12, y: 12)).composited(over: CIImage(color: .white).cropped(to: CGRect(x: -40, y: -40, width: 400, height: 400))), from: CGRect(x: -40, y: -40, width: 400, height: 400))
+            let codes = img.map(QRReader.decode) ?? []
+            check("qr: a generated QR code is decoded", codes == [payload], "\(codes)")
+        } else { check("qr: the generator exists", false) }
+
+        check("annotate: images only", Annotator.canAnnotate(URL(fileURLWithPath: "/a/Shot.PNG")) && Annotator.canAnnotate(URL(fileURLWithPath: "/a/b.heic")) && !Annotator.canAnnotate(URL(fileURLWithPath: "/a/b.pdf")))
+        check("annotate: the copy sits next to the original", Annotator.outputURL(for: URL(fileURLWithPath: "/a/My shot.jpg")).path == "/a/My shot annotated.png")
+        let red = NSColor.systemRed.usingColorSpace(.sRGB)!.cgColor
+        let ctx = CGContext(data: nil, width: 200, height: 100, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+        for x in 0..<200 { ctx.setFillColor(x % 2 == 0 ? .black : .white); ctx.fill(CGRect(x: x, y: 0, width: 1, height: 100)) }
+        let base = ctx.makeImage()!
+        func pixel(_ img: CGImage, _ x: Int, _ y: Int) -> [UInt8] {   // y from the top
+            let c = CGContext(data: nil, width: 1, height: 1, bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            c.draw(img, in: CGRect(x: -x, y: -(img.height - 1 - y), width: img.width, height: img.height))
+            let p = c.data!.assumingMemoryBound(to: UInt8.self); return [p[0], p[1], p[2]]
+        }
+        let marks = [Mark(kind: .rect, color: red, points: [CGPoint(x: 10, y: 10), CGPoint(x: 60, y: 40)]),
+                     Mark(kind: .pixelate, color: red, points: [CGPoint(x: 100, y: 0), CGPoint(x: 200, y: 100)]),
+                     Mark(kind: .text, color: red, points: [CGPoint(x: 5, y: 60)], text: "Hi"),
+                     Mark(kind: .arrow, color: red, points: [CGPoint(x: 70, y: 90), CGPoint(x: 95, y: 60)])]
+        let out = Annotator.render(base, marks: marks, pixelated: Annotator.pixelated(base))
+        check("annotate: the render keeps the size", out?.width == 200 && out?.height == 100)
+        if let out {
+            let edge = pixel(out, 10, 25)
+            check("annotate: a rectangle is drawn where it was put (top-left origin)", edge[0] > 200 && edge[1] < 120, "\(edge)")
+            let a = pixel(out, 150, 50), b = pixel(out, 151, 50)
+            check("annotate: pixelate flattens the stripes", abs(Int(a[0]) - Int(b[0])) < 40, "\(a) \(b)")
+            check("annotate: the rest of the picture is untouched", pixel(out, 90, 5) == [0, 0, 0] && pixel(out, 91, 5) == [255, 255, 255], "\(pixel(out, 90, 5))")
+        }
+        check("annotate: arrows have a head, a zero-length arrow draws nothing",
+              Annotator.paths(marks[3], lineWidth: 3).fill != nil && Annotator.paths(Mark(kind: .arrow, color: red, points: [.zero, .zero]), lineWidth: 3).stroke == nil)
+    }
 }
 
 /// `--render <dir>` draws the island states to PNG with ImageRenderer: no screen, no permission.
@@ -793,6 +837,13 @@ enum ViewRenderer {
             let size = CGSize(width: 330, height: 66)
             save("activity-\(i)", island(ActivityView(activity: a), size), size: size)
         }
+        ScreenRecorder.shared.since = Date(timeIntervalSinceNow: -75)
+        save("recording-wings", island(CollapsedWings(), model.size(hasWings: true)), size: model.size(hasWings: true))
+        model.tab = .shelf; model.expanded = true
+        save("recording-panel", island(ExpandedView(), NotchModel.expandedSize), size: NotchModel.expandedSize)
+        model.expanded = false; ScreenRecorder.shared.since = nil
+        let qr = Activity(symbol: "qrcode", title: "QR code link", subtitle: "https://example.com/a%20b?q=1", tint: .green, actionTitle: "Open link")
+        save("activity-qr", island(ActivityView(activity: qr), CGSize(width: 330, height: 66)), size: CGSize(width: 330, height: 66))
         save("snapzones", SnapZonesView(), size: SnapZones.panelSize)
         save("widgets", DesktopWidgetView(), size: CGSize(width: 330, height: 190))
         let appr = Approval(tool: "Bash", detail: "rm -rf ./build && swift build", respond: { _ in })

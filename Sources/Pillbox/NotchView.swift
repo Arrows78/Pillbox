@@ -9,7 +9,7 @@ final class LiveState {
     var hasWings: Bool {
         let t = TimerService.shared, m = MusicService.shared
         return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
-            || CallMonitor.shared.call != nil || lottiePath != nil || !DownloadProgress.shared.items.isEmpty || BuildWatcher.shared.since != nil
+            || CallMonitor.shared.call != nil || lottiePath != nil || !DownloadProgress.shared.items.isEmpty || BuildWatcher.shared.since != nil || ScreenRecorder.shared.recording
     }
 }
 
@@ -23,8 +23,9 @@ struct NotchRootView: View {
     @ObservedObject var calls = CallMonitor.shared
     @ObservedObject var downloads = DownloadProgress.shared
     @ObservedObject var build = BuildWatcher.shared
+    @ObservedObject var recorder = ScreenRecorder.shared
 
-    private var wings: Bool { timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil }
+    private var wings: Bool { recorder.recording || timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil }
     private var size: CGSize { model.size(hasWings: wings) }
 
     var body: some View {
@@ -61,6 +62,7 @@ struct NotchRootView: View {
 }
 
 struct CollapsedWings: View {
+    @ObservedObject var recorder = ScreenRecorder.shared
     @ObservedObject var downloads = DownloadProgress.shared
     @ObservedObject var build = BuildWatcher.shared
     @ObservedObject var calls = CallMonitor.shared
@@ -81,7 +83,9 @@ struct CollapsedWings: View {
     }
 
     @ViewBuilder private var left: some View {
-        if CleaningLock.shared.active {
+        if recorder.recording {
+            RecordingDot()
+        } else if CleaningLock.shared.active {
             Image(systemName: "lock.fill").foregroundStyle(.yellow)
         } else if calls.call != nil {
             Image(systemName: "phone.fill").font(.system(size: 12)).foregroundStyle(.green)
@@ -108,7 +112,9 @@ struct CollapsedWings: View {
     }
 
     @ViewBuilder private var right: some View {
-        if let c = calls.call {
+        if let r = recorder.since {
+            Text(r, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.red).frame(width: 52)
+        } else if let c = calls.call {
             Text(c.since, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.green).frame(width: 52)
         } else if let s = build.since {
             Text(s, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.blue).frame(width: 52)
@@ -224,6 +230,7 @@ struct ExpandedView: View {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 TabStrip()
+                RecordingStopButton()
                 Menu {
                     let current = AudioControl.currentOutput()
                     ForEach(AudioControl.outputDevices()) { d in

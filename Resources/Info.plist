@@ -58,6 +58,6 @@
 	<key>NSDownloadsFolderUsageDescription</key>
 	<string>Pillbox shows an island when a download finishes.</string>
 	<key>NSDesktopFolderUsageDescription</key>
-	<string>Pillbox can stage files from your Desktop on the shelf.</string>
+	<string>Pillbox can stage files from your Desktop on the shelf and saves screen recordings there.</string>
 </dict>
 </plist>

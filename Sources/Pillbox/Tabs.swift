@@ -546,6 +546,7 @@ struct ShelfTab: View {
                             .menuStyle(.button).fixedSize()
                     }
                     Button("Reveal") { shelf.reveal(target) }
+                    if target.count == 1, let one = target.first, Annotator.canAnnotate(one.url) { Button("Annotate") { Annotator.open(one.url) } }
                     Spacer()
                     Button("Clear") { shelf.clear() }
                 }.controlSize(.small)
@@ -572,6 +573,7 @@ struct ShelfCell: View {
         .contextMenu {
             Button("Remove") { shelf.remove([item.id]) }
             Button("Reveal in Finder") { shelf.reveal([item]) }
+            if Annotator.canAnnotate(item.url) { Button("Annotate") { Annotator.open(item.url) } }
         }
     }
 }
