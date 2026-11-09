@@ -154,7 +154,7 @@ enum SelfTest {
         m.expanded = true
         check("expanded size", m.size(hasWings: false) == NotchModel.expandedSize)
         m.tab = .terminal
-        check("terminal tab is larger", m.size(hasWings: false).height > NotchModel.expandedSize.height)
+        check("terminal tab opens at the same size as the others", m.size(hasWings: false) == NotchModel.expandedSize)
         var decided = ""
         m.requestApproval(tool: "Bash", detail: "ls", timeout: 60) { decided = $0 }
         check("approval takes over the island", m.size(hasWings: false).width == 520 && m.approval != nil)

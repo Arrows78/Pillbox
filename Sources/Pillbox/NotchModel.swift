@@ -94,12 +94,13 @@ final class NotchModel: ObservableObject {
     static let shared = NotchModel()
 
     static let windowSize = CGSize(width: 1000, height: 480)
-    static let expandedSize = CGSize(width: 760, height: 260)
+    static let expandedSize = CGSize(width: 760, height: 340)
     static let wing: CGFloat = 62
 
     /// User-chosen scale of the open panel (0.8 to 1.3).
     static var scale: CGFloat { CGFloat(min(max(UserDefaults.standard.object(forKey: "panelScale") as? Double ?? 1, 0.8), 1.3)) }
-    static func baseExpanded(_ tab: Tab) -> CGSize { tab == .terminal ? CGSize(width: 760, height: 340) : expandedSize }
+    /// Every tab opens at the same size, so the panel does not jump when switching tabs.
+    static func baseExpanded(_ tab: Tab) -> CGSize { expandedSize }
 
     @Published var expanded = false
     @Published var tab: Tab = .home
