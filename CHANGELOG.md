@@ -4,6 +4,33 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.5.0] - 2026-11-09
+
+### Added
+
+- **tabs**: Show the full name of the selected tab
+- **prompter**: Prompter tab with a script list, speeds and voice following
+- **calendar**: Calendar tab with today and tomorrow and a Join button
+- **island**: Larger panel, header below the notch, hover tooltips
+- **home**: Now playing and up next cards
+- **prompter**: Click anywhere in the script to pause or resume
+- **focus**: Block distracting apps, desktop name and camera islands
+- **audio**: Per-app volume and mute in the Music tab
+- **island**: Every tab opens at the terminal's height
+- **capture**: Screen recording, screenshot annotation and QR code reading
+- **battery**: Battery history chart, health, time remaining, fast drain and Bluetooth audio islands, network sparkline
+- **home**: Use the taller panel on Home, Music and Timer
+- **dictation**: Dictate into the front app from a global shortcut or the palette
+- **activity**: Opt-in daily counter of clicks, keystrokes and mouse distance
+- **timer**: One-click length presets as capsules
+- **shelf**: Tile grid, add files button, item count and fuller context menu
+- **clipboard**: Type filters, hover actions, empty states and island-style controls
+
+### Fixed
+
+- **tabs**: Keep the tab bar inside the panel
+- **dictation**: Shorter permission island so it fits in every language
+
 ## [0.4.0] - 2026-11-08
 
 ### Added
@@ -64,6 +91,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.5.0]: https://github.com/Arrows78/Pillbox/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Arrows78/Pillbox/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Arrows78/Pillbox/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Arrows78/Pillbox/compare/v0.2.0...v0.3.0
