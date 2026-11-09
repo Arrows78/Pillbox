@@ -113,7 +113,16 @@ struct TeleprompterView: View {
                         .offset(x: 12, y: 40 - t.offset)
                         .frame(width: g.size.width, height: g.size.height, alignment: .topLeading).clipped()
                         .overlay(alignment: .top) { Rectangle().fill(.orange.opacity(0.7)).frame(height: 2).offset(y: 36) }
+                        .overlay {
+                            if !t.running {
+                                Label("Click to resume", systemImage: "play.fill").font(.system(size: 11, weight: .semibold))
+                                    .padding(.horizontal, 10).padding(.vertical, 5).background(.black.opacity(0.75), in: Capsule())
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture { t.toggle() }
                 }
+                .accessibilityAddTraits(.isButton).accessibilityLabel(LocalizedStringKey(t.running ? "Pause" : "Play"))
             }
             HStack(spacing: 14) {
                 Button { t.editing.toggle() } label: { Image(systemName: t.editing ? "checkmark" : "pencil") }.accessibilityLabel(LocalizedStringKey(t.editing ? "Done editing" : "Edit script"))
