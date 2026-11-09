@@ -31,17 +31,12 @@ struct HomeTab: View {
                     Label(stats.devices.map { "\($0.name) \($0.percent)%" }.joined(separator: " · "), systemImage: "battery.75percent")
                         .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
                 }
-                if let e = calendar.next {
-                    HStack(spacing: 8) {
-                        Image(systemName: "calendar").foregroundStyle(.red)
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text(e.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
-                            Text(e.start, style: e.start > Date() ? .relative : .time).font(.system(size: 10)).foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(8).frame(maxWidth: .infinity, alignment: .leading).background(card, in: RoundedRectangle(cornerRadius: 10))
-                }
-            }.frame(maxWidth: .infinity, alignment: .leading)
+            }.frame(width: 190, alignment: .leading)
+
+            VStack(spacing: 8) {
+                HomeNowPlaying()
+                HomeUpNext()
+            }.frame(maxWidth: .infinity)
 
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
@@ -65,7 +60,7 @@ struct HomeTab: View {
                     quick("video.fill", "Mirror") { CameraMirror.shared.toggle() }
                     quick("timer", "Focus", active: timer.running) { timer.mode = .focus; timer.toggle() }
                 }
-            }.frame(width: 260)
+            }.frame(width: 280)
         }
         .onAppear { stats.start() }
         .onDisappear { stats.stop() }
@@ -89,12 +84,78 @@ struct HomeTab: View {
         Button(action: action) {
             VStack(spacing: 3) {
                 Image(systemName: symbol).font(.system(size: 15)).frame(height: 18)
-                Text(title).font(.system(size: 9))
+                Text(title).font(.system(size: 9)).lineLimit(1).minimumScaleFactor(0.75).padding(.horizontal, 2)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .background(active ? Color.orange.opacity(0.30) : card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(active ? Color.orange.opacity(0.6) : DS.hairline, lineWidth: 0.5))
         }.buttonStyle(.plain)
+    }
+}
+
+/// Home card: the current track with its controls, or a way to start the music.
+struct HomeNowPlaying: View {
+    @ObservedObject var music = MusicService.shared
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Group {
+                if let a = music.artwork { Image(nsImage: a).resizable() }
+                else { Rectangle().fill(.white.opacity(0.08)).overlay(Image(systemName: "music.note").foregroundStyle(.secondary)) }
+            }
+            .frame(width: 44, height: 44).clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: music.hasTrack ? music.title : L("Nothing playing")).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                Text(verbatim: music.hasTrack ? music.artist : L("Start Spotify or Apple Music")).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            if music.hasTrack {
+                HStack(spacing: 14) {
+                    Button { music.previous() } label: { Image(systemName: "backward.fill") }.accessibilityLabel("Previous track")
+                    Button { music.playPause() } label: { Image(systemName: music.isPlaying ? "pause.fill" : "play.fill").font(.system(size: 15)) }
+                        .accessibilityLabel(LocalizedStringKey(music.isPlaying ? "Pause" : "Play"))
+                    Button { music.next() } label: { Image(systemName: "forward.fill") }.accessibilityLabel("Next track")
+                }.buttonStyle(.plain).font(.system(size: 12))
+            }
+        }
+        .padding(8).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(card, in: RoundedRectangle(cornerRadius: DS.radius, style: .continuous))
+        .contentShape(Rectangle())
+        .onTapGesture { NotchModel.shared.tab = .music }
+    }
+}
+
+/// Home card: the next timed event today or tomorrow, with Join when it is a video call.
+struct HomeUpNext: View {
+    @ObservedObject var agenda = AgendaModel.shared
+    @ObservedObject var calendar = CalendarService.shared
+
+    var body: some View {
+        let e = agenda.events.first { !$0.allDay && $0.end > Date() }
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 2).fill(e?.color ?? .red).frame(width: 4).padding(.vertical, 4)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Up next").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+                if let e {
+                    Text(verbatim: e.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                    Group {
+                        if e.start > Date() { Text(e.start, style: .relative) } else { Text("Now") }
+                    }.font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+                } else {
+                    Text(agenda.denied ? "Calendar access is off" : "No upcoming events").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+                }
+            }
+            Spacer(minLength: 4)
+            if let url = e?.join {
+                Button { NSWorkspace.shared.open(url) } label: { Label("Join", systemImage: "video.fill") }.buttonStyle(PillButtonStyle(tint: .green))
+            }
+        }
+        .padding(8).frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(card, in: RoundedRectangle(cornerRadius: DS.radius, style: .continuous))
+        .contentShape(Rectangle())
+        .onTapGesture { NotchModel.shared.tab = .calendar }
+        .onAppear { agenda.refresh() }
+        .onChange(of: calendar.next?.start) { agenda.refresh() }
     }
 }
 
