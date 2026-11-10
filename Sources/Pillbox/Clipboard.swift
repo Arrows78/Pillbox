@@ -109,6 +109,8 @@ final class ClipboardService: ObservableObject {
     }
 
     private func save() { Store.save(items, "clipboard.json") }
+    /// Writes the history to disk after an import.
+    func persist() { save() }
 
     private func recognize(_ image: NSImage, done: @escaping @MainActor (String) -> Void) {
         guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }

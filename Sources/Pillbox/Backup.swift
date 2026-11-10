@@ -19,7 +19,7 @@ enum SettingsBackup {
                     "desktopWidgets", "brightnessHUD", "focusIsland", "callIsland", "copyStack", "notificationIsland", "shakeToOpen", "buildIsland",
                     "hideInFullScreen", "screenshotShelf", "driveEject", "shortcutsOnly", "showMenuBarIcon"] { k[key] = .bool }
         for key in ["dictationShortcut", "activityCounter", "focusBlocking", "spaceIsland", "cameraGuard"] { k[key] = .bool }
-        for key in [IdlePill.key, Haptics.key, Mirroring.key, SpaceSwipe.key, EyeBreaks.key] { k[key] = .bool }
+        for key in [IdlePill.key, Haptics.key, Mirroring.key, SpaceSwipe.key, EyeBreaks.key, NotificationFeed.codeKey, Updater.autoKey, BrewUpdates.key] { k[key] = .bool }
         k[TypingSounds.profileKey] = .text(TypingSounds.Profile.allCases.map(\.rawValue))
         k[AmbientNoise.kindKey] = .text(AmbientNoise.Kind.allCases.map(\.rawValue))
         k[TypingSounds.volumeKey] = .number(0...1); k[AmbientNoise.volumeKey] = .number(0...1)
@@ -191,8 +191,13 @@ enum UpdateCheck {
         }
         alert.messageText = L("Pillbox %@ is available", tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV")))
         alert.informativeText = L("You are using version %@.", current)
+        let release = Updater.release(from: json)
+        let canInstall = release?.zip != nil && Updater.installTarget != nil
+        if canInstall { alert.addButton(withTitle: L("Update")) }
         alert.addButton(withTitle: L("View release"))
         alert.addButton(withTitle: L("Later"))
-        if alert.runModal() == .alertFirstButtonReturn, let page = releasePage(from: json) { NSWorkspace.shared.open(page) }
+        let r = alert.runModal()
+        if canInstall, r == .alertFirstButtonReturn, let release { Updater.shared.install(release) }
+        else if r == (canInstall ? .alertSecondButtonReturn : .alertFirstButtonReturn), let page = releasePage(from: json) { NSWorkspace.shared.open(page) }
     }
 }

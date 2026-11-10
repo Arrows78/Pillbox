@@ -243,14 +243,27 @@ final class NotificationFeed {
     private var lastID: Int64?
     private var timer: Timer?
 
+    nonisolated static let codeKey = "codeIsland"
+
     /// Items newer than `after`, oldest first.
     nonisolated static func fresh(_ items: [NotificationItem], after: Int64) -> [NotificationItem] {
         items.filter { $0.id > after }.sorted { $0.id < $1.id }
     }
 
+    /// A 4 to 8 digit verification code in a message, when the text talks about a code (or is nothing but the code).
+    nonisolated static func verificationCode(in text: String) -> String? {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if t.range(of: #"^\d{4,8}$"#, options: .regularExpression) != nil { return t }
+        let keywords = ["code", "verification", "verify", "otp", "passcode", "pin", "2fa", "one-time", "mot de passe", "código", "codice"]
+        guard keywords.contains(where: { t.lowercased().contains($0) }) else { return nil }
+        guard let r = t.range(of: #"(?<![\d.,])\d{3}[ -]?\d{3}(?![\d.,])|(?<![\d.,])\d{4,8}(?![\d.,])"#, options: .regularExpression) else { return nil }
+        return t[r].filter(\.isNumber)
+    }
+
     func start() {
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
-            guard UserDefaults.standard.bool(forKey: "notificationIsland") else { self?.lastID = nil; return }
+            let codes = UserDefaults.standard.object(forKey: Self.codeKey) as? Bool ?? true
+            guard UserDefaults.standard.bool(forKey: "notificationIsland") || codes else { self?.lastID = nil; return }
             DispatchQueue.global(qos: .utility).async {
                 let items = NotificationReader.read(limit: 10)
                 DispatchQueue.main.async { MainActor.assumeIsolated { self?.handle(items) } }
@@ -262,8 +275,14 @@ final class NotificationFeed {
         guard let items else { return }
         defer { lastID = max(lastID ?? 0, items.map(\.id).max() ?? 0) }
         guard let last = lastID else { return }   // first read is only a baseline
+        let mirror = UserDefaults.standard.bool(forKey: "notificationIsland"), codes = UserDefaults.standard.object(forKey: Self.codeKey) as? Bool ?? true
         for n in Self.fresh(items, after: last).suffix(3) {
-            NotchModel.shared.show(Activity(symbol: "bell.fill", title: n.title.isEmpty ? n.app : n.title, subtitle: n.body.isEmpty ? nil : String(n.body.prefix(90)), tint: .yellow, duration: 5))
+            if codes, let code = Self.verificationCode(in: n.body) ?? Self.verificationCode(in: n.title) {
+                NotchModel.shared.show(Activity(symbol: "key.fill", title: L("Code %@", code), subtitle: n.title.isEmpty ? n.app : n.title, tint: .green,
+                                                actionTitle: "Copy", action: { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(code, forType: .string) }, duration: 12))
+            } else if mirror {
+                NotchModel.shared.show(Activity(symbol: "bell.fill", title: n.title.isEmpty ? n.app : n.title, subtitle: n.body.isEmpty ? nil : String(n.body.prefix(90)), tint: .yellow, duration: 5))
+            }
         }
     }
 }

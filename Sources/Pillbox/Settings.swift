@@ -61,6 +61,9 @@ struct SettingsView: View {
     @AppStorage(Mirroring.key) private var hideWhileMirroring = false
     @AppStorage(SpaceSwipe.key) private var swipeSpaces = false
     @AppStorage(EyeBreaks.key) private var eyeBreaks = false
+    @AppStorage(NotificationFeed.codeKey) private var codeIsland = true
+    @AppStorage(Updater.autoKey) private var autoUpdate = false
+    @AppStorage(BrewUpdates.key) private var brewUpdates = false
     @AppStorage(TypingSounds.profileKey) private var typingProfile = "off"
     @AppStorage(TypingSounds.volumeKey) private var typingVolume = 0.5
     @AppStorage(AmbientNoise.kindKey) private var ambientKind = "off"
@@ -213,6 +216,13 @@ struct SettingsView: View {
             SettingsCard(title: "Tabs") {
                 TabsPicker()
             }
+            SettingsCard(title: "Clipboard") {
+                ForEach(ClipboardImport.Source.allCases) { s in
+                    SettingsRow(title: LocalizedStringKey(L("Import history from %@", s.name)), subtitle: s.installed ? "Text items only. Their files are not changed." : "Not found on this Mac.") {
+                        Button("Import") { ClipboardImport.run(s) }.controlSize(.small).disabled(!s.installed)
+                    }
+                }
+            }
             SettingsCard(title: "Island appearance") {
                 SettingsRow(title: "Island theme", subtitle: "The collapsed pill always stays black to blend into the notch.") {
                     Picker("", selection: $islandTheme) { ForEach(IslandTheme.allCases) { Text(LocalizedStringKey($0.title)).tag($0.rawValue) } }.labelsHidden().frame(width: 170)
@@ -286,6 +296,8 @@ struct SettingsView: View {
                 SettingsToggle("Call in progress island", "Shows the duration while a call app uses the microphone.", isOn: $callIsland)
                 SettingsToggle("Build island", "Shows a stopwatch while Xcode or swift build runs.", isOn: $buildIsland)
                 SettingsToggle("Show new notifications as islands", "Needs Full Disk Access.", isOn: $notificationIsland)
+                SettingsToggle("Verification codes with a Copy button", "A code in a new notification becomes an island. Needs Full Disk Access.", isOn: $codeIsland)
+                SettingsToggle("Homebrew updates island", "Once a day, the packages with a newer version, with Upgrade in the Terminal tab.", isOn: $brewUpdates)
                 SettingsToggle("Stage new screenshots on the shelf", isOn: $screenshotShelf)
                 SettingsRow(title: "Warn when an AI limit reaches", subtitle: "Claude Code and Codex usage limits.") {
                     Picker("", selection: $usageAlert) { Text("Never").tag(0); Text("70%").tag(70); Text("80%").tag(80); Text("90%").tag(90) }.labelsHidden().frame(width: 170)
@@ -441,9 +453,10 @@ struct SettingsView: View {
                         Button("Releases") { NSWorkspace.shared.open(URL(string: "https://github.com/Arrows78/Pillbox/releases")!) }
                     }.controlSize(.small)
                 }
-                SettingsRow(title: "Updates", subtitle: "Asks GitHub for the latest release when you click. Pillbox never checks on its own.") {
+                SettingsRow(title: "Updates", subtitle: "Asks GitHub for the latest release. The update installs in place and relaunches Pillbox.") {
                     Button("Check for updates…") { UpdateCheck.run() }.controlSize(.small)
                 }
+                SettingsToggle("Check for updates automatically", "Once a day. Only the version number is asked for; nothing about you is sent.", isOn: $autoUpdate)
                 SettingsRow(title: "Diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.") {
                     CopyButton(text: { Diagnostics.text }, title: "Copy diagnostics")
                 }

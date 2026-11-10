@@ -670,3 +670,33 @@ Plays while a Focus session runs and fades out when it ends. Also in the Timer t
 Ambient volume	Volumen ambiente	Umgebungslautstärke
 Eye breaks (20-20-20)	Pausas para la vista (20-20-20)	Augenpausen (20-20-20)
 Every 20 minutes at the keyboard, 20 seconds to look at something far away, counted down on the island.	Cada 20 minutos al teclado, 20 segundos para mirar a lo lejos, con cuenta atrás en la isla.	Alle 20 Minuten an der Tastatur 20 Sekunden in die Ferne schauen, auf der Insel heruntergezählt.
+Update	Actualizar	Aktualisieren
+Downloading Pillbox %@…	Descargando Pillbox %@…	Pillbox %@ wird geladen…
+Could not update	No se pudo actualizar	Aktualisierung fehlgeschlagen
+Release page	Página de la versión	Release-Seite
+Installing the update…	Instalando la actualización…	Update wird installiert…
+The download failed	La descarga falló	Der Download ist fehlgeschlagen
+The checksum does not match	La suma de verificación no coincide	Die Prüfsumme stimmt nicht überein
+Could not save the download	No se pudo guardar la descarga	Download konnte nicht gespeichert werden
+The archive is not a Pillbox release	El archivo no es una versión de Pillbox	Das Archiv ist keine Pillbox-Version
+Homebrew is not installed	Homebrew no está instalado	Homebrew ist nicht installiert
+Homebrew is up to date	Homebrew está al día	Homebrew ist aktuell
+Could not run brew outdated	No se pudo ejecutar brew outdated	brew outdated konnte nicht ausgeführt werden
+%d Homebrew update(s)	%d actualización(es) de Homebrew	%d Homebrew-Update(s)
+Upgrade	Actualizar	Upgraden
+No %@ history on this Mac	No hay historial de %@ en este Mac	Kein %@-Verlauf auf diesem Mac
+Could not read %@'s history	No se pudo leer el historial de %@	Verlauf von %@ konnte nicht gelesen werden
+macOS keeps other apps' data private: allow Full Disk Access	macOS mantiene privados los datos de otras apps: permite el acceso total al disco	macOS schützt die Daten anderer Apps: erlaube den vollen Festplattenzugriff
+Imported %d item(s) from %@	%d elemento(s) importado(s) de %@	%d Element(e) aus %@ importiert
+Code %@	Código %@	Code %@
+Verification codes with a Copy button	Códigos de verificación con un botón Copiar	Bestätigungscodes mit Kopieren-Taste
+A code in a new notification becomes an island. Needs Full Disk Access.	Un código en una notificación nueva se convierte en una isla. Requiere acceso total al disco.	Ein Code in einer neuen Mitteilung wird zur Insel. Benötigt vollen Festplattenzugriff.
+Homebrew updates island	Isla de actualizaciones de Homebrew	Homebrew-Updates-Insel
+Once a day, the packages with a newer version, with Upgrade in the Terminal tab.	Una vez al día, los paquetes con una versión más reciente, con Actualizar en la pestaña Terminal.	Einmal täglich die Pakete mit neuerer Version, mit Upgraden im Terminal-Tab.
+Import history from %@	Importar el historial de %@	Verlauf aus %@ importieren
+Text items only. Their files are not changed.	Solo elementos de texto. Sus archivos no se modifican.	Nur Textelemente. Ihre Dateien werden nicht verändert.
+Not found on this Mac.	No se encontró en este Mac.	Auf diesem Mac nicht gefunden.
+Import	Importar	Importieren
+Asks GitHub for the latest release. The update installs in place and relaunches Pillbox.	Pide a GitHub la última versión. La actualización se instala en el sitio y relanza Pillbox.	Fragt GitHub nach der neuesten Version. Das Update wird an Ort und Stelle installiert und Pillbox neu gestartet.
+Check for updates automatically	Buscar actualizaciones automáticamente	Automatisch nach Updates suchen
+Once a day. Only the version number is asked for; nothing about you is sent.	Una vez al día. Solo se pide el número de versión; no se envía nada sobre ti.	Einmal täglich. Nur die Versionsnummer wird abgefragt; nichts über dich wird gesendet.

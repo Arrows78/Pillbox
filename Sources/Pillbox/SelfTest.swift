@@ -974,6 +974,24 @@ extension SelfTest {
     static func batch9() {
         check("tabs: hidden set parses, ignores unknown names and never hides Home",
               Tab.hidden(from: "music,home,bogus,terminal") == [.music, .terminal] && Tab.hidden(from: nil).isEmpty && Tab.hidden(from: "") .isEmpty)
+        check("verification codes: found next to a keyword, bare codes, never prices or years",
+              NotificationFeed.verificationCode(in: "Your verification code is 482913") == "482913" && NotificationFeed.verificationCode(in: "G-123456 is your Google code") == "123456"
+              && NotificationFeed.verificationCode(in: "Code: 123 456") == "123456" && NotificationFeed.verificationCode(in: "2048") == "2048"
+              && NotificationFeed.verificationCode(in: "Your order of 12.99 shipped in 2026") == nil && NotificationFeed.verificationCode(in: "See you at 1830") == nil)
+        let json: [String: Any] = ["tag_name": "v1.2.0", "html_url": "https://github.com/Arrows78/Pillbox/releases/tag/v1.2.0",
+                                   "assets": [["name": "Pillbox-1.2.0.zip", "browser_download_url": "https://github.com/Arrows78/Pillbox/releases/download/v1.2.0/Pillbox-1.2.0.zip"],
+                                              ["name": "Pillbox-1.2.0.zip.sha256", "browser_download_url": "http://evil.example/x.sha256"]]]
+        let rel = Updater.release(from: json)
+        check("updater: release parsing keeps https github assets only", rel?.version == "1.2.0" && rel?.zip?.lastPathComponent == "Pillbox-1.2.0.zip" && rel?.sha == nil && rel?.page != nil)
+        check("updater: shasum line digest and SHA-256", Updater.digest(in: "ab" + String(repeating: "cd", count: 31) + "  Pillbox.zip\n")?.count == 64 && Updater.digest(in: "short  x") == nil
+              && Updater.sha256(Data("abc".utf8)) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+        check("updater: due once a day when enabled", Updater.due(enabled: true, last: nil, now: Date()) && !Updater.due(enabled: false, last: nil, now: Date())
+              && Updater.due(enabled: true, last: Date().addingTimeInterval(-90000), now: Date()) && !Updater.due(enabled: true, last: Date().addingTimeInterval(-3600), now: Date()))
+        check("brew: outdated names parsed, chatter skipped", BrewUpdates.parse("==> Checking\nnode\n  git \nWarning: x\n") == ["node", "git"] && BrewUpdates.parse("").isEmpty)
+        let clip = ClipboardService.shared; clip.items = [ClipItem(text: "kept")]
+        let merged = ClipboardImport.merge([("kept", Date(), false), ("new one", Date(timeIntervalSince1970: 1), true), ("  ", Date(), false)], into: clip)
+        check("clipboard import: new texts added with their date and pin, duplicates and blanks skipped", merged == 1 && clip.items.count == 2 && clip.items.last?.pinned == true && clip.items.last?.date == Date(timeIntervalSince1970: 1))
+        clip.items = []
         let key = KeySynth.sample(.thock, kind: .press), n = Int(key.frameLength), samples = (0..<n).map { key.floatChannelData![0][$0] }
         check("typing sounds: a synthesised key is finite, audible and within range", n > 1000 && samples.allSatisfy { $0.isFinite && abs($0) <= 1 } && (samples.map { abs($0) }.max() ?? 0) > 0.05)
         let noise = NoiseState(); noise.kind = .pink

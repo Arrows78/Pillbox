@@ -49,6 +49,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         PointerHider.shared.apply()
         EyeBreaks.shared.start()
         TypingSounds.shared.apply()
+        Updater.shared.start()
+        BrewUpdates.shared.start()
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 HyperKey.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
