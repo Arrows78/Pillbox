@@ -78,7 +78,7 @@ final class BatteryService: ObservableObject {
         let newCharging = d[kIOPSIsChargingKey] as? Bool ?? false
         let newPlugged = (d[kIOPSPowerSourceStateKey] as? String) == kIOPSACPowerValue
         defer { first = false }
-        let wasPlugged = pluggedIn
+        let wasPlugged = pluggedIn, oldLevel = level
         level = newLevel; charging = newCharging; pluggedIn = newPlugged
         BatteryLog.shared.record(level: newLevel, charging: newCharging, pluggedIn: newPlugged)
         guard !first else { return }
@@ -94,7 +94,8 @@ final class BatteryService: ObservableObject {
             NotchModel.shared.show(Activity(symbol: "battery.100.bolt", title: "Charged", subtitle: "\(newLevel)%", tint: .green, duration: 4))
         }
         if !newPlugged || newLevel < target - 2 { notifiedFull = false }
-        if !newPlugged && newLevel <= 10 && newLevel < level + 1 {
+        // Once when the level drops to 10 %, then at each further point lost: never again on every power event.
+        if !newPlugged && newLevel <= 10 && (oldLevel > 10 || newLevel < oldLevel) {
             NotchModel.shared.show(Activity(symbol: "battery.0", title: "Low battery", subtitle: "\(newLevel)%", tint: .red, duration: 5))
         }
     }
