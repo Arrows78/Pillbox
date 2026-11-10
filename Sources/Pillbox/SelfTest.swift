@@ -974,6 +974,11 @@ extension SelfTest {
     static func batch9() {
         check("tabs: hidden set parses, ignores unknown names and never hides Home",
               Tab.hidden(from: "music,home,bogus,terminal") == [.music, .terminal] && Tab.hidden(from: nil).isEmpty && Tab.hidden(from: "") .isEmpty)
+        let key = KeySynth.sample(.thock, kind: .press), n = Int(key.frameLength), samples = (0..<n).map { key.floatChannelData![0][$0] }
+        check("typing sounds: a synthesised key is finite, audible and within range", n > 1000 && samples.allSatisfy { $0.isFinite && abs($0) <= 1 } && (samples.map { abs($0) }.max() ?? 0) > 0.05)
+        let noise = NoiseState(); noise.kind = .pink
+        let pink = (0..<20000).map { _ in noise.next() }; noise.kind = .brown; let brown = (0..<20000).map { _ in noise.next() }
+        check("ambient noise: pink and brown stay finite and bounded", (pink + brown).allSatisfy { $0.isFinite && abs($0) < 1.5 } && (brown.map { abs($0) }.max() ?? 0) > 0.01)
         check("idle collapse: only an open, unpinned panel past the limit", IdleCollapse.shouldCollapse(expanded: true, pinned: false, idle: 31, limit: 30)
               && !IdleCollapse.shouldCollapse(expanded: true, pinned: true, idle: 31, limit: 30) && !IdleCollapse.shouldCollapse(expanded: true, pinned: false, idle: 31, limit: 0)
               && !IdleCollapse.shouldCollapse(expanded: false, pinned: false, idle: 31, limit: 30) && !IdleCollapse.shouldCollapse(expanded: true, pinned: false, idle: 10, limit: 30))

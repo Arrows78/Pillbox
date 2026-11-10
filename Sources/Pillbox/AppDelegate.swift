@@ -47,12 +47,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         ActivityCounter.shared.apply()
         IdleCollapse.shared.start()
         PointerHider.shared.apply()
+        EyeBreaks.shared.start()
+        TypingSounds.shared.apply()
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 HyperKey.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
                 AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
                 SettingsWindow.applyTheme(); self?.applyStatusItemVisibility()
-                self?.applyHotKeys(); ActivityCounter.shared.apply(); PointerHider.shared.apply()
+                self?.applyHotKeys(); ActivityCounter.shared.apply(); PointerHider.shared.apply(); TypingSounds.shared.apply()
                 NotificationCenter.default.post(name: .notchStateChanged, object: nil)   // the idle clock changes the pill's shape
             }
         }

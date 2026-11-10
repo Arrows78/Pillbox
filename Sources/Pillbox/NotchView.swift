@@ -62,7 +62,7 @@ struct NotchRootView: View {
         }
         .frame(width: NotchModel.windowSize.width, height: NotchModel.windowSize.height, alignment: .top)
         .animation(.spring(response: 0.38, dampingFraction: 0.8), value: size)
-        .onChange(of: wings) { _ in NotificationCenter.default.post(name: .notchStateChanged, object: nil) }
+        .onChange(of: wings) { _, _ in NotificationCenter.default.post(name: .notchStateChanged, object: nil) }
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
     }

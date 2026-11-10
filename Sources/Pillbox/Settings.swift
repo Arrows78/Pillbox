@@ -60,6 +60,11 @@ struct SettingsView: View {
     @AppStorage(PointerHider.key) private var hidePointer = 0
     @AppStorage(Mirroring.key) private var hideWhileMirroring = false
     @AppStorage(SpaceSwipe.key) private var swipeSpaces = false
+    @AppStorage(EyeBreaks.key) private var eyeBreaks = false
+    @AppStorage(TypingSounds.profileKey) private var typingProfile = "off"
+    @AppStorage(TypingSounds.volumeKey) private var typingVolume = 0.5
+    @AppStorage(AmbientNoise.kindKey) private var ambientKind = "off"
+    @AppStorage(AmbientNoise.volumeKey) private var ambientVolume = 0.3
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     @State private var pane: SettingsPane
@@ -95,7 +100,7 @@ struct SettingsView: View {
         SettingsPage(pane: .general) {
             SettingsCard(title: "Startup") {
                 SettingsToggle("Launch at login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { on in setLaunchAtLogin(on) }
+                    .onChange(of: launchAtLogin) { _, on in setLaunchAtLogin(on) }
                 SettingsToggle("Show in the menu bar", "When hidden, open Settings from the gear on the island or by launching Pillbox again.", isOn: $showMenuBarIcon)
             }
             SettingsCard(title: "Appearance") {
@@ -132,7 +137,7 @@ struct SettingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             launchAtLogin = SMAppService.mainApp.status == .enabled
         }
-        .onChange(of: appearance) { _ in SettingsWindow.applyTheme() }
+        .onChange(of: appearance) { _, _ in SettingsWindow.applyTheme() }
     }
 
     private func setLaunchAtLogin(_ on: Bool) {
@@ -229,6 +234,21 @@ struct SettingsView: View {
                 }
                 SettingsToggle("Live audio spectrum", "The equalizer follows the real sound. Asks for audio capture.", isOn: $liveSpectrum)
             }
+            SettingsCard(title: "Sounds") {
+                SettingsRow(title: "Typing sounds", subtitle: "A click on every key press, made on the Mac. Needs Input Monitoring. Which keys you press is never kept.") {
+                    HStack(spacing: 8) {
+                        Picker("", selection: $typingProfile) { ForEach(TypingSounds.Profile.allCases) { Text(verbatim: $0.title).tag($0.rawValue) } }.labelsHidden().frame(width: 110)
+                        Button("Try") { TypingSounds.shared.preview(TypingSounds.Profile(rawValue: typingProfile) ?? .soft) }.controlSize(.small).disabled(typingProfile == "off")
+                    }
+                }
+                if typingProfile != "off" { SettingsRow(title: "Typing volume") { Slider(value: $typingVolume, in: 0.05...1).frame(width: 180) } }
+                SettingsRow(title: "Ambient sound during focus", subtitle: "Plays while a Focus session runs and fades out when it ends. Also in the Timer tab and the palette.") {
+                    Picker("", selection: $ambientKind) { ForEach(AmbientNoise.Kind.allCases) { Text(verbatim: $0.title).tag($0.rawValue) } }.labelsHidden().frame(width: 150)
+                }
+                if ambientKind != "off" {
+                    SettingsRow(title: "Ambient volume") { Slider(value: $ambientVolume, in: 0.05...1).frame(width: 180).onChange(of: ambientVolume) { AmbientNoise.shared.setVolume(Float($0)) } }
+                }
+            }
             SettingsCard(title: "Pill gestures") {
                 SettingsRow(title: "Double-click the pill") {
                     Picker("", selection: $doubleClickAction) { ForEach(PillAction.allCases) { Text(verbatim: $0.title).tag($0.rawValue) } }.labelsHidden().frame(width: 170)
@@ -256,7 +276,7 @@ struct SettingsView: View {
                     Picker("", selection: $drainAlert) { Text("Off").tag(0); ForEach([3, 5, 8], id: \.self) { Text(verbatim: "−\($0)%/10 min").tag($0) } }.labelsHidden().frame(width: 170)
                 }
                 SettingsToggle("Bluetooth audio island", "AirPods and headphones connecting, with their battery. Asks for Bluetooth access.", isOn: $bluetoothIsland)
-                    .onChange(of: bluetoothIsland) { _ in BluetoothIslands.shared.apply() }
+                    .onChange(of: bluetoothIsland) { _, _ in BluetoothIslands.shared.apply() }
                 SettingsToggle("Drive connected island with Eject", isOn: $driveEject)
                 SettingsToggle("Download finished island", "Also shows the size of a download while it runs.", isOn: $downloadAlerts)
                 SettingsToggle("Microphone and camera indicator", "Shows when an app is using the microphone or the camera.", isOn: $privacyIndicator)
@@ -275,6 +295,7 @@ struct SettingsView: View {
                         Text("Off").tag(0); Text("Every 20 min").tag(20); Text("Every 30 min").tag(30); Text("Every 45 min").tag(45); Text("Every hour").tag(60)
                     }.labelsHidden().frame(width: 170)
                 }
+                SettingsToggle("Eye breaks (20-20-20)", "Every 20 minutes at the keyboard, 20 seconds to look at something far away, counted down on the island.", isOn: $eyeBreaks)
             }
             AwarenessSettings()
             SettingsCard(title: "Presentations") {
@@ -333,7 +354,7 @@ struct SettingsView: View {
             SettingsCard(title: "Developer API") {
                 SettingsRow(title: "Enable local API", subtitle: "Scripts and AI apps on this Mac can then reach Pillbox, with a private token.") {
                     Toggle("", isOn: $devAPI).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(SettingsStyle.accent)
-                        .onChange(of: devAPI) { _ in DevAPI.shared.apply() }
+                        .onChange(of: devAPI) { _, _ in DevAPI.shared.apply() }
                 }
                 if devAPI {
                     SettingsRow(title: "Address", subtitle: "Reachable from this Mac only.") {
@@ -499,7 +520,7 @@ struct DetachToggle: View {
     init(tab: Tab) { self.tab = tab; _on = State(initialValue: MenuBarDetach.wanted.contains(tab)) }
     var body: some View {
         SettingsToggle("Show \(tab.title) in the menu bar", isOn: $on)
-            .onChange(of: on) { v in
+            .onChange(of: on) { _, v in
                 var set = MenuBarDetach.wanted
                 if v { set.insert(tab) } else { set.remove(tab) }
                 UserDefaults.standard.set(set.map(\.rawValue).sorted(), forKey: "detachedTabs")

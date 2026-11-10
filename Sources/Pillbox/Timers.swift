@@ -66,6 +66,7 @@ final class TimerService: ObservableObject {
         now = Date()
         if mode == .stopwatch { startDate = now } else { endDate = now.addingTimeInterval(pausedRemaining ?? total) }
         running = true
+        if mode == .focus { AmbientNoise.shared.autoStart() }
         timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.tick() }
         }
@@ -75,10 +76,12 @@ final class TimerService: ObservableObject {
         guard running else { return }
         if mode == .stopwatch { accumulated = seconds } else { pausedRemaining = seconds }
         running = false; timer?.invalidate()
+        AmbientNoise.shared.autoStop()
     }
 
     func reset() {
         running = false; timer?.invalidate()
+        AmbientNoise.shared.autoStop()
         endDate = nil; startDate = nil; accumulated = 0; pausedRemaining = nil
         objectWillChange.send()
     }

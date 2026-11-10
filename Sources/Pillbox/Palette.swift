@@ -50,6 +50,8 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
             PaletteCommand(title: DictationService.shared.active ? "Stop dictation" : "Dictate", symbol: "mic.fill") { DictationService.shared.toggle() },
             PaletteCommand(title: "Activity today", symbol: "chart.bar.fill") { ActivityCounter.shared.showToday() },
+            PaletteCommand(title: AmbientNoise.shared.playing ? "Stop the ambient sound" : "Play ambient sound", symbol: "speaker.wave.2") { AmbientNoise.shared.toggle() },
+            PaletteCommand(title: "Rest your eyes (20 s)", symbol: "eye") { EyeBreaks.shared.begin() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
         if AppVolumeService.supported { list.append(PaletteCommand(title: "App volume", symbol: "slider.horizontal.3") { AppVolumeService.shared.show() }) }
@@ -161,7 +163,7 @@ struct PaletteView: View {
             TextField("Type a command, search the clipboard, or do math…", text: $model.query)
                 .textFieldStyle(.plain).font(.system(size: 18)).padding(14).focused($focus)
                 .onSubmit { run(cmds) }
-                .onChange(of: model.query) { _ in model.selection = 0 }
+                .onChange(of: model.query) { _, _ in model.selection = 0 }
                 .onKeyPress(.downArrow) { model.selection = min(model.selection + 1, cmds.count - 1); return .handled }
                 .onKeyPress(.upArrow) { model.selection = max(model.selection - 1, 0); return .handled }
                 .onKeyPress(.escape) { close(); return .handled }

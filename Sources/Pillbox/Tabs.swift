@@ -180,7 +180,7 @@ struct HomeUpNext: View {
         .contentShape(Rectangle())
         .onTapGesture { NotchModel.shared.tab = .calendar }
         .onAppear { agenda.refresh() }
-        .onChange(of: calendar.next?.start) { agenda.refresh() }
+        .onChange(of: calendar.next?.start) { _, _ in agenda.refresh() }
     }
 }
 
@@ -342,6 +342,7 @@ struct TimerTab: View {
                         .buttonStyle(PillButtonStyle(tint: .orange))
                     Button("Reset") { t.reset() }.buttonStyle(PillButtonStyle())
                     if t.mode == .countdown { Button("Repeat") { t.repeatTimer() }.buttonStyle(PillButtonStyle()) }
+                    AmbientMenu()
                     Spacer(minLength: 0)
                     HStack(spacing: 6) {
                         Button { stepBinding.wrappedValue = max(1, stepBinding.wrappedValue - 1) } label: { Image(systemName: "minus") }.accessibilityLabel("Fewer minutes")

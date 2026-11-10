@@ -19,7 +19,10 @@ enum SettingsBackup {
                     "desktopWidgets", "brightnessHUD", "focusIsland", "callIsland", "copyStack", "notificationIsland", "shakeToOpen", "buildIsland",
                     "hideInFullScreen", "screenshotShelf", "driveEject", "shortcutsOnly", "showMenuBarIcon"] { k[key] = .bool }
         for key in ["dictationShortcut", "activityCounter", "focusBlocking", "spaceIsland", "cameraGuard"] { k[key] = .bool }
-        for key in [IdlePill.key, Haptics.key, Mirroring.key, SpaceSwipe.key] { k[key] = .bool }
+        for key in [IdlePill.key, Haptics.key, Mirroring.key, SpaceSwipe.key, EyeBreaks.key] { k[key] = .bool }
+        k[TypingSounds.profileKey] = .text(TypingSounds.Profile.allCases.map(\.rawValue))
+        k[AmbientNoise.kindKey] = .text(AmbientNoise.Kind.allCases.map(\.rawValue))
+        k[TypingSounds.volumeKey] = .number(0...1); k[AmbientNoise.volumeKey] = .number(0...1)
         k[IdleCollapse.key] = .number(0...600)
         k[PointerHider.key] = .number(0...120)
         k[Tab.hiddenKey] = .text(nil)
