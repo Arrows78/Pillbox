@@ -51,6 +51,7 @@ final class NotchWindowController {
             MainActor.assumeIsolated {
                 self?.model.geometry = NotchGeometry.detect()
                 self?.reposition()
+                self?.applyCapturePreference()
             }
         })
     }
@@ -87,6 +88,8 @@ final class NotchWindowController {
         let g = model.geometry
         if detected.screen != g.screen || detected.width != g.width || detected.height != g.height { model.geometry = detected; reposition() }
         NotchHider.shared.apply(screen: model.geometry.screen ?? NSScreen.main, height: model.geometry.height)
+        // A mirrored display copies the whole screen, so capture exclusion cannot hide the island on a projector: it goes away outright.
+        if Mirroring.shouldHide { panel.orderOut(nil) } else if !panel.isVisible { panel.orderFrontRegardless() }
     }
 
     func makeKey() { panel.makeKey() }

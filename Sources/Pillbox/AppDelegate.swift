@@ -45,12 +45,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         DoubleTapKey.shared.apply()
         DesktopWidgets.shared.apply()
         ActivityCounter.shared.apply()
+        IdleCollapse.shared.start()
+        PointerHider.shared.apply()
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 HyperKey.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
                 AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
                 SettingsWindow.applyTheme(); self?.applyStatusItemVisibility()
-                self?.applyHotKeys(); ActivityCounter.shared.apply()
+                self?.applyHotKeys(); ActivityCounter.shared.apply(); PointerHider.shared.apply()
+                NotificationCenter.default.post(name: .notchStateChanged, object: nil)   // the idle clock changes the pill's shape
             }
         }
         DevAPI.shared.apply()
@@ -95,10 +98,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                   let c = e.charactersIgnoringModifiers, let n = Int(c), (1...Tab.visible.count).contains(n) else { return e }
             NotchModel.shared.tab = Tab.visible[n - 1]; return nil
         } as Any)
-        // Swipe left/right on the notch to change tab.
+        // Swipe left/right on the notch to change tab; on the resting pill (opt-in) to change desktop.
         monitors.append(NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] e in
-            guard let self, NotchModel.shared.expanded, abs(e.scrollingDeltaX) > 8, abs(e.scrollingDeltaX) > abs(e.scrollingDeltaY) * 2,
+            guard let self, abs(e.scrollingDeltaX) > 8, abs(e.scrollingDeltaX) > abs(e.scrollingDeltaY) * 2,
                   e.phase == .began || e.phase == .changed, self.swipeCooldown < Date() else { return e }
+            if !NotchModel.shared.expanded {
+                guard UserDefaults.standard.bool(forKey: SpaceSwipe.key), NotchModel.shared.activity == nil else { return e }
+                self.swipeCooldown = Date().addingTimeInterval(0.8)
+                SpaceSwipe.go(left: e.scrollingDeltaX > 0); return nil
+            }
             self.swipeCooldown = Date().addingTimeInterval(0.4)
             let tabs = Tab.visible, i = tabs.firstIndex(of: NotchModel.shared.tab) ?? 0
             let j = e.scrollingDeltaX < 0 ? min(i + 1, tabs.count - 1) : max(i - 1, 0)

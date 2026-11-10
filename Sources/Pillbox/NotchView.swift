@@ -10,6 +10,7 @@ final class LiveState {
         let t = TimerService.shared, m = MusicService.shared
         return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
             || CallMonitor.shared.call != nil || lottiePath != nil || !DownloadProgress.shared.items.isEmpty || BuildWatcher.shared.since != nil || ScreenRecorder.shared.recording
+            || IdlePill.enabled
     }
 }
 
@@ -25,8 +26,11 @@ struct NotchRootView: View {
     @ObservedObject var build = BuildWatcher.shared
     @ObservedObject var recorder = ScreenRecorder.shared
     @ObservedObject var dictation = DictationService.shared
+    @AppStorage(IdlePill.key) private var idleClock = false
 
-    private var wings: Bool { recorder.recording || timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil }
+    /// Live content on the wings; the idle clock is the lowest priority and only fills an otherwise empty pill.
+    private var liveWings: Bool { recorder.recording || timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil }
+    private var wings: Bool { liveWings || idleClock }
     private var size: CGSize { model.size(hasWings: wings) }
 
     var body: some View {
@@ -42,7 +46,8 @@ struct NotchRootView: View {
                 }
                 else if dictation.active { DictationView() }
                 else if let a = model.activity { ActivityView(activity: a) }
-                else if wings { CollapsedWings() }
+                else if liveWings { CollapsedWings() }
+                else if idleClock { IdleClockWings() }
             }
             .frame(width: size.width, height: size.height, alignment: .top)
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28))

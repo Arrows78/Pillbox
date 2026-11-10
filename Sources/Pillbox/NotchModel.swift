@@ -134,12 +134,14 @@ final class NotchModel: ObservableObject {
 
     func expand(_ tab: Tab? = nil) {
         if let tab { self.tab = tab }
+        if !expanded { Haptics.tap() }
         withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { expanded = true }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
     }
 
     func collapse() {
         pinnedOpen = false
+        if expanded { Haptics.tap() }
         withAnimation(.spring(response: 0.34, dampingFraction: 0.85)) { expanded = false }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
     }

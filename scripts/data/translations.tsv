@@ -629,3 +629,20 @@ Tabs	Pestañas	Tabs
 Shown in the island	Mostradas en la isla	In der Insel angezeigt
 Turn off the tabs you never open. Home always stays.	Desactiva las pestañas que nunca abres. Inicio siempre se queda.	Schalte Tabs aus, die du nie öffnest. Start bleibt immer.
 Or swipe left and right with two fingers. The numbers follow the tabs shown in the bar.	O desliza a izquierda y derecha con dos dedos. Los números siguen las pestañas mostradas en la barra.	Oder wische mit zwei Fingern nach links und rechts. Die Zahlen folgen den Tabs in der Leiste.
+Hide the island while the screen is mirrored	Ocultar la isla mientras la pantalla está duplicada	Insel ausblenden, während der Bildschirm gespiegelt wird
+A projector or a TV copies the whole screen, so the island goes away outright.	Un proyector o una TV copian toda la pantalla, así que la isla desaparece por completo.	Ein Projektor oder Fernseher kopiert den ganzen Bildschirm, daher verschwindet die Insel ganz.
+Close the island after	Cerrar la isla tras	Insel schließen nach
+Without any input. Fields being edited and the Terminal keep it open.	Sin ninguna entrada. Los campos en edición y el Terminal la mantienen abierta.	Ohne jede Eingabe. Bearbeitete Felder und das Terminal halten sie offen.
+10 s	10 s	10 s
+30 s	30 s	30 s
+1 min	1 min	1 Min.
+5 s	5 s	5 s
+Haptic feedback when the island opens	Respuesta háptica al abrir la isla	Haptisches Feedback beim Öffnen der Insel
+A light tap of the trackpad.	Un ligero toque del trackpad.	Ein leichtes Tippen des Trackpads.
+Clock and battery on the resting pill	Reloj y batería en la píldora en reposo	Uhr und Akku auf der ruhenden Pille
+Shown on the wings when nothing else is live.	Se muestran en las alas cuando nada más está activo.	Auf den Flügeln angezeigt, wenn sonst nichts aktiv ist.
+Swipe the resting pill to change desktop	Deslizar la píldora en reposo para cambiar de escritorio	Über die ruhende Pille wischen, um den Schreibtisch zu wechseln
+Two fingers left or right on the pill. Needs Accessibility.	Dos dedos a izquierda o derecha sobre la píldora. Requiere Accesibilidad.	Zwei Finger nach links oder rechts auf der Pille. Benötigt Bedienungshilfen.
+Hide the pointer when it rests	Ocultar el puntero cuando está quieto	Zeiger ausblenden, wenn er ruht
+In every app, handy for films. Any movement brings it back.	En todas las apps, útil para películas. Cualquier movimiento lo devuelve.	In jeder App, praktisch für Filme. Jede Bewegung bringt ihn zurück.
+Allow Pillbox to switch desktops	Permite a Pillbox cambiar de escritorio	Erlaube Pillbox, den Schreibtisch zu wechseln

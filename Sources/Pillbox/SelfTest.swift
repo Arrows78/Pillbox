@@ -974,5 +974,8 @@ extension SelfTest {
     static func batch9() {
         check("tabs: hidden set parses, ignores unknown names and never hides Home",
               Tab.hidden(from: "music,home,bogus,terminal") == [.music, .terminal] && Tab.hidden(from: nil).isEmpty && Tab.hidden(from: "") .isEmpty)
+        check("idle collapse: only an open, unpinned panel past the limit", IdleCollapse.shouldCollapse(expanded: true, pinned: false, idle: 31, limit: 30)
+              && !IdleCollapse.shouldCollapse(expanded: true, pinned: true, idle: 31, limit: 30) && !IdleCollapse.shouldCollapse(expanded: true, pinned: false, idle: 31, limit: 0)
+              && !IdleCollapse.shouldCollapse(expanded: false, pinned: false, idle: 31, limit: 30) && !IdleCollapse.shouldCollapse(expanded: true, pinned: false, idle: 10, limit: 30))
     }
 }

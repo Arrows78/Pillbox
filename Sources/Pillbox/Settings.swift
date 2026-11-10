@@ -54,6 +54,12 @@ struct SettingsView: View {
     @AppStorage("showMenuBarIcon") private var showMenuBarIcon = true
     @AppStorage("dictationShortcut") private var dictationShortcut = false
     @AppStorage("activityCounter") private var activityCounter = false
+    @AppStorage(IdlePill.key) private var idleClock = false
+    @AppStorage(Haptics.key) private var hapticIsland = false
+    @AppStorage(IdleCollapse.key) private var idleCollapse = 0
+    @AppStorage(PointerHider.key) private var hidePointer = 0
+    @AppStorage(Mirroring.key) private var hideWhileMirroring = false
+    @AppStorage(SpaceSwipe.key) private var swipeSpaces = false
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     @State private var pane: SettingsPane
@@ -183,6 +189,16 @@ struct SettingsView: View {
                 }
                 SettingsRow(title: "Panel size") { Slider(value: $panelScale, in: 0.8...1.3).frame(width: 180) }
                 SettingsToggle("Hide the island in full screen", isOn: $hideInFullScreen)
+                SettingsToggle("Hide the island while the screen is mirrored", "A projector or a TV copies the whole screen, so the island goes away outright.", isOn: $hideWhileMirroring)
+                SettingsRow(title: "Close the island after", subtitle: "Without any input. Fields being edited and the Terminal keep it open.") {
+                    Picker("", selection: $idleCollapse) { Text("Never").tag(0); Text("10 s").tag(10); Text("30 s").tag(30); Text("1 min").tag(60) }.labelsHidden().frame(width: 170)
+                }
+                SettingsToggle("Haptic feedback when the island opens", "A light tap of the trackpad.", isOn: $hapticIsland)
+                SettingsToggle("Clock and battery on the resting pill", "Shown on the wings when nothing else is live.", isOn: $idleClock)
+                SettingsToggle("Swipe the resting pill to change desktop", "Two fingers left or right on the pill. Needs Accessibility.", isOn: $swipeSpaces)
+                SettingsRow(title: "Hide the pointer when it rests", subtitle: "In every app, handy for films. Any movement brings it back.") {
+                    Picker("", selection: $hidePointer) { Text("Never").tag(0); Text("5 s").tag(5); Text("10 s").tag(10); Text("30 s").tag(30) }.labelsHidden().frame(width: 170)
+                }
                 SettingsToggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
                 SettingsToggle("Shake a dragged file to open the shelf", isOn: $shakeToOpen)
                 SettingsToggle("Snap zones when dragging a window to the notch", "Needs Accessibility. Drop the window on a zone to tile it.", isOn: $snapZones)

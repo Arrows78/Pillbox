@@ -19,6 +19,10 @@ enum SettingsBackup {
                     "desktopWidgets", "brightnessHUD", "focusIsland", "callIsland", "copyStack", "notificationIsland", "shakeToOpen", "buildIsland",
                     "hideInFullScreen", "screenshotShelf", "driveEject", "shortcutsOnly", "showMenuBarIcon"] { k[key] = .bool }
         for key in ["dictationShortcut", "activityCounter", "focusBlocking", "spaceIsland", "cameraGuard"] { k[key] = .bool }
+        for key in [IdlePill.key, Haptics.key, Mirroring.key, SpaceSwipe.key] { k[key] = .bool }
+        k[IdleCollapse.key] = .number(0...600)
+        k[PointerHider.key] = .number(0...120)
+        k[Tab.hiddenKey] = .text(nil)
         k["hoverDelay"] = .number(0.05...0.6)
         k["panelScale"] = .number(0.8...1.3)
         k["pillWidth"] = .number(120...260)
