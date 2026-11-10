@@ -189,6 +189,9 @@ struct SettingsView: View {
                 SettingsToggle("Double-press Control to open the notch", "Needs Input Monitoring.", isOn: $doubleTapOpen)
                 SettingsToggle("Copy stack", "Copy several things, then paste them one by one, in order, with the Paste next shortcut.", isOn: $copyStack)
             }
+            SettingsCard(title: "Tabs") {
+                TabsPicker()
+            }
             SettingsCard(title: "Island appearance") {
                 SettingsRow(title: "Island theme", subtitle: "The collapsed pill always stays black to blend into the notch.") {
                     Picker("", selection: $islandTheme) { ForEach(IslandTheme.allCases) { Text(LocalizedStringKey($0.title)).tag($0.rawValue) } }.labelsHidden().frame(width: 170)
@@ -371,7 +374,7 @@ struct SettingsView: View {
                 if doubleTapOpen { SettingsRow(title: "Open the notch", subtitle: "Press Control twice quickly.") { Keycaps("⌃⌃") } }
             }
             SettingsCard(title: "While the island is open") {
-                SettingsRow(title: "Switch tab", subtitle: "Or swipe left and right with two fingers.") { Keycaps("⌘1–\(min(Tab.allCases.count, 9))") }
+                SettingsRow(title: "Switch tab", subtitle: "Or swipe left and right with two fingers. The numbers follow the tabs shown in the bar.") { Keycaps("⌘1–\(min(Tab.visible.count, 9))") }
             }
             SettingsCard(title: "While cleaning") {
                 SettingsRow(title: "Unlock the keyboard") { Keycaps("⌘⎋") }
@@ -489,5 +492,28 @@ struct DetachToggle: View {
                 let now = MenuBarDetach.wanted.contains(tab)   // an import or a reset changes it behind this switch
                 if now != on { on = now }
             }
+    }
+}
+
+/// Settings › Island › Tabs: one switch per tab. Fewer tabs make a shorter bar, and ⌘1–9 follow the ones left.
+struct TabsPicker: View {
+    @AppStorage(Tab.hiddenKey) private var hidden = ""
+
+    var body: some View {
+        let set = Tab.hidden(from: hidden)
+        SettingsRow(title: "Shown in the island", subtitle: "Turn off the tabs you never open. Home always stays.") {
+            Button("Show all") { hidden = "" }.controlSize(.small).disabled(set.isEmpty)
+        }
+        ForEach(Tab.allCases.filter { $0 != .home }) { tab in
+            SettingsRow(title: LocalizedStringKey(tab.title)) {
+                Toggle("", isOn: Binding(get: { !set.contains(tab) }, set: { on in
+                    var s = set
+                    if on { s.remove(tab) } else { s.insert(tab) }
+                    hidden = Tab.allCases.filter(s.contains).map(\.rawValue).joined(separator: ",")
+                    if !on, NotchModel.shared.tab == tab { NotchModel.shared.tab = .home }
+                })).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(SettingsStyle.accent)
+                    .accessibilityLabel(Text(verbatim: tab.title))
+            }
+        }
     }
 }

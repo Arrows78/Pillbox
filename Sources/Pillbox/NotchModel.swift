@@ -3,6 +3,16 @@ import SwiftUI
 enum Tab: String, CaseIterable, Identifiable {
     case home, music, timer, stocks, ai, pulls, reminders, notifications, notes, clipboard, shelf, launcher, terminal, prompter, calendar
     var id: String { rawValue }
+
+    /// Tabs the user turned off in Settings › Island, stored as a comma-separated list. Home can never be hidden.
+    static let hiddenKey = "hiddenTabs"
+    nonisolated static func hidden(from setting: String?) -> Set<Tab> {
+        Set((setting ?? "").split(separator: ",").compactMap { Tab(rawValue: String($0)) }).subtracting([.home])
+    }
+    static var hidden: Set<Tab> { hidden(from: UserDefaults.standard.string(forKey: hiddenKey)) }
+    /// The tabs shown in the bar, in their usual order: ⌘1–9, swipes and the palette follow this list.
+    static var visible: [Tab] { let h = hidden; return allCases.filter { !h.contains($0) } }
+    var isHidden: Bool { Self.hidden.contains(self) }
     var title: String {
         switch self {
         case .home: L("Home")

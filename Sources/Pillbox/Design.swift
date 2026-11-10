@@ -149,7 +149,7 @@ struct TabStrip: View {
 
     var body: some View {
         GeometryReader { g in
-            let split = TabBarMetrics.split(Tab.allCases, selected: model.tab, available: g.size.width)
+            let split = TabBarMetrics.split(Tab.visible, selected: model.tab, available: g.size.width)
             HStack(spacing: TabBarMetrics.spacing) {
                 ForEach(split.shown) { tab in
                     TabBarButton(tab: tab, selected: model.tab == tab) { select(tab) }

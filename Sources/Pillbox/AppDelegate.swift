@@ -92,15 +92,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // ⌘1–9 switches tabs while the notch is open.
         monitors.append(NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
             guard NotchModel.shared.expanded, e.modifierFlags.contains(.command),
-                  let c = e.charactersIgnoringModifiers, let n = Int(c), (1...Tab.allCases.count).contains(n) else { return e }
-            NotchModel.shared.tab = Tab.allCases[n - 1]; return nil
+                  let c = e.charactersIgnoringModifiers, let n = Int(c), (1...Tab.visible.count).contains(n) else { return e }
+            NotchModel.shared.tab = Tab.visible[n - 1]; return nil
         } as Any)
         // Swipe left/right on the notch to change tab.
         monitors.append(NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] e in
             guard let self, NotchModel.shared.expanded, abs(e.scrollingDeltaX) > 8, abs(e.scrollingDeltaX) > abs(e.scrollingDeltaY) * 2,
                   e.phase == .began || e.phase == .changed, self.swipeCooldown < Date() else { return e }
             self.swipeCooldown = Date().addingTimeInterval(0.4)
-            let tabs = Tab.allCases, i = tabs.firstIndex(of: NotchModel.shared.tab)!
+            let tabs = Tab.visible, i = tabs.firstIndex(of: NotchModel.shared.tab) ?? 0
             let j = e.scrollingDeltaX < 0 ? min(i + 1, tabs.count - 1) : max(i - 1, 0)
             NotchModel.shared.tab = tabs[j]; return e
         } as Any)
@@ -163,7 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         let tabs = NSMenu()
-        for tab in Tab.allCases {
+        for tab in Tab.visible {
             let item = NSMenuItem(title: tab.title, action: #selector(openTab(_:)), keyEquivalent: "")
             item.target = self; item.representedObject = tab.rawValue
             item.image = icon(tab.symbol)

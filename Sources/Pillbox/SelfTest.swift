@@ -19,6 +19,7 @@ enum SelfTest {
         lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders(); extras(); batch3(); batch4(); batch5(); batch6(); batch7(); batch8(); awareness(); recordingQRAnnotate(); dictationAndActivity()
         appVolume()
         battery()
+        batch9()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -965,5 +966,13 @@ private extension Process {
         let pipe = Pipe(); p.standardOutput = pipe; p.standardError = Pipe()
         try p.run(); p.waitUntilExit()
         return String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    }
+}
+
+extension SelfTest {
+    /// Custom tabs and the features that came with 0.6.
+    static func batch9() {
+        check("tabs: hidden set parses, ignores unknown names and never hides Home",
+              Tab.hidden(from: "music,home,bogus,terminal") == [.music, .terminal] && Tab.hidden(from: nil).isEmpty && Tab.hidden(from: "") .isEmpty)
     }
 }
