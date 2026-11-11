@@ -49,6 +49,7 @@ enum SettingsBackup {
         k["lottiePath"] = .text(nil)
         k["pinnedStock"] = .text(nil)
         k["detachedTabs"] = .textList
+        k[HomeLayout.cardsKey] = .text(nil); k[HomeLayout.tilesKey] = .text(nil)   // unknown names are skipped when read
         return k
     }
 

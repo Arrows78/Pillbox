@@ -11,7 +11,11 @@ struct HomeTab: View {
     @ObservedObject var audio = AudioControl.shared
     @ObservedObject var weather = WeatherService.shared
     @ObservedObject var batteryLog = BatteryLog.shared
+    @ObservedObject var recorder = ScreenRecorder.shared
+    @ObservedObject var dictation = DictationService.shared
     @State private var batteryChart = false
+    @AppStorage(HomeLayout.cardsKey) private var cardsRaw = ""
+    @AppStorage(HomeLayout.tilesKey) private var tilesRaw = ""
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -38,8 +42,13 @@ struct HomeTab: View {
             }.frame(width: 190, alignment: .leading)
 
             VStack(spacing: 8) {
-                HomeNowPlaying()
-                HomeUpNext()
+                ForEach(Array(HomeLayout.parse(cardsRaw, slots: HomeLayout.cardSlots, defaults: HomeLayout.defaultCards).enumerated()), id: \.offset) { _, card in
+                    switch card {
+                    case .nowPlaying: HomeNowPlaying()
+                    case .upNext: HomeUpNext()
+                    case .recentIslands: HomeRecentIslands()
+                    }
+                }
             }.frame(maxWidth: .infinity)
 
             VStack(spacing: 8) {
@@ -59,24 +68,12 @@ struct HomeTab: View {
                             .accessibilityAddTraits(.isButton).accessibilityAction { batteryChart = false }
                     }
                 }
+                let tiles = HomeLayout.parse(tilesRaw, slots: HomeLayout.tileSlots, defaults: HomeLayout.defaultTiles)
                 VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        quick("cup.and.saucer.fill", "Awake", active: caffeine.active) { caffeine.toggle() }
-                            .contextMenu {
-                                Button("30 minutes") { caffeine.start(minutes: 30) }
-                                Button("1 hour") { caffeine.start(minutes: 60) }
-                                Button("2 hours") { caffeine.start(minutes: 120) }
-                                Button("Until 6 pm") { caffeine.start(until: 18) }
-                                Button("Until turned off") { caffeine.start() }
-                                if caffeine.active { Divider(); Button("Turn off") { caffeine.stop() } }
-                            }
-                        quick("eyedropper", "Color") { SystemActions.pickColor() }
-                        quick("camera.viewfinder", "Capture") { SystemActions.captureArea() }
-                    }
-                    HStack(spacing: 8) {
-                        quick("mic.slash.fill", "Mute", active: audio.micMuted) { audio.toggleMic() }
-                        quick("video.fill", "Mirror") { CameraMirror.shared.toggle() }
-                        quick("timer", "Focus", active: timer.running) { timer.mode = .focus; timer.toggle() }
+                    ForEach([0, 3], id: \.self) { row in
+                        HStack(spacing: 8) {
+                            ForEach(row..<row + 3, id: \.self) { i in tile(tiles[i]) }
+                        }
                     }
                 }
             }.frame(width: 280)
@@ -97,6 +94,34 @@ struct HomeTab: View {
         }.frame(maxWidth: .infinity).padding(.vertical, 8)
         .background(card, in: RoundedRectangle(cornerRadius: Design.radius, style: .continuous))
         .accessibilityElement(children: .ignore).accessibilityLabel(Text(name)).accessibilityValue("\(Int(fraction * 100))%")
+    }
+
+    /// One quick tile, with its action and whether it is on.
+    @ViewBuilder private func tile(_ tile: HomeLayout.Tile) -> some View {
+        let title = LocalizedStringKey(tile.title)
+        switch tile {
+        case .awake:
+            quick(tile.symbol, title, active: caffeine.active) { caffeine.toggle() }
+                .contextMenu {
+                    Button("30 minutes") { caffeine.start(minutes: 30) }
+                    Button("1 hour") { caffeine.start(minutes: 60) }
+                    Button("2 hours") { caffeine.start(minutes: 120) }
+                    Button("Until 6 pm") { caffeine.start(until: 18) }
+                    Button("Until turned off") { caffeine.start() }
+                    if caffeine.active { Divider(); Button("Turn off") { caffeine.stop() } }
+                }
+        case .color: quick(tile.symbol, title) { SystemActions.pickColor() }
+        case .capture: quick(tile.symbol, title) { SystemActions.captureArea() }
+        case .mute: quick(tile.symbol, title, active: audio.micMuted) { audio.toggleMic() }
+        case .mirror: quick(tile.symbol, title) { CameraMirror.shared.toggle() }
+        case .focus: quick(tile.symbol, title, active: timer.running) { timer.mode = .focus; timer.toggle() }
+        case .record: quick(tile.symbol, title, active: recorder.recording) { recorder.toggle() }
+        case .dictate: quick(tile.symbol, title, active: dictation.active) { dictation.toggle() }
+        case .palette: quick(tile.symbol, title) { PaletteController.shared.show() }
+        case .eyes: quick(tile.symbol, title) { EyeBreaks.shared.begin() }
+        case .lyrics: quick(tile.symbol, title) { LyricsScreen.shared.show() }
+        case .settings: quick(tile.symbol, title) { SettingsWindow.show() }
+        }
     }
 
     private func quick(_ symbol: String, _ title: LocalizedStringKey, active: Bool = false, action: @escaping () -> Void) -> some View {

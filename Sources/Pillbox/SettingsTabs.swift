@@ -12,6 +12,7 @@ struct SettingsTabsPane: View {
             SettingsCard(title: "Tabs") {
                 TabsPicker()
             }
+            HomeLayoutSettings()
             SettingsCard(title: "Clipboard") {
                 ForEach(ClipboardImport.Source.allCases) { s in
                     SettingsRow(title: LocalizedStringKey(localized("Import history from %@", s.name)), subtitle: s.installed ? "Text items only. Their files are not changed." : "Not found on this Mac.") {
