@@ -119,4 +119,6 @@ enum Preferences {
     static func islandOn(_ kind: IslandKind) -> Preference<Bool> { Preference("island.\(kind.key).on", true) }
     static func islandPriority(_ kind: IslandKind) -> Preference<String> { Preference("island.\(kind.key).priority", kind.defaultPriority.key) }
     static func islandDuration(_ kind: IslandKind) -> Preference<Double> { Preference("island.\(kind.key).duration", kind.defaultDuration) }
+    /// Short names typed in the command palette, by the command's English title: "mute" finds "Mute microphone".
+    static let paletteAliases = Preference<[String: String]>("paletteAliases", [:])
 }

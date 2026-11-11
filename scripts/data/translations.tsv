@@ -75,7 +75,7 @@ Pin the apps you open most with +, drag to reorder	Fija tus apps favoritas con +
 Ask in terminal	Preguntar en el terminal	Im Terminal fragen
 Deny	Denegar	Ablehnen
 Allow	Permitir	Erlauben
-Type a command, search the clipboard, or do math…	Escribe un comando, busca en el portapapeles o calcula…	Befehl eingeben, Zwischenablage durchsuchen oder rechnen…
+Command, app, math, f file or w window…	Comando, app, cálculo, f archivo o w ventana…	Befehl, App, Rechnung, f Datei oder w Fenster…
 Go to %@	Ir a %@	Gehe zu %@
 Turn keep awake off	Desactivar mantener activo	Wachhalten ausschalten
 Turn keep awake on	Activar mantener activo	Wachhalten einschalten
@@ -958,3 +958,5 @@ Low	Baja	Niedrig
 High	Alta	Hoch
 Islands	Islas	Inseln
 Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen.	Las islas bajas esperan detrás de las demás y se descartan mientras hay otra en pantalla. Las altas pasan delante. La duración es el tiempo que cada una se queda en pantalla.	Niedrige Inseln warten hinter den anderen und werden verworfen, solange eine andere angezeigt wird. Hohe kommen zuerst. Die Dauer ist die Zeit, die jede auf dem Bildschirm bleibt.
+Command aliases	Alias de comandos	Befehlsaliase
+Alias	Alias	Alias

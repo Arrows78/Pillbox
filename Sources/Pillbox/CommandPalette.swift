@@ -15,47 +15,82 @@ enum PaletteCategory: String, CaseIterable {
 struct PaletteCommand: Identifiable {
     let id = UUID()
     let title: String
+    /// The English title that does not change with the state of the command (the "on" or "off" form it shows first).
+    /// Aliases are kept by it. Empty for the rows that are not commands (tabs, apps, files, clipboard).
+    let key: String
     let symbol: String
     let category: PaletteCategory
+    /// The shortcut the row runs, shown on its right ("⌘2", "⌃⌥V"), or nil.
+    let shortcut: String?
     let run: @MainActor () -> Void
 
     /// `title` is an English key, localised here so filtering matches what the user reads.
-    init(title: String, symbol: String, category: PaletteCategory = .general, run: @escaping @MainActor () -> Void) {
-        self.title = localized(title); self.symbol = symbol; self.category = category; self.run = run
+    init(title: String, symbol: String, category: PaletteCategory = .general, key: String? = nil, shortcut: String? = nil, run: @escaping @MainActor () -> Void) {
+        self.title = localized(title); self.key = key ?? title; self.symbol = symbol; self.category = category; self.shortcut = shortcut; self.run = run
     }
-    init(localized title: String, symbol: String, category: PaletteCategory = .general, run: @escaping @MainActor () -> Void) {
-        self.title = title; self.symbol = symbol; self.category = category; self.run = run
+    init(localized title: String, symbol: String, category: PaletteCategory = .general, shortcut: String? = nil, run: @escaping @MainActor () -> Void) {
+        self.title = title; self.key = ""; self.symbol = symbol; self.category = category; self.shortcut = shortcut; self.run = run
     }
 }
 
 @MainActor
 final class PaletteModel: ObservableObject {
     /// Changing the query rebuilds the rows; so does opening the palette, so live labels (keep awake, microphone) are current.
-    @Published var query = "" { didSet { refresh() } }
+    @Published var query = "" { didSet { queryChanged() } }
     @Published var selection = 0
     /// The rows for the current query. Built when the query changes or the palette opens, not on every redraw.
     private(set) var commands: [PaletteCommand] = []
+    /// The files Spotlight found for the "f " prefix, once its search has gathered.
+    private var fileHits: [URL] = []
 
     init() { refresh() }
 
     func refresh() { commands = buildCommands() }
 
-    /// The commands whose titles match `query`, best match first. An empty query keeps the order given.
+    private func queryChanged() {
+        if case .files(let rest) = PalettePrefix(query), !rest.isEmpty {
+            fileHits = []
+            FileSearch.shared.search(rest) { [weak self] urls in
+                guard let self else { return }
+                self.fileHits = urls
+                self.objectWillChange.send()
+                self.refresh()
+            }
+        } else {
+            FileSearch.shared.cancel(); fileHits = []
+        }
+        refresh()
+    }
+
+    /// The commands whose titles, or whose alias, match `query`, best match first. An empty query keeps the order given.
     static func ranked(_ list: [PaletteCommand], _ query: String) -> [PaletteCommand] {
         guard !query.isEmpty else { return list }
-        return list.compactMap { c in FuzzyMatch.score(query, in: c.title).map { (c, $0) } }.sorted { $0.1 > $1.1 }.map(\.0)
+        let aliases = Preferences.paletteAliases.value
+        return list.compactMap { c in score(query, c, aliases).map { (c, $0) } }.sorted { $0.1 > $1.1 }.map(\.0)
+    }
+
+    /// The better of the title's score and the alias's score (a little higher, so a typed alias ranks first).
+    static func score(_ query: String, _ c: PaletteCommand, _ aliases: [String: String]) -> Int? {
+        let title = FuzzyMatch.score(query, in: c.title)
+        let alias = aliases[c.key].flatMap { FuzzyMatch.score(query, in: $0) }.map { $0 + 10 }
+        return [title, alias].compactMap { $0 }.max()
+    }
+
+    /// The shortcut of a global shortcut, when it is on and registered: the palette shows it next to its command.
+    static func label(_ s: GlobalShortcut) -> String? {
+        s.isEnabled && !HotKey.unavailable.contains(s.rawValue) ? s.keycaps : nil
     }
 
     private func buildCommands() -> [PaletteCommand] {
         let notch = NotchModel.shared, timers = TimerService.shared
         var list = Tab.visible.enumerated().map { i, tab in
-            PaletteCommand(localized: localized("Go to %@", tab.title) + (i < 9 ? "  ⌘\(i + 1)" : ""), symbol: tab.symbol, category: .tabs) { notch.expand(tab) }
+            PaletteCommand(localized: localized("Go to %@", tab.title), symbol: tab.symbol, category: .tabs, shortcut: i < 9 ? "⌘\(i + 1)" : nil) { notch.expand(tab) }
         }
         list += [
-            PaletteCommand(title: CaffeineService.shared.active ? "Turn keep awake off" : "Turn keep awake on", symbol: "cup.and.saucer.fill") { CaffeineService.shared.toggle() },
+            PaletteCommand(title: CaffeineService.shared.active ? "Turn keep awake off" : "Turn keep awake on", symbol: "cup.and.saucer.fill", key: "Turn keep awake on") { CaffeineService.shared.toggle() },
             PaletteCommand(title: "Start focus session", symbol: "timer", category: .focus) { timers.mode = .focus; timers.start() },
             PaletteCommand(title: "Start stopwatch", symbol: "stopwatch", category: .focus) { timers.mode = .stopwatch; timers.start() },
-            PaletteCommand(title: AudioControl.shared.micMuted ? "Unmute microphone" : "Mute microphone", symbol: "mic.slash.fill", category: .music) { AudioControl.shared.toggleMic() },
+            PaletteCommand(title: AudioControl.shared.micMuted ? "Unmute microphone" : "Mute microphone", symbol: "mic.slash.fill", category: .music, key: "Mute microphone") { AudioControl.shared.toggleMic() },
             PaletteCommand(title: "Video speed 1×", symbol: "speedometer", category: .music) { VideoSpeed.set(1) },
             PaletteCommand(title: "Video speed 1.5×", symbol: "speedometer", category: .music) { VideoSpeed.set(1.5) },
             PaletteCommand(title: "Video speed 2×", symbol: "speedometer", category: .music) { VideoSpeed.set(2) },
@@ -67,17 +102,17 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Black out screens to clean them", symbol: "display", category: .cleaning) { CleaningLock.shared.startScreenBlackout() },
             PaletteCommand(title: "Floating player", symbol: "music.note.tv", category: .music) { FloatingPlayer.shared.toggle() },
             PaletteCommand(title: "Full-screen lyrics", symbol: "text.quote", category: .music) { LyricsScreen.shared.show() },
-            PaletteCommand(title: "Paste next from the copy stack", symbol: "square.stack", category: .windows) { CopyStackStore.shared.pasteNext() },
+            PaletteCommand(title: "Paste next from the copy stack", symbol: "square.stack", category: .windows, shortcut: Self.label(.pasteNext)) { CopyStackStore.shared.pasteNext() },
             PaletteCommand(title: "Clear the copy stack", symbol: "square.stack.3d.up.slash", category: .windows) { CopyStackStore.shared.clear() },
             PaletteCommand(title: "Ask about screen", symbol: "text.viewfinder", category: .capture) { AskAboutScreen.start() },
-            PaletteCommand(title: WindowWatch.shared.watching ? "Stop watching the screen area" : "Watch a screen area", symbol: "eye", category: .capture) { WindowWatch.shared.watching ? WindowWatch.shared.stop() : WindowWatch.shared.choose() },
-            PaletteCommand(title: ScreenRecorder.shared.recording ? "Stop screen recording" : "Record the screen", symbol: "record.circle", category: .capture) { ScreenRecorder.shared.toggle() },
+            PaletteCommand(title: WindowWatch.shared.watching ? "Stop watching the screen area" : "Watch a screen area", symbol: "eye", category: .capture, key: "Watch a screen area") { WindowWatch.shared.watching ? WindowWatch.shared.stop() : WindowWatch.shared.choose() },
+            PaletteCommand(title: ScreenRecorder.shared.recording ? "Stop screen recording" : "Record the screen", symbol: "record.circle", category: .capture, key: "Record the screen") { ScreenRecorder.shared.toggle() },
             PaletteCommand(title: "Record an area of the screen", symbol: "rectangle.dashed.badge.record", category: .capture) { ScreenRecorder.shared.recordArea() },
             PaletteCommand(title: "Read QR code on screen", symbol: "qrcode.viewfinder", category: .capture) { QRReader.scanScreen() },
             PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft", category: .capture) { Teleprompter.shared.show() },
-            PaletteCommand(title: DictationService.shared.active ? "Stop dictation" : "Dictate", symbol: "mic.fill") { DictationService.shared.toggle() },
+            PaletteCommand(title: DictationService.shared.active ? "Stop dictation" : "Dictate", symbol: "mic.fill", key: "Dictate", shortcut: Self.label(.dictate)) { DictationService.shared.toggle() },
             PaletteCommand(title: "Activity today", symbol: "chart.bar.fill") { ActivityCounter.shared.showToday() },
-            PaletteCommand(title: AmbientNoise.shared.playing ? "Stop the ambient sound" : "Play ambient sound", symbol: "speaker.wave.2", category: .focus) { AmbientNoise.shared.toggle() },
+            PaletteCommand(title: AmbientNoise.shared.playing ? "Stop the ambient sound" : "Play ambient sound", symbol: "speaker.wave.2", category: .focus, key: "Play ambient sound") { AmbientNoise.shared.toggle() },
             PaletteCommand(title: "Rest your eyes (20 s)", symbol: "eye", category: .focus) { EyeBreaks.shared.begin() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
@@ -97,8 +132,8 @@ final class PaletteModel: ObservableObject {
         list += ShortcutsService.shared.names.map { n in PaletteCommand(localized: localized("Shortcut: %@", n), symbol: "bolt.fill", category: .actions) { ShortcutsService.shared.run(n) } }
         list += SnapZone.allCases.map { z in PaletteCommand(localized: localized("Snap window: %@", localized(z.rawValue)), symbol: "rectangle.split.2x1", category: .windows) { WindowSnap.snap(z) } }
         let q = query.trimmingCharacters(in: .whitespaces)
-        // `>` lists the commands only, `/` the clipboard only; each is ranked by how well it matches.
-        switch PalettePrefix(q) {
+        // `>` lists the commands only, `/` the clipboard only, `f ` the files, `w ` the windows; each is ranked by how well it matches.
+        switch PalettePrefix(query) {
         case .commands(let rest):
             return Self.ranked(list, rest)
         case .clipboard(let rest):
@@ -106,6 +141,12 @@ final class PaletteModel: ObservableObject {
                 .sorted { $0.1 > $1.1 }.prefix(20).map { item, _ in
                     PaletteCommand(localized: localized("Paste: %@", String((item.text ?? item.ocr ?? localized("Image")).prefix(50))), symbol: "doc.on.clipboard") { ClipboardService.shared.paste(item) }
                 }
+        case .files(let rest):
+            return rest.isEmpty ? [] : fileHits.map { url in
+                PaletteCommand(localized: url.lastPathComponent, symbol: "doc") { NSWorkspace.shared.open(url) }
+            }
+        case .windows(let rest):
+            return Self.ranked(PaletteWindows.rows(), rest)
         case .none: break
         }
         guard !q.isEmpty else {
@@ -115,6 +156,9 @@ final class PaletteModel: ObservableObject {
             return recent + rest + CalcStore.history.entries.prefix(5).map { e in PaletteCommand(localized: e, symbol: "clock.arrow.circlepath") { Pasteboard.copy(CalcHistory.result(of: e)) } }
         }
         var out = Self.ranked(list, q)
+        out += PaletteApps.matches(q, in: PaletteApps.installed).map { app in
+            PaletteCommand(localized: app.name, symbol: "app.dashed") { NSWorkspace.shared.open(app.url) }
+        }
         out += ClipboardService.shared.items.filter { $0.searchable.localizedCaseInsensitiveContains(q) }.prefix(5).map { item in
             PaletteCommand(localized: localized("Paste: %@", String((item.text ?? item.ocr ?? localized("Image")).prefix(50))), symbol: "doc.on.clipboard") { ClipboardService.shared.paste(item) }
         }
@@ -123,6 +167,12 @@ final class PaletteModel: ObservableObject {
         }
         if let v = Self.evaluate(q) {
             out.insert(PaletteCommand(localized: "= \(v)  (" + localized("copy") + ")", symbol: "equal.circle") {
+                Pasteboard.copy(v)
+                CalcStore.record(q, v)
+            }, at: 0)
+        }
+        if let v = UnitConverter.answer(q) {
+            out.insert(PaletteCommand(localized: "= \(v)  (" + localized("copy") + ")", symbol: "arrow.left.arrow.right") {
                 Pasteboard.copy(v)
                 CalcStore.record(q, v)
             }, at: 0)
@@ -136,7 +186,7 @@ final class PaletteModel: ObservableObject {
         if let t = QuickCapture.argument(q, keywords: ["note", "n"]) {
             out.insert(PaletteCommand(localized: localized("Save to Apple Notes: %@", String(t.prefix(40))), symbol: "note.text.badge.plus") { QuickCapture.addNote(t) }, at: 0)
         }
-        if Self.evaluate(q) == nil, QuickCapture.argument(q, keywords: ["event", "ev", "note", "n"]) == nil, let r = WebSearch.resolve(q, defaultKey: UserDefaults.standard.string(forKey: "searchEngine") ?? "google") {
+        if Self.evaluate(q) == nil, UnitConverter.answer(q) == nil, QuickCapture.argument(q, keywords: ["event", "ev", "note", "n"]) == nil, let r = WebSearch.resolve(q, defaultKey: UserDefaults.standard.string(forKey: "searchEngine") ?? "google") {
             out.append(PaletteCommand(localized: localized("Search %@: %@", localized(r.label), q), symbol: r.label == TranslateRoute.label ? "character.bubble" : "magnifyingglass") {
                 NotchModel.shared.collapse(); NSWorkspace.shared.open(r.url)
             })
@@ -164,7 +214,7 @@ struct PaletteView: View {
     var body: some View {
         let cmds = model.commands
         VStack(spacing: 0) {
-            TextField("Type a command, search the clipboard, or do math…", text: $model.query)
+            TextField("Command, app, math, f file or w window…", text: $model.query)
                 .textFieldStyle(.plain).font(.system(size: 18)).padding(14).focused($focus)
                 .onSubmit { run(cmds) }
                 .onChange(of: model.query) { _, _ in model.selection = 0 }
@@ -182,7 +232,12 @@ struct PaletteView: View {
             ScrollView {
                 VStack(spacing: 2) {
                     ForEach(Array(cmds.enumerated()), id: \.element.id) { i, c in
-                        HStack { Image(systemName: c.symbol).frame(width: 22); Text(c.title).lineLimit(1); Spacer() }
+                        HStack {
+                            Image(systemName: c.symbol).frame(width: 22)
+                            Text(c.title).lineLimit(1)
+                            Spacer()
+                            if let shortcut = c.shortcut { Keycaps(shortcut).opacity(0.7) }
+                        }
                             .padding(.horizontal, 12).padding(.vertical, 6)
                             .background(i == model.selection ? Color.accentColor.opacity(0.3) : .clear, in: RoundedRectangle(cornerRadius: 6))
                             .contentShape(Rectangle()).onTapGesture { model.selection = i; run(cmds) }

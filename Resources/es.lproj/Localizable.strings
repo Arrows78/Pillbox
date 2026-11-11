@@ -78,7 +78,7 @@
 "Ask in terminal" = "Preguntar en el terminal";
 "Deny" = "Denegar";
 "Allow" = "Permitir";
-"Type a command, search the clipboard, or do math…" = "Escribe un comando, busca en el portapapeles o calcula…";
+"Command, app, math, f file or w window…" = "Comando, app, cálculo, f archivo o w ventana…";
 "Go to %@" = "Ir a %@";
 "Turn keep awake off" = "Desactivar mantener activo";
 "Turn keep awake on" = "Activar mantener activo";
@@ -960,3 +960,5 @@
 "High" = "Alta";
 "Islands" = "Islas";
 "Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen." = "Las islas bajas esperan detrás de las demás y se descartan mientras hay otra en pantalla. Las altas pasan delante. La duración es el tiempo que cada una se queda en pantalla.";
+"Command aliases" = "Alias de comandos";
+"Alias" = "Alias";

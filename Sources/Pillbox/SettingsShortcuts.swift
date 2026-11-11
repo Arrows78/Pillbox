@@ -7,6 +7,9 @@ struct SettingsShortcutsPane: View {
     @AppStorage(Preferences.doubleTapOpen.key) private var doubleTapOpen = Preferences.doubleTapOpen.defaultValue
     @AppStorage(Preferences.copyStack.key) private var copyStack = Preferences.copyStack.defaultValue
     @AppStorage(Preferences.dictationShortcut.key) private var dictationShortcut = Preferences.dictationShortcut.defaultValue
+    /// The palette commands that take an alias, and the aliases typed so far (read when the pane appears).
+    @State private var commands: [PaletteCommand] = []
+    @State private var aliases: [String: String] = [:]
 
     var body: some View {
         SettingsPage(pane: .shortcuts) {
@@ -33,7 +36,27 @@ struct SettingsShortcutsPane: View {
             SettingsCard(title: "While cleaning") {
                 SettingsRow(title: "Unlock the keyboard") { Keycaps("⌘⎋") }
             }
+            SettingsCard(title: "Command aliases") {
+                ForEach(commands, id: \.key) { c in
+                    SettingsRow(title: LocalizedStringKey(localized(c.key))) {
+                        TextField("Alias", text: aliasBinding(c.key))
+                            .textFieldStyle(.roundedBorder).frame(width: 150)
+                    }
+                }
+            }
             SettingsNote("These shortcuts are fixed.")
         }
+        .onAppear {
+            aliases = UserDefaults.standard.dictionary(forKey: Preferences.paletteAliases.key) as? [String: String] ?? [:]
+            commands = PaletteModel().commands.filter { !$0.key.isEmpty }
+        }
+    }
+
+    /// Reads and writes one command's alias; the palette reads the same storage the next time it opens.
+    private func aliasBinding(_ key: String) -> Binding<String> {
+        Binding(get: { aliases[key] ?? "" }, set: { text in
+            PaletteAliases.set(text, for: key)
+            aliases[key] = PaletteAliases.clean(text)
+        })
     }
 }

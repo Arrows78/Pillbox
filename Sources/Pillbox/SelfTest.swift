@@ -24,7 +24,7 @@ enum SelfTest {
         activityQueue(); activityTitleDisplay(); shellActions(); notificationFeed(); pillAndTheme()
         usageAlert(); githubPRs(); edgeBar()
         mcpProtocol(); agentActions(); turnTokens(); panelSize(); tabPanelSizes(); playerAndLyrics(); terminalEnvironment(); terminalLook(); equalizer(); copyStackAndHistory()
-        paletteMath(); settingsBackup(); updateVersions(); shortcutsAndDiagnostics()
+        paletteMath(); paletteSources(); settingsBackup(); updateVersions(); shortcutsAndDiagnostics()
         awareness(); recordingQRAnnotate(); dictationAndActivity()
         appVolume()
         battery()

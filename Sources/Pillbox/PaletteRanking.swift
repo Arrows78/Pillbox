@@ -38,14 +38,18 @@ enum PaletteRecents {
     }
 }
 
-/// What the palette's prefixes mean: `>` keeps only commands, `/` only clipboard items; the rest of the query is what
-/// they are matched with.
-enum PalettePrefix {
-    case commands(String), clipboard(String), none
+/// What the palette's prefixes mean: `>` keeps only commands, `/` only clipboard items, `f ` (with its space) only files
+/// and `w ` only windows; the rest of the query is what they are matched with. Leading spaces are ignored.
+enum PalettePrefix: Equatable {
+    case commands(String), clipboard(String), files(String), windows(String), none
 
     init(_ query: String) {
-        if query.hasPrefix(">") { self = .commands(String(query.dropFirst()).trimmingCharacters(in: .whitespaces)) }
-        else if query.hasPrefix("/") { self = .clipboard(String(query.dropFirst()).trimmingCharacters(in: .whitespaces)) }
+        let s = String(query.drop(while: { $0 == " " }))
+        func rest(_ dropping: Int) -> String { String(s.dropFirst(dropping)).trimmingCharacters(in: .whitespaces) }
+        if s.hasPrefix(">") { self = .commands(rest(1)) }
+        else if s.hasPrefix("/") { self = .clipboard(rest(1)) }
+        else if s.hasPrefix("f ") { self = .files(rest(2)) }
+        else if s.hasPrefix("w ") { self = .windows(rest(2)) }
         else { self = .none }
     }
 }

@@ -10,7 +10,7 @@ extension SettingsPane {
         .audio: ["Audio and sounds", "Music", "Equalizer", "Sounds", "Show music playing in a browser", "Live audio spectrum", "System equalizer", "Typing sounds", "Typing volume", "Ambient sound during focus", "Ambient volume"],
         .windows: ["Windows and keyboard", "Desktop and keyboard", "Swipe the resting pill to change desktop", "Move and resize windows with the mouse", "Snap zones when dragging a window to the notch", "Double-press Control to open the notch", "Copy stack", "Desktop widgets", "Hyper key", "A quick press sends Escape"],
         .integrations: ["Integrations", "Ask about screen", "Terminal", "Developer API", "Enable local API", "Anthropic API key", "Font size", "Theme", "Token", "Address"],
-        .shortcuts: ["Shortcuts", "Anywhere", "While the island is open", "While cleaning", "Open the notch", "Switch tab", "Unlock the keyboard"],
+        .shortcuts: ["Shortcuts", "Anywhere", "While the island is open", "While cleaning", "Command aliases", "Open the notch", "Switch tab", "Unlock the keyboard"],
         .about: ["About", "Privacy", "Check for updates automatically", "Include beta versions", "Source code and releases", "Updates", "Diagnostics", "Recent logs", "Report a problem"],
         .permissions: ["Permissions", "Accessibility", "Input Monitoring", "Screen Recording", "Full Disk Access", "Calendars", "Reminders", "Location", "Camera", "Automation: Spotify", "Automation: Music", "Automation: Messages", "Automation: browsers", "Bluetooth", "Microphone", "Speech Recognition", "Keyboard lock, window snapping and paste from the clipboard.", "Keystroke display and activity counter.", "Window watch, Ask about screen, screen recording and QR codes.", "Notification mirror and Focus island.", "Next event on Home.", "Reminders tab.", "Local weather.", "Camera mirror.", "Now playing and controls (open Spotify first).", "Now playing and controls (open Music first).", "Dictation and voice following.", "Turns speech into text for dictation and voice following.", "AirPods and headphones connecting, with their battery.", "Replies to messages from the island.", "Video speed in the front browser tab."],
     ]
@@ -24,7 +24,7 @@ extension SettingsPane {
         .audio: [Preferences.liveSpectrum.key, Preferences.browserMusic.key, Preferences.systemEQ.key, Preferences.eqBass.key, Preferences.eqMid.key, Preferences.eqTreble.key, Preferences.typingProfile.key, Preferences.typingVolume.key, Preferences.ambientKind.key, Preferences.ambientVolume.key],
         .windows: [Preferences.hyperKey.key, Preferences.hyperEscape.key, Preferences.doubleTapOpen.key, Preferences.snapZones.key, Preferences.desktopWidgets.key, Preferences.windowDrag.key, Preferences.copyStack.key, Preferences.swipeSpaces.key],
         .integrations: [Preferences.devAPI.key, Preferences.terminalFontSize.key, Preferences.terminalTheme.key],
-        .shortcuts: [Preferences.doubleTapOpen.key, Preferences.copyStack.key, Preferences.dictationShortcut.key],
+        .shortcuts: [Preferences.doubleTapOpen.key, Preferences.copyStack.key, Preferences.dictationShortcut.key, Preferences.paletteAliases.key],
         .about: [Preferences.autoUpdate.key, Preferences.betaUpdates.key],
         .permissions: [],
     ]

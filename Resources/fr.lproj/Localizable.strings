@@ -101,7 +101,7 @@
 "Allow" = "Autoriser";
 
 /* Palette */
-"Type a command, search the clipboard, or do math…" = "Tape une commande, cherche dans le presse-papiers ou calcule…";
+"Command, app, math, f file or w window…" = "Commande, app, calcul, f fichier ou w fenêtre…";
 "Go to %@" = "Aller à %@";
 "Turn keep awake off" = "Désactiver le maintien éveillé";
 "Turn keep awake on" = "Activer le maintien éveillé";
@@ -1013,3 +1013,5 @@
 "High" = "Haute";
 "Islands" = "Îles";
 "Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen." = "Les îles basses attendent derrière les autres et sont abandonnées pendant qu'une autre est affichée. Les hautes passent devant. La durée est le temps que chacune reste à l'écran.";
+"Command aliases" = "Alias des commandes";
+"Alias" = "Alias";
