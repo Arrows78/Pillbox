@@ -698,7 +698,6 @@
 "5 s" = "5 s";
 "Haptic feedback when the island opens" = "Retour haptique à l'ouverture de l'île";
 "A light tap of the trackpad." = "Une légère impulsion du trackpad.";
-"Clock and battery on the resting pill" = "Heure et batterie sur la pilule au repos";
 "Shown on the wings when nothing else is live." = "Affichés sur les ailes quand rien d'autre n'est actif.";
 "Swipe the resting pill to change desktop" = "Balayer la pilule au repos pour changer de bureau";
 "Two fingers left or right on the pill. Needs Accessibility." = "Deux doigts à gauche ou à droite sur la pilule. Requiert Accessibilité.";
@@ -1015,3 +1014,15 @@
 "Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen." = "Les îles basses attendent derrière les autres et sont abandonnées pendant qu'une autre est affichée. Les hautes passent devant. La durée est le temps que chacune reste à l'écran.";
 "Command aliases" = "Alias des commandes";
 "Alias" = "Alias";
+"Clock" = "Horloge";
+"Date" = "Date";
+"Weather" = "Météo";
+"Next event" = "Prochain événement";
+"Current track" = "Titre en cours";
+"Pill wings" = "Ailes de la pastille";
+"Left wing" = "Aile gauche";
+"Right wing" = "Aile droite";
+"What shows beside the notch while something is live. Recording, calls and other alerts still come first." = "Ce qui s'affiche à côté de l'encoche quand quelque chose est actif. Les enregistrements, appels et autres alertes passent toujours en premier.";
+"Show content on the resting pill" = "Contenu de la pastille au repos";
+"Resting pill, left" = "Pastille au repos, gauche";
+"Resting pill, right" = "Pastille au repos, droite";

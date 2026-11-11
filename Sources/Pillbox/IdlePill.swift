@@ -2,29 +2,15 @@ import Foundation
 import AppKit
 import SwiftUI
 
+/// The resting pill: what it shows when nothing is live. Off by default; when on, its two wings show the chosen items.
 enum IdlePill {
     static let key = "idleClock"
     static var enabled: Bool { UserDefaults.standard.bool(forKey: key) }
-}
 
-/// The wings of a resting pill: battery on the left, the time on the right.
-struct IdleClockWings: View {
-    @ObservedObject var battery = BatteryService.shared
-    var body: some View {
-        HStack(spacing: 0) {
-            HStack(spacing: 3) {
-                Image(systemName: battery.pluggedIn ? "battery.100percent.bolt" : battery.level <= 20 ? "battery.25percent" : "battery.75percent")
-                    .font(.system(size: 10)).foregroundStyle(battery.level <= 20 && !battery.pluggedIn ? .red : .white.opacity(0.8))
-                Text(verbatim: "\(battery.level)%").font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.8))
-            }.frame(width: NotchModel.wing)
-            Spacer(minLength: NotchModel.shared.geometry.width)
-            TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                Text(ctx.date, format: .dateTime.hour().minute()).font(.system(size: 11, weight: .semibold, design: .rounded)).monospacedDigit()
-                    .foregroundStyle(.white.opacity(0.85))
-            }.frame(width: NotchModel.wing)
-        }
-        .frame(maxHeight: NotchModel.shared.geometry.height)
-        .accessibilityElement(children: .combine)
+    /// Whether the resting pill has anything to show: it is on and at least one wing has a live item.
+    @MainActor static var restingContent: Bool {
+        let w = WingLayout.resting(left: Preferences.restingLeft.value, right: Preferences.restingRight.value)
+        return enabled && (w.left != nil || w.right != nil)
     }
 }
 

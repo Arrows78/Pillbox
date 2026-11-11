@@ -24,6 +24,10 @@ struct SettingsIslandPane: View {
     @AppStorage(Preferences.lottiePath.key) private var lottiePath = Preferences.lottiePath.defaultValue
     @AppStorage(Preferences.pillWidth.key) private var pillWidth = Preferences.pillWidth.defaultValue
     @AppStorage(Preferences.idleClock.key) private var idleClock = Preferences.idleClock.defaultValue
+    @AppStorage(Preferences.wingLeft.key) private var wingLeft = Preferences.wingLeft.defaultValue
+    @AppStorage(Preferences.wingRight.key) private var wingRight = Preferences.wingRight.defaultValue
+    @AppStorage(Preferences.restingLeft.key) private var restingLeft = Preferences.restingLeft.defaultValue
+    @AppStorage(Preferences.restingRight.key) private var restingRight = Preferences.restingRight.defaultValue
     @AppStorage(Preferences.hapticIsland.key) private var hapticIsland = Preferences.hapticIsland.defaultValue
     @AppStorage(Preferences.idleCollapse.key) private var idleCollapse = Preferences.idleCollapse.defaultValue
     @AppStorage(Preferences.hidePointer.key) private var hidePointer = Preferences.hidePointer.defaultValue
@@ -48,6 +52,12 @@ struct SettingsIslandPane: View {
             sizes[tab] = size
             tabPanelSizes = PanelSize.setting(from: sizes)
         })
+    }
+
+    /// The choices of a wing picker: nothing, or one of the items a wing can show.
+    @ViewBuilder private func wingOptions() -> some View {
+        Text("None").tag("none")
+        ForEach(WingItem.choices) { Text(verbatim: $0.title).tag($0.rawValue) }
     }
 
     var body: some View {
@@ -80,7 +90,6 @@ struct SettingsIslandPane: View {
                     Picker("", selection: $idleCollapse) { Text("Never").tag(0); Text("10 s").tag(10); Text("30 s").tag(30); Text("1 min").tag(60) }.labelsHidden().frame(width: 170)
                 }
                 SettingsToggle("Haptic feedback when the island opens", "A light tap of the trackpad.", isOn: $hapticIsland)
-                SettingsToggle("Clock and battery on the resting pill", "Shown on the wings when nothing else is live.", isOn: $idleClock)
                 SettingsRow(title: "Hide the pointer when it rests", subtitle: "In every app, handy for films. Any movement brings it back.") {
                     Picker("", selection: $hidePointer) { Text("Never").tag(0); Text("5 s").tag(5); Text("10 s").tag(10); Text("30 s").tag(30) }.labelsHidden().frame(width: 170)
                 }
@@ -95,6 +104,23 @@ struct SettingsIslandPane: View {
                 }
             }
             SettingsNote("The size applies when the panel opens on that tab. Switching tabs keeps it. Panel size above scales every tab.")
+            SettingsCard(title: "Pill wings") {
+                SettingsRow(title: "Left wing", subtitle: "What shows beside the notch while something is live. Recording, calls and other alerts still come first.") {
+                    Picker("", selection: $wingLeft) { wingOptions() }.labelsHidden().frame(width: 170)
+                }
+                SettingsRow(title: "Right wing") {
+                    Picker("", selection: $wingRight) { wingOptions() }.labelsHidden().frame(width: 170)
+                }
+                SettingsToggle("Show content on the resting pill", "Shown on the wings when nothing else is live.", isOn: $idleClock)
+                if idleClock {
+                    SettingsRow(title: "Resting pill, left") {
+                        Picker("", selection: $restingLeft) { wingOptions() }.labelsHidden().frame(width: 170)
+                    }
+                    SettingsRow(title: "Resting pill, right") {
+                        Picker("", selection: $restingRight) { wingOptions() }.labelsHidden().frame(width: 170)
+                    }
+                }
+            }
             SettingsCard(title: "Island appearance") {
                 SettingsRow(title: "Island theme", subtitle: "The collapsed pill always stays black to blend into the notch.") {
                     Picker("", selection: $islandTheme) { ForEach(IslandTheme.allCases) { Text(LocalizedStringKey($0.title)).tag($0.rawValue) } }.labelsHidden().frame(width: 170)

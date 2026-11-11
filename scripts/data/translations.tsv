@@ -642,7 +642,6 @@ Without any input. Fields being edited and the Terminal keep it open.	Sin ningun
 5 s	5 s	5 s
 Haptic feedback when the island opens	Respuesta háptica al abrir la isla	Haptisches Feedback beim Öffnen der Insel
 A light tap of the trackpad.	Un ligero toque del trackpad.	Ein leichtes Tippen des Trackpads.
-Clock and battery on the resting pill	Reloj y batería en la píldora en reposo	Uhr und Akku auf der ruhenden Pille
 Shown on the wings when nothing else is live.	Se muestran en las alas cuando nada más está activo.	Auf den Flügeln angezeigt, wenn sonst nichts aktiv ist.
 Swipe the resting pill to change desktop	Deslizar la píldora en reposo para cambiar de escritorio	Über die ruhende Pille wischen, um den Schreibtisch zu wechseln
 Two fingers left or right on the pill. Needs Accessibility.	Dos dedos a izquierda o derecha sobre la píldora. Requiere Accesibilidad.	Zwei Finger nach links oder rechts auf der Pille. Benötigt Bedienungshilfen.
@@ -960,3 +959,16 @@ Islands	Islas	Inseln
 Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen.	Las islas bajas esperan detrás de las demás y se descartan mientras hay otra en pantalla. Las altas pasan delante. La duración es el tiempo que cada una se queda en pantalla.	Niedrige Inseln warten hinter den anderen und werden verworfen, solange eine andere angezeigt wird. Hohe kommen zuerst. Die Dauer ist die Zeit, die jede auf dem Bildschirm bleibt.
 Command aliases	Alias de comandos	Befehlsaliase
 Alias	Alias	Alias
+
+Clock	Reloj	Uhr
+Date	Fecha	Datum
+Weather	Tiempo	Wetter
+Next event	Próximo evento	Nächster Termin
+Current track	Pista actual	Aktueller Titel
+Pill wings	Alas de la píldora	Flügel der Pille
+Left wing	Ala izquierda	Linker Flügel
+Right wing	Ala derecha	Rechter Flügel
+What shows beside the notch while something is live. Recording, calls and other alerts still come first.	Lo que se muestra junto a la muesca mientras algo está activo. La grabación, las llamadas y otras alertas siguen yendo primero.	Was neben der Kerbe angezeigt wird, solange etwas aktiv ist. Aufnahmen, Anrufe und andere Warnungen haben weiterhin Vorrang.
+Show content on the resting pill	Contenido de la píldora en reposo	Inhalte auf der ruhenden Pille
+Resting pill, left	Píldora en reposo, izquierda	Ruhende Pille, links
+Resting pill, right	Píldora en reposo, derecha	Ruhende Pille, rechts

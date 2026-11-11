@@ -6,16 +6,14 @@ final class LiveState {
     static let shared = LiveState()
     static var lottiePath: String? { UserDefaults.standard.string(forKey: "lottiePath").flatMap { FileManager.default.fileExists(atPath: $0) ? $0 : nil } }
 
-    /// Live content that the wings show. The one predicate for the root view's wings and for the window size.
+    /// Whether anything live takes a wing of the collapsed pill. The one predicate for the root view's wings and for the window size.
     static var hasLiveContent: Bool {
-        let timers = TimerService.shared, music = MusicService.shared, stocks = StocksService.shared
-        return timers.isActive || CaffeineService.shared.active || (music.hasTrack && music.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
-            || CallMonitor.shared.call != nil || lottiePath != nil || !DownloadProgress.shared.items.isEmpty || BuildWatcher.shared.since != nil || ScreenRecorder.shared.recording
-            || (stocks.pinned.flatMap { stocks.quotes[$0] } != nil)   // the pinned quote is drawn on the wing too
+        let w = WingLayout.live(left: Preferences.wingLeft.value, right: Preferences.wingRight.value)
+        return w.left != nil || w.right != nil
     }
 
-    /// Whether the collapsed pill has wings: live content, or the idle clock that fills an otherwise empty pill.
-    var hasWings: Bool { Self.hasLiveContent || IdlePill.enabled }
+    /// Whether the collapsed pill has wings: live content, or the resting content that fills an otherwise empty pill.
+    var hasWings: Bool { Self.hasLiveContent || IdlePill.restingContent }
 }
 
 struct NotchRootView: View {
@@ -31,11 +29,20 @@ struct NotchRootView: View {
     @ObservedObject var recorder = ScreenRecorder.shared
     @ObservedObject var dictation = DictationService.shared
     @ObservedObject var stocks = StocksService.shared
+    @ObservedObject var calendar = CalendarService.shared
+    @ObservedObject var weather = WeatherService.shared
     @AppStorage(IdlePill.key) private var idleClock = false
+    @AppStorage(Preferences.wingLeft.key) private var wingLeft = Preferences.wingLeft.defaultValue
+    @AppStorage(Preferences.wingRight.key) private var wingRight = Preferences.wingRight.defaultValue
+    @AppStorage(Preferences.restingLeft.key) private var restingLeft = Preferences.restingLeft.defaultValue
+    @AppStorage(Preferences.restingRight.key) private var restingRight = Preferences.restingRight.defaultValue
 
-    /// Live content on the wings; the idle clock is the lowest priority and only fills an otherwise empty pill.
-    private var liveWings: Bool { LiveState.hasLiveContent }
-    private var wings: Bool { liveWings || idleClock }
+    /// The wings while something is live; the resting content only fills an otherwise empty pill.
+    private var live: (left: WingItem?, right: WingItem?) { WingLayout.live(left: wingLeft, right: wingRight) }
+    private var liveWings: Bool { live.left != nil || live.right != nil }
+    private var resting: (left: WingItem?, right: WingItem?) { WingLayout.resting(left: restingLeft, right: restingRight) }
+    private var restingWings: Bool { idleClock && (resting.left != nil || resting.right != nil) }
+    private var wings: Bool { liveWings || restingWings }
     private var size: CGSize { model.size(hasWings: wings) }
 
     var body: some View {
@@ -51,8 +58,8 @@ struct NotchRootView: View {
                 }
                 else if dictation.active { DictationView() }
                 else if let a = model.activity { ActivityView(activity: a) }
-                else if liveWings { CollapsedWings() }
-                else if idleClock { IdleClockWings() }
+                else if liveWings { WingRow(left: live.left, right: live.right) }
+                else if restingWings { WingRow(left: resting.left, right: resting.right, resting: true) }
             }
             .frame(width: size.width, height: size.height, alignment: .top)
             .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28))
@@ -70,82 +77,6 @@ struct NotchRootView: View {
         .onChange(of: wings) { _, _ in NotificationCenter.default.post(name: .notchStateChanged, object: nil) }
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
-    }
-}
-
-struct CollapsedWings: View {
-    @ObservedObject var recorder = ScreenRecorder.shared
-    @ObservedObject var downloads = DownloadProgress.shared
-    @ObservedObject var build = BuildWatcher.shared
-    @ObservedObject var calls = CallMonitor.shared
-    @ObservedObject var cleaning = CleaningLock.shared
-    @ObservedObject var privacy = PrivacyService.shared
-    @ObservedObject var model = NotchModel.shared
-    @ObservedObject var timer = TimerService.shared
-    @ObservedObject var music = MusicService.shared
-    @ObservedObject var caffeine = CaffeineService.shared
-
-    var body: some View {
-        HStack(spacing: 0) {
-            left.frame(width: NotchModel.wing, alignment: .center)
-            Spacer(minLength: model.geometry.width)
-            right.frame(width: NotchModel.wing, alignment: .center)
-        }
-        .frame(maxHeight: model.geometry.height)
-    }
-
-    @ViewBuilder private var left: some View {
-        if recorder.recording {
-            RecordingDot()
-        } else if CleaningLock.shared.active {
-            Image(systemName: "lock.fill").foregroundStyle(.yellow)
-        } else if calls.call != nil {
-            Image(systemName: "phone.fill").font(.system(size: 12)).foregroundStyle(.green)
-        } else if build.since != nil {
-            Image(systemName: "hammer.fill").font(.system(size: 12)).foregroundStyle(.blue)
-        } else if !downloads.items.isEmpty {
-            Image(systemName: "arrow.down.circle.fill").font(.system(size: 13)).foregroundStyle(.blue)
-        } else if privacy.live {
-            HStack(spacing: 4) {
-                if privacy.micLive { Image(systemName: "mic.fill").foregroundStyle(.orange) }
-                if privacy.cameraLive { Image(systemName: "video.fill").foregroundStyle(.green) }
-            }.font(.system(size: 11))
-        } else if music.hasTrack && music.isPlaying, let art = music.artwork {
-            Image(nsImage: art).resizable().frame(width: 20, height: 20).clipShape(RoundedRectangle(cornerRadius: 5))
-        } else if timer.isActive {
-            if let e = Mascot.emoji(for: Mascot.current, progress: timer.progress) { Text(e).font(.system(size: 14)) }
-            else { Image(systemName: "timer").font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange) }
-        } else if caffeine.active {
-            Image(systemName: "cup.and.saucer.fill").font(.system(size: 13)).foregroundStyle(.orange)
-        } else if music.hasTrack && music.isPlaying {
-            Image(systemName: "music.note").foregroundStyle(.white)
-        }
-
-    }
-
-    @ViewBuilder private var right: some View {
-        if let r = recorder.since {
-            Text(r, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.red).frame(width: 52)
-        } else if let c = calls.call {
-            Text(c.since, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.green).frame(width: 52)
-        } else if let s = build.since {
-            Text(s, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.blue).frame(width: 52)
-        } else if let d = downloads.items.first {
-            Text(verbatim: DownloadProgress.size(d.bytes)).font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(.blue)
-        } else if CleaningLock.shared.active {
-            Text("\(CleaningLock.shared.remaining)s").font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.yellow)
-        } else if timer.isActive {
-            Text(timer.display).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.orange)
-        } else if music.hasTrack && music.isPlaying {
-            Equalizer()
-        } else if let sym = StocksService.shared.pinned, let q = StocksService.shared.quotes[sym] {
-            Text(String(format: "%@%.1f%%", q.change >= 0 ? "+" : "", q.change * 100))
-                .font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(q.change >= 0 ? .green : .red)
-        } else if caffeine.active, let u = caffeine.until {
-            Text(u, style: .timer).font(.system(size: 10, design: .monospaced)).foregroundStyle(.orange)
-        } else if let path = LiveState.lottiePath {
-            LottieIdle(path: path).frame(width: 28, height: 24).clipped()
-        }
     }
 }
 

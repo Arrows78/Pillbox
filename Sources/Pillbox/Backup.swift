@@ -43,6 +43,7 @@ enum SettingsBackup {
         k[Preferences.terminalTheme.key] = .text(TerminalTheme.allCases.map(\.rawValue))
         k["searchEngine"] = .text(WebSearch.engines.map(\.key))
         k["hudStyle"] = .text(["notch", "edge", "circle"])
+        for key in [Preferences.wingLeft.key, Preferences.wingRight.key, Preferences.restingLeft.key, Preferences.restingRight.key] { k[key] = .text(WingItem.settingValues) }
         k["islandTheme"] = .text(IslandTheme.allCases.map(\.rawValue))
         k["doubleClickAction"] = .text(PillAction.allCases.map(\.rawValue))
         k["tripleClickAction"] = .text(PillAction.allCases.map(\.rawValue))

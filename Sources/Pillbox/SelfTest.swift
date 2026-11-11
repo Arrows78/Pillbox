@@ -33,6 +33,7 @@ enum SelfTest {
         calendarWeek()
         agentApprovals()
         islandTable()
+        pillWings()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }
@@ -102,7 +103,7 @@ enum ViewRenderer {
             save("activity-\(i)", island(ActivityView(activity: a), size), size: size)
         }
         ScreenRecorder.shared.since = Date(timeIntervalSinceNow: -75)
-        save("recording-wings", island(CollapsedWings(), model.size(hasWings: true)), size: model.size(hasWings: true))
+        save("recording-wings", island(WingRow(left: .recording, right: .recording), model.size(hasWings: true)), size: model.size(hasWings: true))
         model.tab = .shelf; model.expanded = true
         save("recording-panel", island(ExpandedView(), NotchModel.expandedSize), size: NotchModel.expandedSize)
         model.expanded = false; ScreenRecorder.shared.since = nil

@@ -121,4 +121,10 @@ enum Preferences {
     static func islandDuration(_ kind: IslandKind) -> Preference<Double> { Preference("island.\(kind.key).duration", kind.defaultDuration) }
     /// Short names typed in the command palette, by the command's English title: "mute" finds "Mute microphone".
     static let paletteAliases = Preference<[String: String]>("paletteAliases", [:])
+    /// What the wings beside the collapsed pill show while live: a `WingItem` raw value, or "none".
+    static let wingLeft = Preference<String>("wingLeft", "none")
+    static let wingRight = Preference<String>("wingRight", "none")
+    /// What the resting pill shows on each wing (when `IdlePill.enabled`): a `WingItem` raw value, or "none".
+    static let restingLeft = Preference<String>("restingLeft", "battery")
+    static let restingRight = Preference<String>("restingRight", "clock")
 }
