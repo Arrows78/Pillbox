@@ -762,3 +762,14 @@ Move up	Subir	Nach oben
 Move down	Bajar	Nach unten
 Step	Paso	Schritt
 Loupe	Lupa	Lupe
+Unavailable	No disponible	Nicht verfügbar
+Music is open	Música abierta	Musik ist geöffnet
+Could not lock the keyboard	No se pudo bloquear el teclado	Tastatur konnte nicht gesperrt werden
+Could not turn Hyper on	No se pudo activar Hyper	Hyper konnte nicht eingeschaltet werden
+Keystroke display	Mostrar pulsaciones	Tastenanzeige
+Double-press Control	Doble pulsación de Control	Doppeltippen auf Control
+Allow Automation for %@ in Settings	Permite la automatización para %@ en Ajustes	Automation für %@ in den Einstellungen erlauben
+Weather needs Location access	El tiempo necesita acceso a la ubicación	Wetter braucht Standortzugriff
+Some calendar links could not be loaded	Algunos enlaces de calendario no se pudieron cargar	Einige Kalenderlinks konnten nicht geladen werden
+Hiding the pointer is not supported on this Mac	Ocultar el puntero no es compatible con este Mac	Das Ausblenden des Zeigers wird auf diesem Mac nicht unterstützt
+%@ needs Input Monitoring	%@ necesita supervisión de entrada	%@ benötigt die Eingabeüberwachung

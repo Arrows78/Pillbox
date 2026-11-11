@@ -764,3 +764,14 @@
 "Move down" = "Nach unten";
 "Step" = "Schritt";
 "Loupe" = "Lupe";
+"Unavailable" = "Nicht verfügbar";
+"Music is open" = "Musik ist geöffnet";
+"Could not lock the keyboard" = "Tastatur konnte nicht gesperrt werden";
+"Could not turn Hyper on" = "Hyper konnte nicht eingeschaltet werden";
+"Keystroke display" = "Tastenanzeige";
+"Double-press Control" = "Doppeltippen auf Control";
+"Allow Automation for %@ in Settings" = "Automation für %@ in den Einstellungen erlauben";
+"Weather needs Location access" = "Wetter braucht Standortzugriff";
+"Some calendar links could not be loaded" = "Einige Kalenderlinks konnten nicht geladen werden";
+"Hiding the pointer is not supported on this Mac" = "Das Ausblenden des Zeigers wird auf diesem Mac nicht unterstützt";
+"%@ needs Input Monitoring" = "%@ benötigt die Eingabeüberwachung";

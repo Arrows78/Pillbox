@@ -815,3 +815,14 @@
 "Move down" = "Descendre";
 "Step" = "Étape";
 "Loupe" = "Loupe";
+"Unavailable" = "Indisponible";
+"Music is open" = "Musique ouverte";
+"Could not lock the keyboard" = "Impossible de verrouiller le clavier";
+"Could not turn Hyper on" = "Impossible d'activer Hyper";
+"Keystroke display" = "Affichage des frappes";
+"Double-press Control" = "Double appui sur Contrôle";
+"Allow Automation for %@ in Settings" = "Autorisez l'automatisation pour %@ dans Réglages";
+"Weather needs Location access" = "La météo a besoin de la localisation";
+"Some calendar links could not be loaded" = "Certains liens de calendrier n'ont pas pu être chargés";
+"Hiding the pointer is not supported on this Mac" = "Le masquage du pointeur n'est pas pris en charge sur ce Mac";
+"%@ needs Input Monitoring" = "%@ a besoin de la surveillance du clavier";
