@@ -1016,3 +1016,4 @@
 "Turn on GitHub or GitLab in Settings" = "Activa GitHub o GitLab en los ajustes";
 "Needs the GitHub (gh) or GitLab (glab) CLI, logged in" = "Necesita la CLI de GitHub (gh) o de GitLab (glab), con sesión iniciada";
 "Open in browser" = "Abrir en el navegador";
+"Custom" = "Personalizado";

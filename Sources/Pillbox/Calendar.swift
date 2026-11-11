@@ -128,7 +128,7 @@ struct CalendarTab: View {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 10) {
                                 ForEach(days, id: \.offset) { day in
-                                    Text(verbatim: dayTitle(day)).font(Design.labelStrong).foregroundStyle(.white.opacity(0.5))
+                                    SectionHeader(Text(verbatim: dayTitle(day)))
                                     ForEach(day.events) { row($0) }
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading)
@@ -194,7 +194,7 @@ struct CalendarTab: View {
             }
         }
         .opacity(e.end < Date() && !e.allDay ? 0.4 : 1)
-        .padding(8).background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: Design.tileRadius))
+        .padding(8).background(Design.card, in: RoundedRectangle(cornerRadius: Design.tileRadius, style: .continuous))
     }
 }
 

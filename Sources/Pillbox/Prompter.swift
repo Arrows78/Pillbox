@@ -143,7 +143,7 @@ struct PrompterTab: View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Label("Scripts", systemImage: "books.vertical.fill").font(Design.labelStrong).foregroundStyle(.white.opacity(0.5))
+                    SectionHeader("Scripts")
                     Spacer()
                     Button { store.add() } label: { Image(systemName: "plus") }.buttonStyle(.plain).accessibilityLabel("New script")
                 }
@@ -151,13 +151,9 @@ struct PrompterTab: View {
                     VStack(spacing: 2) {
                         ForEach(store.scripts) { s in
                             Button { store.selected = s.id } label: {
-                                HStack(spacing: 6) {
+                                ListRow(title: s.title, selected: store.selected == s.id, accent: Tab.prompter.tint) {
                                     Image(systemName: "doc.text.fill").font(Design.caption)
-                                    Text(verbatim: s.title).lineLimit(1).font(Design.bodyMedium)
-                                    Spacer(minLength: 0)
-                                }
-                                .padding(.horizontal, 8).padding(.vertical, 6)
-                                .background(store.selected == s.id ? Color.white.opacity(0.14) : .clear, in: RoundedRectangle(cornerRadius: 8))
+                                } trailing: { EmptyView() }
                             }
                             .buttonStyle(.plain)
                             .contextMenu { Button("Delete", role: .destructive) { store.remove(s) } }
@@ -171,7 +167,7 @@ struct PrompterTab: View {
                 if store.current != nil {
                     TextEditor(text: Binding(get: { store.current?.text ?? "" }, set: { store.setText($0) }))
                         .font(.system(size: 14)).scrollContentBackground(.hidden)
-                        .padding(6).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                        .padding(6).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: Design.tileRadius, style: .continuous))
                 } else {
                     VStack(spacing: 6) {
                         Image(systemName: "text.alignleft").font(.system(size: 26)).foregroundStyle(.white.opacity(0.3))

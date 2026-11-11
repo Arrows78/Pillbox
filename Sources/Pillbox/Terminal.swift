@@ -193,7 +193,7 @@ struct TerminalTab: View {
     private func sessionChip(_ session: TerminalSession) -> some View {
         let selected = session.id == store.selectedID
         return HStack(spacing: 5) {
-            Text(localized("Session %lld", session.number)).font(.system(size: 11, weight: selected ? .semibold : .regular))
+            Text(localized("Session %lld", session.number)).font(selected ? Design.labelStrong : Design.label)
             if store.sessions.count > 1 {
                 Button { store.close(session.id) } label: { Image(systemName: "xmark").font(.system(size: 8, weight: .bold)).frame(width: 14, height: 14) }
                     .buttonStyle(.plain).help(localized("Close this session"))

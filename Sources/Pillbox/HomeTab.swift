@@ -194,7 +194,7 @@ struct HomeUpNext: View {
     var body: some View {
         let upcoming = Array(agenda.events.filter { !$0.allDay && $0.end > Date() }.prefix(3))
         VStack(alignment: .leading, spacing: 8) {
-            Text("Up next").font(Design.captionStrong).foregroundStyle(.secondary)
+            SectionHeader("Up next")
             if upcoming.isEmpty {
                 Text(agenda.denied ? "Calendar access is off" : "No upcoming events").font(Design.bodyMedium).foregroundStyle(.secondary).lineLimit(1)
             }

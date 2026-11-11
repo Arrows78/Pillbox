@@ -1015,3 +1015,4 @@ Merge requests through the glab command, which must be installed and logged in. 
 Turn on GitHub or GitLab in Settings	Activa GitHub o GitLab en los ajustes	GitHub oder GitLab in den Einstellungen aktivieren
 Needs the GitHub (gh) or GitLab (glab) CLI, logged in	Necesita la CLI de GitHub (gh) o de GitLab (glab), con sesión iniciada	Benötigt die GitHub-CLI (gh) oder GitLab-CLI (glab), angemeldet
 Open in browser	Abrir en el navegador	Im Browser öffnen
+Custom	Personalizado	Eigene

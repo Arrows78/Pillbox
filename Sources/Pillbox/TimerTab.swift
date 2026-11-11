@@ -4,6 +4,8 @@ import SwiftUI
 
 struct TimerTab: View {
     @ObservedObject var service = TimerService.shared
+    /// The "Custom" chip was tapped: the stepper is shown even when the length is one of the presets.
+    @State private var customOpen = false
 
     var body: some View {
         HStack(spacing: 18) {
@@ -27,26 +29,22 @@ struct TimerTab: View {
                     if service.mode == .countdown { Button("Repeat") { service.repeatTimer() }.buttonStyle(PillButtonStyle()) }
                     AmbientMenu()
                     Spacer(minLength: 0)
-                    HStack(spacing: 6) {
-                        Button { stepBinding.wrappedValue = max(1, stepBinding.wrappedValue - 1) } label: { Image(systemName: "minus") }.accessibilityLabel("Fewer minutes")
-                        Text("\(stepBinding.wrappedValue) min").font(.system(size: 11, weight: .medium)).monospacedDigit().frame(minWidth: 44)
-                        Button { stepBinding.wrappedValue = min(180, stepBinding.wrappedValue + 1) } label: { Image(systemName: "plus") }.accessibilityLabel("More minutes")
+                    if showStepper {
+                        HStack(spacing: 6) {
+                            Button { stepBinding.wrappedValue = max(1, stepBinding.wrappedValue - 1) } label: { Image(systemName: "minus") }.accessibilityLabel("Fewer minutes")
+                            Text("\(stepBinding.wrappedValue) min").font(Design.labelStrong).monospacedDigit().frame(minWidth: 44)
+                            Button { stepBinding.wrappedValue = min(180, stepBinding.wrappedValue + 1) } label: { Image(systemName: "plus") }.accessibilityLabel("More minutes")
+                        }
+                        .buttonStyle(.plain).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.8))
+                        .padding(.horizontal, 10).padding(.vertical, 5).background(Design.card, in: Capsule())
+                        .disabled(service.running).opacity(service.running ? 0.4 : 1)
                     }
-                    .buttonStyle(.plain).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.8))
-                    .padding(.horizontal, 10).padding(.vertical, 5).background(Design.card, in: Capsule())
-                    .disabled(service.mode == .stopwatch || service.running).opacity(service.mode == .stopwatch || service.running ? 0.4 : 1)
                 }
                 HStack(spacing: 6) {
                     ForEach(service.mode.presets, id: \.self) { minutes in
-                        let on = stepBinding.wrappedValue == minutes
-                        Button { stepBinding.wrappedValue = minutes } label: {
-                            Text("\(minutes) min").font(.system(size: 11, weight: .medium)).monospacedDigit()
-                                .foregroundStyle(on ? .white : .white.opacity(0.7))
-                                .padding(.horizontal, 10).padding(.vertical, 5)
-                                .background(on ? Tab.timer.tint.opacity(0.35) : Design.card, in: Capsule())
-                                .overlay(Capsule().strokeBorder(on ? Tab.timer.tint.opacity(0.7) : Design.hairline, lineWidth: 0.5))
-                        }.buttonStyle(.plain).disabled(service.running)
+                        chip(Text("\(minutes) min"), on: stepBinding.wrappedValue == minutes && !showStepper) { stepBinding.wrappedValue = minutes; customOpen = false }
                     }
+                    if !service.mode.presets.isEmpty { chip(Text("Custom"), on: showStepper) { customOpen.toggle() } }
                     if service.mode == .stopwatch { Text("Counts up until you stop it").font(Design.label).foregroundStyle(Design.secondary) }
                     Spacer(minLength: 0)
                 }.opacity(service.running ? 0.6 : 1)
@@ -64,6 +62,22 @@ struct TimerTab: View {
                 }
             }
         }
+        .onChange(of: service.mode) { _, _ in customOpen = false }
+    }
+
+    /// The stepper sets any minute value, so it shows whenever the length is not a preset or "Custom" was tapped. Never for the stopwatch.
+    private var showStepper: Bool {
+        service.mode != .stopwatch && (customOpen || !service.mode.presets.contains(stepBinding.wrappedValue))
+    }
+
+    private func chip(_ title: Text, on: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            title.font(Design.labelStrong).monospacedDigit()
+                .foregroundStyle(on ? .white : .white.opacity(0.7))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(on ? Tab.timer.tint.opacity(0.35) : Design.card, in: Capsule())
+                .overlay(Capsule().strokeBorder(on ? Tab.timer.tint.opacity(0.7) : Design.hairline, lineWidth: 0.5))
+        }.buttonStyle(.plain).disabled(service.running)
     }
 
     /// The length the stepper and the presets edit: each mode has its own. The stopwatch has no length, so it shows 0 and the stepper is off.
