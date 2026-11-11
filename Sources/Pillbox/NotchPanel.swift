@@ -82,6 +82,10 @@ final class NotchWindowController {
     /// Asks capture apps to leave the island out of screenshots, recordings and screen shares.
     func applyCapturePreference() {
         panel.sharingType = UserDefaults.standard.bool(forKey: "hideFromCapture") ? .none : .readOnly
+        // Hidden everywhere: the island is transparent and lets clicks through, but its shortcuts keep working.
+        let hidden = UserDefaults.standard.bool(forKey: "hideEverywhere")
+        panel.alphaValue = hidden ? 0 : 1
+        panel.ignoresMouseEvents = hidden
         panel.collectionBehavior = UserDefaults.standard.bool(forKey: "hideInFullScreen") ? [.canJoinAllSpaces, .stationary, .ignoresCycle] : [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         let detected = NotchGeometry.detect()
         // The pill width setting changes the geometry without changing the screen.

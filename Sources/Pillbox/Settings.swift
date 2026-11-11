@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("volumeHUD") private var volumeHUD = true
     @AppStorage("keystrokeHUD") private var keystrokeHUD = false
     @AppStorage("hideFromCapture") private var hideFromCapture = false
+    @AppStorage("hideEverywhere") private var hideEverywhere = false
     @AppStorage("hideNotch") private var hideNotch = false
     @AppStorage("searchEngine") private var searchEngine = "google"
     @AppStorage("hyperKey") private var hyperKey = false
@@ -128,6 +129,7 @@ struct SettingsView: View {
                 SettingsToggle("Open when hovering the notch", isOn: $hoverOpen)
                 if hoverOpen { SettingsRow(title: "Hover delay") { Slider(value: $hoverDelay, in: 0.05...0.6).frame(width: 180) } }
                 SettingsToggle("Hide from screenshots and screen sharing", "Pillbox stays out of screenshots, recordings and screen sharing.", isOn: $hideFromCapture)
+                SettingsToggle("Hide everywhere", "Also hides the island on your own screen, not only from captures. Its shortcuts keep working; open Settings from the menu bar icon to turn it back on.", isOn: $hideEverywhere)
                 SettingsToggle("Hide the notch (black menu bar)", "Paints the menu bar black so the notch disappears.", isOn: $hideNotch)
                 if NotchModel.shared.geometry.screen?.safeAreaInsets.top == 0 {
                     SettingsRow(title: "Pill width", subtitle: "Width of the pill on a screen without a notch.") { Slider(value: $pillWidth, in: 120...260).frame(width: 180) }

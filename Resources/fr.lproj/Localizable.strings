@@ -805,3 +805,5 @@
 "Treble" = "Aigus";
 "The equalizer could not start" = "L'égaliseur n'a pas pu démarrer";
 "Allow System Audio Recording for Pillbox." = "Autorisez l'enregistrement audio système pour Pillbox.";
+"Hide everywhere" = "Masquer partout";
+"Also hides the island on your own screen, not only from captures. Its shortcuts keep working; open Settings from the menu bar icon to turn it back on." = "Masque aussi l'île sur votre écran, et pas seulement dans les captures. Ses raccourcis restent actifs ; ouvrez les réglages depuis l'icône de la barre des menus pour la réafficher.";

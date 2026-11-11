@@ -14,7 +14,7 @@ enum SettingsBackup {
 
     static var keys: [String: Kind] {
         var k: [String: Kind] = [:]
-        for key in ["hoverOpen", "capsHUD", "downloadAlerts", "privacyIndicator", "volumeHUD", "keystrokeHUD", "hideFromCapture", "hideNotch",
+        for key in ["hoverOpen", "capsHUD", "downloadAlerts", "privacyIndicator", "volumeHUD", "keystrokeHUD", "hideFromCapture", "hideEverywhere", "hideNotch",
                     "hyperKey", "hyperEscape", "hideMenuBarIcons", "menuBarCalendar", "liveSpectrum", "doubleTapOpen", "snapZones", "peekOnHover",
                     "desktopWidgets", "brightnessHUD", "focusIsland", "callIsland", "copyStack", "notificationIsland", "shakeToOpen", "buildIsland",
                     "hideInFullScreen", "screenshotShelf", ExtraBrightness.key, WindowDrag.key, "driveEject", "shortcutsOnly", "showMenuBarIcon"] { k[key] = .bool }

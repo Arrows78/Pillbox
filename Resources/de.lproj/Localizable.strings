@@ -754,3 +754,5 @@
 "Treble" = "Höhen";
 "The equalizer could not start" = "Der Equalizer konnte nicht starten";
 "Allow System Audio Recording for Pillbox." = "Systemaudioaufnahme für Pillbox erlauben.";
+"Hide everywhere" = "Überall ausblenden";
+"Also hides the island on your own screen, not only from captures. Its shortcuts keep working; open Settings from the menu bar icon to turn it back on." = "Blendet die Insel auch auf dem eigenen Bildschirm aus, nicht nur in Aufnahmen. Ihre Tastenkürzel bleiben aktiv; die Einstellungen öffnest du über das Menüleisten-Symbol, um sie wieder einzublenden.";
