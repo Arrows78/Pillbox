@@ -1021,6 +1021,12 @@ extension SelfTest {
         let eqShelf = Biquad.gainDB(Biquad.shelf(100, gainDB: 12, rate: 48_000, high: false), at: 20, rate: 48_000)
         check("equalizer: a peak band gives its gain at its centre, a shelf its gain well below the corner",
               abs(eqPeak - 6) < 0.01 && abs(eqShelf - 12) < 0.5, "\(eqPeak) \(eqShelf)")
+        let stamped = MusicService.parseLRC("[00:10.00]<00:10.00>Hello <00:10.50>world\n[00:14.00]Plain line here")
+        let plain = stamped.last?.words ?? []
+        check("lyrics: word stamps are read, and a plain line spreads its words up to the next line",
+              stamped.first?.words.map(\.text) == ["Hello", "world"] && stamped.first?.words.last?.time == 10.5
+              && plain.map(\.text) == ["Plain", "line", "here"] && plain[0].time == 14 && abs(plain[1].time - (14 + 4.0 / 3)) < 0.01,
+              "\(stamped)")
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]

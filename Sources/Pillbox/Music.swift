@@ -1,6 +1,10 @@
 import AppKit
 
-struct LyricLine: Identifiable { let id = UUID(); let time: Double; let text: String }
+/// One sung word and when it starts. Lines from LRCLIB with word stamps (the enhanced LRC format) carry real times;
+/// the rest share their line's time evenly between the words.
+struct LyricWord: Equatable { let time: Double; let text: String }
+
+struct LyricLine: Identifiable { let id = UUID(); let time: Double; let text: String; var words: [LyricWord] = [] }
 
 enum Player: String {
     case spotify = "Spotify", music = "Music"
@@ -16,7 +20,9 @@ final class MusicService: ObservableObject {
     @Published var artist = ""
     @Published var album = ""
     @Published var duration: Double = 0
-    @Published var position: Double = 0
+    /// Set on every poll or seek; the playhead is estimated from it between polls.
+    @Published var position: Double = 0 { didSet { polledAt = Date() } }
+    private var polledAt = Date()
     @Published var isPlaying = false
     @Published var artwork: NSImage?
     @Published var lyrics: [LyricLine] = []
@@ -29,6 +35,12 @@ final class MusicService: ObservableObject {
     private var lastPoll = Date()
 
     var hasTrack: Bool { player != nil && !title.isEmpty }
+
+    /// The line being sung, with its word stamps.
+    var currentLine: LyricLine? { lyrics.last(where: { $0.time <= position + 0.2 }) }
+
+    /// Where playback is at `date`: the last reading, moved on by the time since while playing, so word highlights stay smooth.
+    func playhead(at date: Date) -> Double { position + (isPlaying ? max(0, date.timeIntervalSince(polledAt)) : 0) }
 
     var currentLyric: String? {
         guard !lyrics.isEmpty else { return nil }
@@ -141,13 +153,37 @@ final class MusicService: ObservableObject {
     }
 
     nonisolated static func parseLRC(_ s: String) -> [LyricLine] {
-        s.split(separator: "\n").compactMap { line in
+        var lines: [LyricLine] = s.split(separator: "\n").compactMap { line in
             guard line.hasPrefix("["), let close = line.firstIndex(of: "]") else { return nil }
             let stamp = line[line.index(after: line.startIndex)..<close].split(separator: ":")
             guard stamp.count == 2, let m = Double(stamp[0]), let sec = Double(stamp[1]) else { return nil }
-            let text = line[line.index(after: close)...].trimmingCharacters(in: .whitespaces)
-            return text.isEmpty ? nil : LyricLine(time: m * 60 + sec, text: text)
+            let (text, words) = wordStamps(String(line[line.index(after: close)...]))
+            return text.isEmpty ? nil : LyricLine(time: m * 60 + sec, text: text, words: words)
         }
+        // A line without word stamps spreads its words across the time up to the next line.
+        for i in lines.indices where lines[i].words.isEmpty {
+            let start = lines[i].time, end = i + 1 < lines.count ? lines[i + 1].time : start + 4
+            let parts = lines[i].text.split(separator: " ").map(String.init)
+            let span = max(end - start, 0.1)
+            lines[i].words = parts.enumerated().map { LyricWord(time: start + span * Double($0.offset) / Double(parts.count), text: $0.element) }
+        }
+        return lines
+    }
+
+    /// The text of a line and its word stamps when it has any, as in "<00:12.34>Hello <00:12.90>world".
+    nonisolated static func wordStamps(_ body: String) -> (String, [LyricWord]) {
+        let trimmed = body.trimmingCharacters(in: .whitespaces)
+        guard trimmed.contains("<"), let pattern = try? NSRegularExpression(pattern: #"<(\d+):(\d+(?:[.,]\d+)?)>([^<]*)"#) else { return (trimmed, []) }
+        let ns = trimmed as NSString
+        var words: [LyricWord] = []
+        for m in pattern.matches(in: trimmed, range: NSRange(location: 0, length: ns.length)) {
+            guard let mi = Double(ns.substring(with: m.range(at: 1))),
+                  let se = Double(ns.substring(with: m.range(at: 2)).replacingOccurrences(of: ",", with: ".")) else { continue }
+            let word = ns.substring(with: m.range(at: 3)).trimmingCharacters(in: .whitespaces)
+            if !word.isEmpty { words.append(LyricWord(time: mi * 60 + se, text: word)) }
+        }
+        guard !words.isEmpty else { return (trimmed, []) }
+        return (words.map(\.text).joined(separator: " "), words)
     }
 
     // MARK: Controls

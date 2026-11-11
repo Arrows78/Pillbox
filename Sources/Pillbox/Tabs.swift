@@ -207,9 +207,9 @@ struct MusicTab: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(music.title).font(.system(size: 20, weight: .bold)).lineLimit(1)
                     Text(music.artist).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
-                    if let l = music.currentLyric {
-                        Text(l).font(.system(size: 12, weight: .medium)).foregroundStyle(.white.opacity(0.85)).lineLimit(2)
-                            .id(l).transition(.opacity).animation(.easeInOut(duration: 0.25), value: l)
+                    if let l = music.currentLine {
+                        LiveLyricLine(line: l).font(.system(size: 12, weight: .medium)).lineLimit(2)
+                            .id(l.id).transition(.opacity).animation(.easeInOut(duration: 0.25), value: l.id)
                     }
                     Spacer(minLength: 0)
                     ProgressBar(value: music.position, total: music.duration) { music.seek(to: $0) }

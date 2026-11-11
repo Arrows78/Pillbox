@@ -81,6 +81,32 @@ final class FloatingPlayer {
 
 // MARK: Full-screen lyrics
 
+/// A lyric line that fills word by word: sung words in full white, the rest dimmed. Moves with the playhead.
+struct LyricWordsText: View {
+    let line: LyricLine
+    let position: Double
+
+    var body: some View {
+        let current = line.words.lastIndex { $0.time <= position + 0.2 } ?? -1
+        line.words.enumerated().reduce(Text("")) { text, word in
+            text + Text(verbatim: (word.offset == 0 ? "" : " ") + word.element.text)
+                .foregroundColor(word.offset <= current ? .white : .white.opacity(0.4))
+        }
+    }
+}
+
+/// `LyricWordsText` redrawn ten times a second, so the highlight follows the music between polls.
+struct LiveLyricLine: View {
+    let line: LyricLine
+    @ObservedObject var music = MusicService.shared
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.1)) { context in
+            LyricWordsText(line: line, position: music.playhead(at: context.date))
+        }
+    }
+}
+
 struct LyricsScreenView: View {
     @ObservedObject var music = MusicService.shared
 
@@ -96,7 +122,9 @@ struct LyricsScreenView: View {
             } else {
                 ForEach(((idx ?? -1) - 1)...((idx ?? -1) + 2), id: \.self) { i in
                     if music.lyrics.indices.contains(i) {
-                        Text(verbatim: music.lyrics[i].text).multilineTextAlignment(.center)
+                        Group {
+                            if i == idx { LiveLyricLine(line: music.lyrics[i]) } else { Text(verbatim: music.lyrics[i].text) }
+                        }.multilineTextAlignment(.center)
                             .font(.system(size: i == idx ? 56 : 32, weight: .bold)).opacity(i == idx ? 1 : 0.35)
                             .animation(.easeInOut(duration: 0.3), value: idx)
                     }
