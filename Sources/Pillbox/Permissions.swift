@@ -83,7 +83,7 @@ final class PermissionsCenter: ObservableObject {
             default: return .denied
             }
         case .location:
-            switch CLLocationManager().authorizationStatus {
+            switch WeatherService.shared.authorizationStatus {
             case .authorizedAlways, .authorized: return .granted
             case .notDetermined: return .notDetermined
             default: return .denied

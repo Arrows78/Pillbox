@@ -13,6 +13,9 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     private var timer: Timer?
     private var location: CLLocation?
 
+    /// Read from the long-lived manager: a new manager can report a stale status.
+    var authorizationStatus: CLAuthorizationStatus { manager.authorizationStatus }
+
     /// Asks for the permission, the one place that can show the prompt.
     func requestAuthorization() {
         manager.requestWhenInUseAuthorization()
