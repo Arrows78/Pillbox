@@ -60,6 +60,7 @@ enum AppFeatures {
         AppFeature(name: "caps lock island", start: { SystemActions.startCapsLockHUD() }),
         AppFeature(name: "keystroke island", start: { KeystrokeHUD.shared.start() }),
         AppFeature(name: "brightness island", start: { BrightnessHUD.shared.start() }),
+        AppFeature(name: "keyboard backlight island", start: { KeyboardBacklightHUD.shared.start() }),
         AppFeature(name: "break reminder", start: { BreakReminder.shared.start() }),
         AppFeature(name: "notifications", start: { NotificationFeed.shared.start() }),
         AppFeature(name: "download progress", start: { DownloadProgress.shared.start() }),

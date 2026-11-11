@@ -231,6 +231,14 @@ extension SelfTest {
         _ = cal
     }
 
+    /// The keyboard backlight island shows a change made outside the app, and not one the app made itself.
+    static func keyboardBacklightWatch() {
+        check("keyboard backlight: a change made with the keys shows", KeyboardBacklight.shouldShow(previous: 0.25, current: 0.5, appliedByApp: nil))
+        check("keyboard backlight: a change the app made is not shown twice", !KeyboardBacklight.shouldShow(previous: 0.25, current: 0.5, appliedByApp: 0.5))
+        check("keyboard backlight: no change, nothing to show", !KeyboardBacklight.shouldShow(previous: 0.5, current: 0.5, appliedByApp: nil))
+        check("keyboard backlight: the first reading is only a baseline", !KeyboardBacklight.shouldShow(previous: nil, current: 0.5, appliedByApp: nil))
+    }
+
     /// The volume the Music tab sends is kept between 0 and 100.
     static func musicVolume() {
         check("music volume: kept between 0 and 100", MusicService.clampVolume(-5) == 0 && MusicService.clampVolume(130) == 100 && MusicService.clampVolume(40) == 40)
