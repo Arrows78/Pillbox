@@ -40,6 +40,12 @@ final class PaletteModel: ObservableObject {
 
     func refresh() { commands = buildCommands() }
 
+    /// The commands whose titles match `query`, best match first. An empty query keeps the order given.
+    static func ranked(_ list: [PaletteCommand], _ query: String) -> [PaletteCommand] {
+        guard !query.isEmpty else { return list }
+        return list.compactMap { c in FuzzyMatch.score(query, in: c.title).map { (c, $0) } }.sorted { $0.1 > $1.1 }.map(\.0)
+    }
+
     private func buildCommands() -> [PaletteCommand] {
         let notch = NotchModel.shared, timers = TimerService.shared
         var list = Tab.visible.enumerated().map { i, tab in
@@ -91,10 +97,24 @@ final class PaletteModel: ObservableObject {
         list += ShortcutsService.shared.names.map { n in PaletteCommand(localized: localized("Shortcut: %@", n), symbol: "bolt.fill", category: .actions) { ShortcutsService.shared.run(n) } }
         list += SnapZone.allCases.map { z in PaletteCommand(localized: localized("Snap window: %@", localized(z.rawValue)), symbol: "rectangle.split.2x1", category: .windows) { WindowSnap.snap(z) } }
         let q = query.trimmingCharacters(in: .whitespaces)
-        guard !q.isEmpty else {
-            return list + CalcStore.history.entries.prefix(5).map { e in PaletteCommand(localized: e, symbol: "clock.arrow.circlepath") { Pasteboard.copy(CalcHistory.result(of: e)) } }
+        // `>` lists the commands only, `/` the clipboard only; each is ranked by how well it matches.
+        switch PalettePrefix(q) {
+        case .commands(let rest):
+            return Self.ranked(list, rest)
+        case .clipboard(let rest):
+            return ClipboardService.shared.items.compactMap { item in FuzzyMatch.score(rest, in: item.searchable).map { (item, $0) } }
+                .sorted { $0.1 > $1.1 }.prefix(20).map { item, _ in
+                    PaletteCommand(localized: localized("Paste: %@", String((item.text ?? item.ocr ?? localized("Image")).prefix(50))), symbol: "doc.on.clipboard") { ClipboardService.shared.paste(item) }
+                }
+        case .none: break
         }
-        var out = list.filter { $0.title.localizedCaseInsensitiveContains(q) }
+        guard !q.isEmpty else {
+            // The commands run most recently come first, then the rest in their usual order.
+            let recent = PaletteRecents.titles.compactMap { t in list.first { $0.title == t } }
+            let rest = list.filter { c in !recent.contains { $0.title == c.title } }
+            return recent + rest + CalcStore.history.entries.prefix(5).map { e in PaletteCommand(localized: e, symbol: "clock.arrow.circlepath") { Pasteboard.copy(CalcHistory.result(of: e)) } }
+        }
+        var out = Self.ranked(list, q)
         out += ClipboardService.shared.items.filter { $0.searchable.localizedCaseInsensitiveContains(q) }.prefix(5).map { item in
             PaletteCommand(localized: localized("Paste: %@", String((item.text ?? item.ocr ?? localized("Image")).prefix(50))), symbol: "doc.on.clipboard") { ClipboardService.shared.paste(item) }
         }
@@ -171,6 +191,7 @@ struct PaletteView: View {
     private func run(_ cmds: [PaletteCommand]) {
         guard cmds.indices.contains(model.selection) else { return }
         let c = cmds[model.selection]
+        PaletteRecents.record(c.title)
         close(); c.run()
     }
 }

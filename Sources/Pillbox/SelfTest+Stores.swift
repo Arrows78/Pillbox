@@ -155,6 +155,22 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// The palette matches letters in order, ranks word starts and runs first, keeps recent commands, and reads prefixes.
+    static func paletteRanking() {
+        check("palette ranking: letters must all be there, in order", FuzzyMatch.score("kbl", in: "Keyboard backlight") != nil && FuzzyMatch.score("snx", in: "Snap center") == nil)
+        check("palette ranking: a run of letters beats scattered ones", (FuzzyMatch.score("snap", in: "Snap center") ?? 0) > (FuzzyMatch.score("snap", in: "Sensor nominal active payload") ?? 0))
+        check("palette ranking: an empty query keeps the order", PaletteModel.ranked([], "") .isEmpty)
+        if case .commands(let rest) = PalettePrefix(">mute") { check("palette prefix: > keeps commands", rest == "mute") } else { check("palette prefix: > keeps commands", false) }
+        if case .clipboard(let rest) = PalettePrefix("/code") { check("palette prefix: / keeps the clipboard", rest == "code") } else { check("palette prefix: / keeps the clipboard", false) }
+        if case .none = PalettePrefix("mute") {} else { check("palette prefix: no prefix means everything", false) }
+        let key = PaletteRecents.key
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.removeObject(forKey: key)
+        PaletteRecents.record("Alpha"); PaletteRecents.record("Beta"); PaletteRecents.record("Alpha")
+        check("palette recents: the last one run comes first, once each", PaletteRecents.titles == ["Alpha", "Beta"])
+    }
+
     /// A data backup holds the files of the data folder with a manifest, and reading it back lists their entries.
     static func dataBackup() {
         let name = "backup-check.json"
