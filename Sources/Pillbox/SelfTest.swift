@@ -975,6 +975,42 @@ extension SelfTest {
     static func batch9() {
         check("tabs: hidden set parses, ignores unknown names and never hides Home",
               Tab.hidden(from: "music,home,bogus,terminal") == [.music, .terminal] && Tab.hidden(from: nil).isEmpty && Tab.hidden(from: "") .isEmpty)
+        var q = ActivityQueue()
+        _ = q.push(Activity(symbol: "speaker.wave.2.fill", title: "Volume", priority: .low))
+        let shownHigh = q.push(Activity(symbol: "phone.fill", title: "In a call", priority: .high))
+        let shownLow = q.push(Activity(symbol: "capslock", title: "Caps Lock on", priority: .low))
+        _ = q.push(Activity(symbol: "bell", title: "Later")); _ = q.push(Activity(symbol: "battery.0", title: "Low battery", priority: .high))
+        check("activity queue: high replaces a HUD and jumps the queue, low is dropped when busy",
+              shownHigh && q.current?.title == "In a call" && !shownLow && q.pending.map(\.title) == ["Low battery", "Later"])
+        let ics = """
+        BEGIN:VCALENDAR\r
+        BEGIN:VEVENT\r
+        UID:a1\r
+        SUMMARY:Team sync\\, weekly\r
+        DTSTART;TZID=Europe/Paris:20260211T090000\r
+        DTEND;TZID=Europe/Paris:20260211T093000\r
+        LOCATION:https://meet.google.com/abc-defg-hij\r
+        DESCRIPTION:Long\r
+          folded line\r
+        END:VEVENT\r
+        BEGIN:VEVENT\r
+        SUMMARY:Holiday\r
+        DTSTART;VALUE=DATE:20260212\r
+        END:VEVENT\r
+        END:VCALENDAR
+        """
+        let ev = ICSParser.parse(ics)
+        var paris = Calendar(identifier: .gregorian); paris.timeZone = TimeZone(identifier: "Europe/Paris")!
+        check("ics: events, time zones, all-day, escaping and folding", ev.count == 2 && ev[0].title == "Team sync, weekly" && paris.component(.hour, from: ev[0].start) == 9
+              && ev[0].end.timeIntervalSince(ev[0].start) == 1800 && ev[0].notes == "Long folded line" && ev[1].allDay && ev[1].end.timeIntervalSince(ev[1].start) == 86400
+              && MeetingLink.find(in: [ev[0].location]) != nil, "\(ev)")
+        check("ics: webcal links become https, others refused", ICSFeeds.url("webcal://example.com/a.ics")?.scheme == "https" && ICSFeeds.url("file:///etc/passwd") == nil && ICSFeeds.url("nonsense") == nil)
+        check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
+        // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
+        let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]
+        let copilot = AIUsageService.copilotUsage(from: ["quota_snapshots": ["premium_interactions": premium] as [String: Any], "quota_reset_date": "2026-12-01"])
+        check("copilot: quota becomes a monthly limit", copilot?.limitPercent == 70 && copilot?.today == 210 && copilot?.limitResetsAt != nil && AIUsageService.copilotUsage(from: [:]) == nil,
+              "\(String(describing: copilot?.limitPercent)) \(String(describing: copilot?.today)) \(String(describing: copilot?.limitResetsAt))")
         check("verification codes: found next to a keyword, bare codes, never prices or years",
               NotificationFeed.verificationCode(in: "Your verification code is 482913") == "482913" && NotificationFeed.verificationCode(in: "G-123456 is your Google code") == "123456"
               && NotificationFeed.verificationCode(in: "Code: 123 456") == "123456" && NotificationFeed.verificationCode(in: "2048") == "2048"

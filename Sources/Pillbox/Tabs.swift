@@ -942,25 +942,63 @@ struct RemindersTab: View {
 
 struct NotificationsTab: View {
     @ObservedObject var mirror = NotificationMirror.shared
+    @State private var app: String?
+
+    /// Bundle identifiers present, most recent first, for the filter chips.
+    nonisolated static func apps(in items: [NotificationItem]) -> [String] {
+        var seen = Set<String>(); return items.map(\.app).filter { !$0.isEmpty && seen.insert($0).inserted }
+    }
+    static func name(_ bundleID: String) -> String { BlockedAppsStore.name(bundleID) }
 
     var body: some View {
         Group {
             if let items = mirror.items, items.isEmpty {
                 EmptyState(symbol: "bell.slash", title: "No notifications")
             } else if let items = mirror.items {
-                ScrollView {
-                    VStack(spacing: 4) {
-                        ForEach(items) { n in
-                            VStack(alignment: .leading, spacing: 1) {
-                                HStack {
-                                    Text(verbatim: n.title.isEmpty ? n.app : n.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
-                                    Spacer()
-                                    Text(n.date, style: .relative).font(.system(size: 9)).foregroundStyle(.secondary)
+                let apps = Self.apps(in: items), shown = items.filter { app == nil || $0.app == app }
+                VStack(spacing: DS.gap) {
+                    if apps.count > 1 {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 4) {
+                                FilterChip(symbol: "tray.full", label: L("All"), selected: app == nil, tint: .red) { app = nil }
+                                ForEach(apps, id: \.self) { id in
+                                    Button { app = app == id ? nil : id } label: {
+                                        HStack(spacing: 4) {
+                                            if let i = BlockedAppsStore.icon(id) { Image(nsImage: i).resizable().frame(width: 14, height: 14) }
+                                            Text(verbatim: Self.name(id)).font(.system(size: 10, weight: .medium)).lineLimit(1)
+                                            Text(verbatim: "\(items.filter { $0.app == id }.count)").font(.system(size: 9)).foregroundStyle(DS.secondary)
+                                        }
+                                        .padding(.horizontal, 8).frame(height: 22)
+                                        .foregroundStyle(app == id ? Color.red : .white.opacity(0.75))
+                                        .background(app == id ? Color.red.opacity(0.22) : .white.opacity(0.06), in: Capsule())
+                                    }.buttonStyle(.plain).accessibilityAddTraits(app == id ? .isSelected : [])
                                 }
-                                if !n.body.isEmpty { Text(verbatim: n.body).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2) }
                             }
-                            .padding(.horizontal, 10).padding(.vertical, 5).frame(maxWidth: .infinity, alignment: .leading)
-                            .rowCard()
+                        }.frame(height: 22)
+                    }
+                    ScrollView {
+                        VStack(spacing: 4) {
+                            ForEach(shown) { n in
+                                HStack(spacing: 8) {
+                                    if let i = BlockedAppsStore.icon(n.app) { Image(nsImage: i).resizable().frame(width: 22, height: 22) }
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        HStack {
+                                            Text(verbatim: n.title.isEmpty ? Self.name(n.app) : n.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                                            Spacer()
+                                            Text(n.date, style: .relative).font(.system(size: 9)).foregroundStyle(.secondary)
+                                        }
+                                        if !n.body.isEmpty { Text(verbatim: n.body).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2) }
+                                    }
+                                }
+                                .padding(.horizontal, 10).padding(.vertical, 5).frame(maxWidth: .infinity, alignment: .leading)
+                                .rowCard()
+                                .onTapGesture { open(n.app) }
+                                .contextMenu {
+                                    Button("Open the app") { open(n.app) }
+                                    if let code = NotificationFeed.verificationCode(in: n.body) { Button(LocalizedStringKey(L("Copy code %@", code))) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(code, forType: .string) } }
+                                    Button("Copy text") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString([n.title, n.body].filter { !$0.isEmpty }.joined(separator: "\n"), forType: .string) }
+                                }
+                            }
                         }
                     }
                 }
@@ -969,5 +1007,10 @@ struct NotificationsTab: View {
             }
         }
         .onAppear { mirror.refresh() }
+    }
+
+    private func open(_ bundleID: String) {
+        guard let u = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return }
+        NSWorkspace.shared.openApplication(at: u, configuration: .init()); NotchModel.shared.collapse()
     }
 }

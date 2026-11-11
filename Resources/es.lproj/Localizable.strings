@@ -719,3 +719,5 @@
 "Add" = "Añadir";
 "Check the link: it must start with https:// or webcal://" = "Comprueba el enlace: debe empezar por https:// o webcal://";
 "The private address of a Google, Notion, Luma or Outlook calendar. Read every 30 minutes; recurring events show only when the feed expands them." = "La dirección privada de un calendario de Google, Notion, Luma u Outlook. Se lee cada 30 minutos; los eventos recurrentes solo aparecen si el feed los expande.";
+"Open the app" = "Abrir la app";
+"Copy code %@" = "Copiar el código %@";
