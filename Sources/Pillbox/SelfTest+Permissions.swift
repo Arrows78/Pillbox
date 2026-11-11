@@ -41,7 +41,7 @@ extension SelfTest {
         check("menu bar calendar: ongoing", MenuBarCalendar.label(title: "Standup", start: now.addingTimeInterval(-60), end: now.addingTimeInterval(600), now: now) == localized("%@ · now", "Standup"))
         check("menu bar calendar: soon", MenuBarCalendar.label(title: "Standup", start: now.addingTimeInterval(12 * 60 - 5), end: now.addingTimeInterval(3600), now: now) == localized("%@ · in %d min", "Standup", 12))
         check("menu bar calendar: long titles are cut", MenuBarCalendar.label(title: String(repeating: "x", count: 40), start: now.addingTimeInterval(300), end: now.addingTimeInterval(900), now: now).count < 40)
-        check("menu bar: six tabs can be detached", MenuBarDetach.detachable.count == 6 && !MenuBarDetach.detachable.contains(.terminal))
+        check("menu bar: every tab that fits a popover can be detached", MenuBarDetach.detachable.count == Tab.allCases.count - 3 && !MenuBarDetach.detachable.contains(.terminal))
     }
 
     static func focusCallsAndNotifications() {

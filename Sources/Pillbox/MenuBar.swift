@@ -32,7 +32,18 @@ final class MenuBarHider {
         toggleItem = nil; separator = nil; collapsed = false
     }
 
-    @objc private func toggle() { collapsed.toggle(); refresh() }
+    @objc private func toggle() { collapsed.toggle(); refresh(); scheduleAutoHide() }
+
+    /// Shown icons hide again after the time chosen in Settings, unless they were hidden by then.
+    private var autoHide: Timer?
+    private func scheduleAutoHide() {
+        autoHide?.invalidate(); autoHide = nil
+        let after = Preferences.menuBarAutoHide.value
+        guard !collapsed, after > 0 else { return }
+        autoHide = Timer.scheduledTimer(withTimeInterval: TimeInterval(after), repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.collapsed = true; self?.refresh() }
+        }
+    }
 
     private func refresh() {
         separator?.length = Self.separatorLength(collapsed: collapsed)
@@ -44,7 +55,8 @@ final class MenuBarHider {
 @MainActor
 final class MenuBarDetach {
     static let shared = MenuBarDetach()
-    static let detachable: [Tab] = [.timer, .stocks, .ai, .reminders, .notes, .clipboard]
+    /// Every tab that fits a small popover. Home is already the island; Terminal and Prompter need room the popover lacks.
+    static let detachable: [Tab] = Tab.allCases.filter { ![.home, .terminal, .prompter].contains($0) }
     private var items: [Tab: NSStatusItem] = [:]
     private let popover: NSPopover = { let p = NSPopover(); p.behavior = .transient; return p }()
     private var shown: Tab?
@@ -100,7 +112,7 @@ final class MenuBarCalendar {
         let on = UserDefaults.standard.bool(forKey: "menuBarCalendar")
         if on, item == nil {
             let i = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-            i.button?.target = self; i.button?.action = #selector(open)
+            i.button?.target = self; i.button?.action = #selector(open(_:))
             item = i
             timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.refresh() } }
             CalendarService.shared.refresh()
@@ -110,11 +122,46 @@ final class MenuBarCalendar {
         refresh()
     }
 
+    /// The text shows the next event, unless it is further away than the hours chosen in Settings.
+    nonisolated static func showsEvent(starting start: Date, within hours: Int, now: Date = Date()) -> Bool {
+        hours <= 0 || start.timeIntervalSince(now) <= TimeInterval(hours) * 3600
+    }
+
     private func refresh() {
         guard let b = item?.button else { return }
         b.image = NSImage(systemSymbolName: "calendar", accessibilityDescription: nil)
-        if let e = CalendarService.shared.next { b.title = " " + Self.label(title: e.title, start: e.start, end: e.end) } else { b.title = "" }
+        if let e = CalendarService.shared.next, Self.showsEvent(starting: e.start, within: Preferences.menuBarCalendarHours.value) {
+            b.title = " " + Self.label(title: e.title, start: e.start, end: e.end)
+        } else {
+            b.title = ""
+        }
     }
 
-    @objc private func open() { NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Calendar.app")) }
+    /// Today's timed events, with Join for the video calls, and Calendar at the foot.
+    @objc private func open(_ sender: NSStatusBarButton) {
+        AgendaModel.shared.refresh()
+        let menu = NSMenu()
+        let today = AgendaModel.shared.events.filter { !$0.allDay && Calendar.current.isDateInToday($0.start) }.sorted { $0.start < $1.start }
+        if today.isEmpty { menu.addItem(NSMenuItem(title: localized("No events today"), action: nil, keyEquivalent: "")) }
+        let time = DateFormatter(); time.timeStyle = .short; time.dateStyle = .none
+        for e in today {
+            menu.addItem(boxed("\(time.string(from: e.start))  \(String(e.title.prefix(50)))") { NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Calendar.app")) })
+            if let url = e.join { menu.addItem(boxed("    " + localized("Join")) { NSWorkspace.shared.open(url) }) }
+        }
+        menu.addItem(.separator())
+        menu.addItem(boxed(localized("Open Calendar")) { NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Calendar.app")) })
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+    }
+
+    private func boxed(_ title: String, _ run: @escaping @MainActor () -> Void) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: #selector(runBox(_:)), keyEquivalent: "")
+        item.target = self
+        item.representedObject = ActionBox(run)
+        return item
+    }
+
+    @objc private func runBox(_ sender: NSMenuItem) {
+        guard let box = sender.representedObject as? ActionBox else { return }
+        box.run()
+    }
 }

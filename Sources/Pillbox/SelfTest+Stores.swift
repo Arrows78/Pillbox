@@ -155,6 +155,15 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// The menu bar shows the next event within the hours chosen, and always when the choice is Always.
+    static func menuBarCalendarWindow() {
+        let now = Date()
+        check("menu bar calendar: always shows when the choice is Always", MenuBarCalendar.showsEvent(starting: now.addingTimeInterval(9 * 3600), within: 0, now: now))
+        check("menu bar calendar: a near event shows", MenuBarCalendar.showsEvent(starting: now.addingTimeInterval(3600), within: 1, now: now))
+        check("menu bar calendar: a far event is hidden", !MenuBarCalendar.showsEvent(starting: now.addingTimeInterval(4 * 3600), within: 3, now: now))
+        check("menu bar: the detachable tabs skip Home, Terminal and Prompter", !MenuBarDetach.detachable.contains(.home) && !MenuBarDetach.detachable.contains(.terminal) && MenuBarDetach.detachable.contains(.music))
+    }
+
     /// The palette matches letters in order, ranks word starts and runs first, keeps recent commands, and reads prefixes.
     static func paletteRanking() {
         check("palette ranking: letters must all be there, in order", FuzzyMatch.score("kbl", in: "Keyboard backlight") != nil && FuzzyMatch.score("snx", in: "Snap center") == nil)

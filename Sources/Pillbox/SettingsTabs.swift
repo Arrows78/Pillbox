@@ -5,7 +5,9 @@ import ServiceManagement
 /// The Tabs and menu bar pane: which tabs the island shows, clipboard import and the menu bar items.
 struct SettingsTabsPane: View {
     @AppStorage(Preferences.hideMenuBarIcons.key) private var hideMenuBarIcons = Preferences.hideMenuBarIcons.defaultValue
+    @AppStorage(Preferences.menuBarAutoHide.key) private var menuBarAutoHide = Preferences.menuBarAutoHide.defaultValue
     @AppStorage(Preferences.menuBarCalendar.key) private var menuBarCalendar = Preferences.menuBarCalendar.defaultValue
+    @AppStorage(Preferences.menuBarCalendarHours.key) private var menuBarCalendarHours = Preferences.menuBarCalendarHours.defaultValue
 
     var body: some View {
         SettingsPage(pane: .tabs) {
@@ -22,7 +24,21 @@ struct SettingsTabsPane: View {
             }
             SettingsCard(title: "Menu bar") {
                 SettingsToggle("Hide menu bar icons", "Adds a divider: ⌘-drag icons to its left, then click the chevron to hide them.", isOn: $hideMenuBarIcons)
-                SettingsToggle("Next calendar event in the menu bar", "Needs Calendars access.", isOn: $menuBarCalendar)
+                if hideMenuBarIcons {
+                    SettingsRow(title: "Show the hidden icons for", subtitle: "After a click on the chevron, they hide again by themselves.") {
+                        Picker("", selection: $menuBarAutoHide) {
+                            Text("Until I hide them").tag(0); Text(verbatim: "5 s").tag(5); Text(verbatim: "10 s").tag(10); Text(verbatim: "30 s").tag(30)
+                        }.labelsHidden().frame(width: 170)
+                    }
+                }
+                SettingsToggle("Next calendar event in the menu bar", "Needs Calendars access. A click on it lists today's events.", isOn: $menuBarCalendar)
+                if menuBarCalendar {
+                    SettingsRow(title: "Show it only when it is near", subtitle: "Further away, the menu bar shows nothing for it.") {
+                        Picker("", selection: $menuBarCalendarHours) {
+                            Text("Always").tag(0); Text(verbatim: "1 h").tag(1); Text(verbatim: "3 h").tag(3); Text(verbatim: "6 h").tag(6)
+                        }.labelsHidden().frame(width: 170)
+                    }
+                }
                 ForEach(MenuBarDetach.detachable) { tab in DetachToggle(tab: tab) }
             }
         }

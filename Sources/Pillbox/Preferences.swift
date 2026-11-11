@@ -91,4 +91,8 @@ enum Preferences {
     static let cameraGuard = Preference<Bool>("cameraGuard", false)
     /// Read by the idle animation: 1× unless changed. Clamped to 0.1× at the reader, so a stored 0 never freezes it.
     static let lottieSpeed = Preference<Double>("lottieSpeed", 1.0)
+    /// Seconds the hidden menu bar icons stay visible after a click on the chevron; 0 keeps them until clicked again.
+    static let menuBarAutoHide = Preference<Int>("menuBarAutoHide", 0)
+    /// Hours ahead within which the next event shows in the menu bar; 0 shows it always.
+    static let menuBarCalendarHours = Preference<Int>("menuBarCalendarHours", 0)
 }

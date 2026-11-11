@@ -898,3 +898,12 @@
 "Your current data is kept in a folder beside it. Restart Pillbox to use the restored data." = "Tus datos actuales se conservan en una carpeta junto a ella. Reinicia Pillbox para usar los datos restaurados.";
 "Data restored. Restart Pillbox to use it." = "Datos restaurados. Reinicia Pillbox para usarlos.";
 "Could not restore the data" = "No se pudieron restaurar los datos";
+"Show the hidden icons for" = "Mostrar los iconos ocultos durante";
+"After a click on the chevron, they hide again by themselves." = "Tras pulsar el chevron, vuelven a ocultarse solas.";
+"Until I hide them" = "Hasta que las oculte";
+"Show it only when it is near" = "Mostrarlo solo si está cerca";
+"Further away, the menu bar shows nothing for it." = "Más lejos, la barra de menús no muestra nada.";
+"Needs Calendars access. A click on it lists today's events." = "Necesita acceso a Calendario. Un clic muestra los eventos de hoy.";
+"No events today" = "No hay eventos hoy";
+"Open Calendar" = "Abrir Calendario";
+"Always" = "Siempre";
