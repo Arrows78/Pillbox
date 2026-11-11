@@ -8,6 +8,36 @@ struct ReminderItem: Identifiable, Equatable {
     var overdue: Bool { due.map { $0 < Date() } ?? false }
 }
 
+/// The filters above the reminders list: all, the ones due today, the overdue ones.
+enum ReminderFilter: String, CaseIterable {
+    case all, today, overdue
+
+    var title: String {
+        switch self {
+        case .all: "All"
+        case .today: "Today"
+        case .overdue: "Overdue"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .all: "list.bullet"
+        case .today: "calendar"
+        case .overdue: "exclamationmark.circle"
+        }
+    }
+
+    /// Whether a reminder belongs under this filter. Reminders without a due date only show under All.
+    func matches(_ item: ReminderItem, now: Date = Date(), calendar: Calendar = .current) -> Bool {
+        switch self {
+        case .all: true
+        case .today: item.due.map { calendar.isDate($0, inSameDayAs: now) } ?? false
+        case .overdue: item.due.map { $0 < now } ?? false
+        }
+    }
+}
+
 /// Apple Reminders through EventKit: shows what is open and adds reminders from one line of text.
 @MainActor
 final class RemindersService: ObservableObject {

@@ -192,6 +192,23 @@ extension SelfTest {
         check("timer sound: the default is one of the offered sounds", FocusExport.sounds.contains(Preferences.timerSound.defaultValue))
     }
 
+    /// The reminder filters: today is the due date on the same day, overdue is due before now, undated only under All.
+    static func reminderFilters() {
+        let cal = Calendar(identifier: .gregorian)
+        let now = cal.date(from: DateComponents(year: 2026, month: 11, day: 11, hour: 12))!
+        let morning = cal.date(from: DateComponents(year: 2026, month: 11, day: 11, hour: 9))!
+        let yesterday = cal.date(from: DateComponents(year: 2026, month: 11, day: 10, hour: 9))!
+        let tomorrow = cal.date(from: DateComponents(year: 2026, month: 11, day: 12, hour: 9))!
+        let undated = ReminderItem(id: "u", title: "u", due: nil)
+        let today = ReminderItem(id: "t", title: "t", due: morning)
+        let late = ReminderItem(id: "l", title: "l", due: yesterday)
+        let later = ReminderItem(id: "n", title: "n", due: tomorrow)
+        check("reminders filter: All shows every reminder, undated too", [undated, today, late, later].allSatisfy { ReminderFilter.all.matches($0, now: now, calendar: cal) })
+        check("reminders filter: Today is due on the same day", ReminderFilter.today.matches(today, now: now, calendar: cal) && !ReminderFilter.today.matches(late, now: now, calendar: cal) && !ReminderFilter.today.matches(later, now: now, calendar: cal))
+        check("reminders filter: Overdue is due before now", ReminderFilter.overdue.matches(late, now: now, calendar: cal) && !ReminderFilter.overdue.matches(later, now: now, calendar: cal))
+        check("reminders filter: undated only under All", !ReminderFilter.today.matches(undated, now: now, calendar: cal) && !ReminderFilter.overdue.matches(undated, now: now, calendar: cal))
+    }
+
     /// Copying a shelf item puts its file on the pasteboard, not its path text.
     static func shelfCopyFile() {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("shelf-copy-\(UUID().uuidString).txt")

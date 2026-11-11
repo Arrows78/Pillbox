@@ -992,3 +992,6 @@
 "Could not export the focus sessions" = "No se pudieron exportar las sesiones de concentración";
 "Copy file" = "Copiar archivo";
 "Share…" = "Compartir…";
+"Overdue" = "Atrasados";
+"Nothing here" = "Nada aquí";
+"No reminder matches this filter" = "Ningún recordatorio coincide con este filtro";

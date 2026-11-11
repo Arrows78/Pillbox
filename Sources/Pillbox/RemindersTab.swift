@@ -6,6 +6,7 @@ struct RemindersTab: View {
     @ObservedObject var rem = RemindersService.shared
     @ObservedObject var model = NotchModel.shared
     @FocusState private var focused: Bool
+    @State private var filter: ReminderFilter = .all
 
     var body: some View {
         if !rem.authorized {
@@ -21,12 +22,21 @@ struct RemindersTab: View {
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(Design.card, in: RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous).strokeBorder(Design.hairline, lineWidth: 0.5))
+                HStack(spacing: 4) {
+                    ForEach(ReminderFilter.allCases, id: \.self) { f in
+                        FilterChip(symbol: f.symbol, label: localized(f.title), selected: filter == f, tint: .blue) { filter = f }
+                    }
+                    Spacer()
+                }
+                let shown = rem.items.filter { filter.matches($0) }
                 if rem.items.isEmpty {
                     EmptyState(symbol: "checkmark.circle", title: "Nothing to do", message: "Type a reminder above, with a date like tomorrow at 9am")
+                } else if shown.isEmpty {
+                    EmptyState(symbol: filter.symbol, title: "Nothing here", message: "No reminder matches this filter")
                 } else {
                     ScrollView {
                         VStack(spacing: 4) {
-                            ForEach(rem.items) { r in
+                            ForEach(shown) { r in
                                 HStack(spacing: 8) {
                                     Button { rem.complete(r) } label: { Image(systemName: "circle").foregroundStyle(Design.secondary) }.buttonStyle(.plain).accessibilityLabel("Complete")
                                     Text(r.title).lineLimit(1)

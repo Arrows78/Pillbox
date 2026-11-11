@@ -1045,3 +1045,6 @@
 "Could not export the focus sessions" = "Impossible d'exporter les sessions de focus";
 "Copy file" = "Copier le fichier";
 "Share…" = "Partager…";
+"Overdue" = "En retard";
+"Nothing here" = "Rien ici";
+"No reminder matches this filter" = "Aucun rappel ne correspond à ce filtre";
