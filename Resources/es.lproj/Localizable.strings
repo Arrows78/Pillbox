@@ -762,3 +762,5 @@
 "Could not connect to %@" = "No se pudo conectar a %@";
 "Move up" = "Subir";
 "Move down" = "Bajar";
+"Step" = "Paso";
+"Loupe" = "Lupa";

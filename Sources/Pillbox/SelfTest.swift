@@ -1039,6 +1039,14 @@ extension SelfTest {
         let arranged = AIUsageService.arranged(sample, order: ["Codex", "Claude Code", "Codex"], hidden: ["Cursor"]).map(\.name)
         check("ai usage: chosen order first, hidden providers left out, unknown names keep their place at the end",
               arranged == ["Codex", "Claude Code", "Gemini CLI"], "\(arranged)")
+        if let blank = CGContext(data: nil, width: 100, height: 100, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?.makeImage() {
+            let color = Annotator.colors[0].cgColor
+            let out = Annotator.render(blank, marks: [Mark(kind: .step, color: color, points: [CGPoint(x: 20, y: 20)]),
+                                                      Mark(kind: .step, color: color, points: [CGPoint(x: 40, y: 20)]),
+                                                      Mark(kind: .loupe, color: color, points: [CGPoint(x: 50, y: 50), CGPoint(x: 80, y: 80)])], pixelated: nil)
+            check("annotate: numbered steps and a loupe render onto the picture at its size", out?.width == 100 && out?.height == 100)
+        }
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]

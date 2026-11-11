@@ -7,13 +7,13 @@ import UniformTypeIdentifiers
 /// One annotation, in image pixels with a top-left origin.
 struct Mark {
     enum Kind: String, CaseIterable, Identifiable {
-        case arrow, rect, pen, text, pixelate
+        case arrow, rect, pen, text, pixelate, step, loupe
         var id: String { rawValue }
         var symbol: String {
-            switch self { case .arrow: "arrow.up.right"; case .rect: "rectangle"; case .pen: "scribble"; case .text: "textformat"; case .pixelate: "checkerboard.rectangle" }
+            switch self { case .arrow: "arrow.up.right"; case .rect: "rectangle"; case .pen: "scribble"; case .text: "textformat"; case .pixelate: "checkerboard.rectangle"; case .step: "1.circle"; case .loupe: "magnifyingglass.circle" }
         }
         var title: String {
-            switch self { case .arrow: "Arrow"; case .rect: "Rectangle"; case .pen: "Pen"; case .text: "Text"; case .pixelate: "Pixelate" }
+            switch self { case .arrow: "Arrow"; case .rect: "Rectangle"; case .pen: "Pen"; case .text: "Text"; case .pixelate: "Pixelate"; case .step: "Step"; case .loupe: "Loupe" }
         }
     }
     var kind: Kind
@@ -56,7 +56,7 @@ enum Annotator {
             let line = CGMutablePath(); line.move(to: a); line.addLine(to: pt(head * 0.8, 0))
             let tip = CGMutablePath(); tip.move(to: b); tip.addLine(to: pt(head, 0.45)); tip.addLine(to: pt(head, -0.45)); tip.closeSubpath()
             return (line, tip)
-        case .text, .pixelate: return (nil, nil)
+        case .text, .pixelate, .step, .loupe: return (nil, nil)
         }
     }
 
@@ -90,8 +90,35 @@ enum Annotator {
         ctx.translateBy(x: 0, y: CGFloat(h)); ctx.scaleBy(x: 1, y: -1)   // top-left origin, like the marks
         let lw = lineWidth(for: size)
         ctx.setLineWidth(lw); ctx.setLineCap(.round); ctx.setLineJoin(.round)
+        var stepNumber = 0
         for m in marks {
             switch m.kind {
+            case .step:
+                guard let c = m.points.first else { continue }
+                stepNumber += 1
+                let d = lw * 12
+                ctx.setFillColor(m.color)
+                ctx.fillEllipse(in: CGRect(x: c.x - d / 2, y: c.y - d / 2, width: d, height: d))
+                // Dark figures on a light disc, light ones on a dark disc.
+                let light = (NSColor(cgColor: m.color)?.usingColorSpace(.sRGB)?.brightnessComponent ?? 0) > 0.7
+                let attrs: [NSAttributedString.Key: Any] = [.font: NSFont.boldSystemFont(ofSize: d * 0.55), .foregroundColor: light ? NSColor.black : NSColor.white]
+                let label = "\(stepNumber)" as NSString, s = label.size(withAttributes: attrs)
+                let g = NSGraphicsContext(cgContext: ctx, flipped: true)
+                NSGraphicsContext.saveGraphicsState(); NSGraphicsContext.current = g
+                label.draw(at: CGPoint(x: c.x - s.width / 2, y: c.y - s.height / 2), withAttributes: attrs)
+                NSGraphicsContext.restoreGraphicsState()
+            case .loupe:
+                // The picture magnified twice inside the circle, with a ring around it.
+                let r = m.rect
+                guard r.width > 4, r.height > 4 else { continue }
+                ctx.saveGState()
+                ctx.addEllipse(in: r); ctx.clip()
+                ctx.translateBy(x: 0, y: CGFloat(h)); ctx.scaleBy(x: 1, y: -1)
+                let c = CGPoint(x: r.midX, y: CGFloat(h) - r.midY)
+                ctx.translateBy(x: c.x, y: c.y); ctx.scaleBy(x: 2, y: 2); ctx.translateBy(x: -c.x, y: -c.y)
+                ctx.draw(image, in: full)
+                ctx.restoreGState()
+                ctx.setStrokeColor(m.color); ctx.strokeEllipse(in: r)
             case .pixelate:
                 guard let pixelated else { continue }
                 let r = m.rect
@@ -180,6 +207,7 @@ final class AnnotatorModel: ObservableObject {
             return
         }
         guard let d = draft else { return }
+        if d.kind == .step { marks.append(d); return }   // a step is placed with one click
         let r = d.rect
         if d.kind == .pen ? d.points.count > 2 : max(r.width, r.height) > 4 { marks.append(d) }
     }
@@ -262,8 +290,11 @@ private struct DraftShape: View {
     var body: some View {
         let t = CGAffineTransform(scaleX: scale, y: scale)
         let color = Color(cgColor: mark.color)
-        if mark.kind == .pixelate {
-            Path(mark.rect.applying(t)).stroke(color, style: StrokeStyle(lineWidth: 1.5, dash: [5]))
+        if mark.kind == .pixelate || mark.kind == .loupe {
+            Path(ellipseIn: mark.rect.applying(t)).stroke(color, style: StrokeStyle(lineWidth: 1.5, dash: [5]))
+        } else if mark.kind == .step, let c = mark.points.first {
+            let d = lineWidth * 12 * scale
+            Path(ellipseIn: CGRect(x: c.x * scale - d / 2, y: c.y * scale - d / 2, width: d, height: d)).stroke(color, lineWidth: 1.5)
         } else {
             let (stroke, fill) = Annotator.paths(mark, lineWidth: lineWidth)
             ZStack {
