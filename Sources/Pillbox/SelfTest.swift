@@ -131,7 +131,8 @@ enum SelfTest {
         try? body.write(to: claude.appendingPathComponent("s.jsonl"), atomically: true, encoding: .utf8)
         let c = AIUsageService.scanClaude(now: now, root: root.appendingPathComponent("claude"))
         check("claude: duplicate message counted once", c.fiveHour == 150, "\(c.fiveHour)")
-        check("claude: older entries only in the week", c.week == 165 && c.today >= 150, "week \(c.week) today \(c.today)")
+        // Ten minutes before midnight, "recent" belongs to yesterday: only then is today allowed to be empty.
+        check("claude: older entries only in the week", c.week == 165 && (c.today >= 150 || !Calendar.current.isDateInToday(now.addingTimeInterval(-600))), "week \(c.week) today \(c.today)")
         check("claude: cache reads kept apart", c.cacheRead == 2000, "\(c.cacheRead)")
         check("claude: seven day buckets", c.days.count == 7 && c.days.last?.tokens == c.today)
 

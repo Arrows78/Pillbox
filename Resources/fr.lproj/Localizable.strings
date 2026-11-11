@@ -753,6 +753,15 @@
 "Asks GitHub for the latest release. The update installs in place and relaunches Pillbox." = "Demande à GitHub la dernière version. La mise à jour s'installe sur place et relance Pillbox.";
 "Check for updates automatically" = "Rechercher les mises à jour automatiquement";
 "Once a day. Only the version number is asked for; nothing about you is sent." = "Une fois par jour. Seul le numéro de version est demandé ; rien vous concernant n'est envoyé.";
+"Monthly limit" = "Limite mensuelle";
+"Used this month" = "Utilisé ce mois-ci";
+"Premium requests, read through the GitHub CLI" = "Requêtes premium, lues via la CLI GitHub";
+"AI-written code edits per day" = "Modifications de code écrites par l'IA par jour";
+"Monthly budget: no daily history" = "Budget mensuel : pas d'historique quotidien";
+"No Claude Code, Codex, Gemini CLI, OpenCode or Cursor activity in the last 7 days" = "Aucune activité Claude Code, Codex, Gemini CLI, OpenCode ou Cursor ces 7 derniers jours";
+"Codex and Copilot usage limits." = "Limites d'utilisation Codex et Copilot.";
+"GitHub Copilot quota in AI usage" = "Quota GitHub Copilot dans Usage IA";
+"Asks GitHub through the gh command and its own login, every 2 minutes while on. Pillbox stores no token." = "Interroge GitHub via la commande gh et sa propre connexion, toutes les 2 minutes tant que c'est activé. Pillbox ne stocke aucun jeton.";
 "macOS calendars" = "Calendriers macOS";
 "Allow Calendars access to choose which ones to show." = "Autorisez l'accès aux calendriers pour choisir ceux à afficher.";
 "Calendar subscriptions" = "Abonnements à des calendriers";

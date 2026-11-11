@@ -1,9 +1,12 @@
 import Foundation
+import SQLite3
 
 struct ProviderUsage: Identifiable {
     var id: String { name }
     var name: String
     var symbol = "sparkles"
+    /// What the numbers count: "tokens" for most providers, "edits" for Cursor's AI-written code, "requests" for Copilot.
+    var unit = "tokens"
     var fiveHour = 0, today = 0, week = 0
     var cacheRead = 0
     var days: [(label: String, tokens: Int)] = []
@@ -34,11 +37,15 @@ final class AIUsageService: ObservableObject {
     func refresh() {
         guard !loading else { return }
         loading = true
+        let copilot = UserDefaults.standard.bool(forKey: Self.copilotKey)
         DispatchQueue.global(qos: .utility).async {
-            let all = [Self.scanClaude(), Self.scanCodex()].filter { $0.week > 0 || $0.lastActivity != nil }
+            var all = [Self.scanClaude(), Self.scanCodex(), Self.scanGemini(), Self.scanOpenCode(), Self.scanCursor()].filter { $0.week > 0 || $0.lastActivity != nil }
+            if copilot, let c = Self.fetchCopilot() { all.append(c) }
             DispatchQueue.main.async { MainActor.assumeIsolated { self.providers = all; self.loading = false; self.checkAlerts(all) } }
         }
     }
+
+    nonisolated static let copilotKey = "copilotUsage"
 
     // MARK: Shared helpers
 
@@ -216,5 +223,106 @@ final class AIUsageService: ObservableObject {
 
     static func short(_ n: Int) -> String {
         n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1e6) : n >= 1000 ? String(format: "%.0fk", Double(n) / 1e3) : "\(n)"
+    }
+}
+
+// MARK: Gemini CLI, OpenCode, Cursor and GitHub Copilot
+
+extension AIUsageService {
+    private nonisolated static func jsonFiles(in root: URL, since: Date) -> [URL] {
+        var out: [URL] = []
+        let keys: Set<URLResourceKey> = [.contentModificationDateKey]
+        let en = FileManager.default.enumerator(at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles])
+        while let url = en?.nextObject() as? URL {
+            guard url.pathExtension == "json", let m = try? url.resourceValues(forKeys: keys).contentModificationDate, m > since else { continue }
+            out.append(url)
+        }
+        return out
+    }
+
+    /// Gemini CLI keeps each chat in ~/.gemini/tmp/<project>/chats/session-*.json; every model reply carries its token counts.
+    nonisolated static func scanGemini(now: Date = Date(), root: URL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".gemini/tmp")) -> ProviderUsage {
+        let weekAgo = now.addingTimeInterval(-7 * 86400)
+        var u = ProviderUsage(name: "Gemini CLI", symbol: "diamond.fill")
+        var perDay: [String: Int] = [:]
+        for f in jsonFiles(in: root, since: weekAgo) where f.deletingLastPathComponent().lastPathComponent == "chats" {
+            guard let data = try? Data(contentsOf: f), let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let messages = root["messages"] as? [[String: Any]] else { continue }
+            for m in messages where m["type"] as? String == "gemini" {
+                guard let ts = m["timestamp"] as? String, let date = parseDate(ts), date > weekAgo, let t = m["tokens"] as? [String: Any] else { continue }
+                let cached = t["cached"] as? Int ?? 0
+                u.cacheRead += cached
+                add(&u, &perDay, tokens: max((t["input"] as? Int ?? 0) - cached, 0) + (t["output"] as? Int ?? 0) + (t["thoughts"] as? Int ?? 0), at: date, now: now)
+            }
+        }
+        finish(&u, perDay: perDay, now: now)
+        return u
+    }
+
+    /// OpenCode stores one JSON per message under storage/message/<session>/; assistant messages carry `tokens` and `time.created` (ms).
+    nonisolated static func scanOpenCode(now: Date = Date(), root: URL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/share/opencode/storage/message")) -> ProviderUsage {
+        let weekAgo = now.addingTimeInterval(-7 * 86400)
+        var u = ProviderUsage(name: "OpenCode", symbol: "terminal")
+        var perDay: [String: Int] = [:]
+        for f in jsonFiles(in: root, since: weekAgo) {
+            guard let data = try? Data(contentsOf: f), let m = try? JSONSerialization.jsonObject(with: data) as? [String: Any], m["role"] as? String == "assistant",
+                  let ms = (m["time"] as? [String: Any])?["created"] as? Double, let t = m["tokens"] as? [String: Any] else { continue }
+            let date = Date(timeIntervalSince1970: ms / 1000)
+            guard date > weekAgo else { continue }
+            let cache = t["cache"] as? [String: Any]
+            u.cacheRead += cache?["read"] as? Int ?? 0
+            add(&u, &perDay, tokens: (t["input"] as? Int ?? 0) + (t["output"] as? Int ?? 0) + (t["reasoning"] as? Int ?? 0) + (cache?["write"] as? Int ?? 0), at: date, now: now)
+        }
+        finish(&u, perDay: perDay, now: now)
+        return u
+    }
+
+    /// Cursor logs no tokens, but ~/.cursor/ai-tracking/ai-code-tracking.db records every piece of code its AI wrote: counted as edits.
+    nonisolated static func scanCursor(now: Date = Date(), path: String = NSHomeDirectory() + "/.cursor/ai-tracking/ai-code-tracking.db") -> ProviderUsage {
+        var u = ProviderUsage(name: "Cursor", symbol: "cursorarrow.rays", unit: "edits")
+        var perDay: [String: Int] = [:]
+        guard FileManager.default.fileExists(atPath: path) else { return u }
+        let weekAgo = now.addingTimeInterval(-7 * 86400)
+        var db: OpaquePointer?
+        guard sqlite3_open_v2("file:\(path)?mode=ro&immutable=1", &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else { sqlite3_close(db); return u }
+        defer { sqlite3_close(db) }
+        var st: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "SELECT createdAt FROM ai_code_hashes WHERE createdAt > ?", -1, &st, nil) == SQLITE_OK else { return u }
+        defer { sqlite3_finalize(st) }
+        sqlite3_bind_int64(st, 1, Int64(weekAgo.timeIntervalSince1970 * 1000))
+        while sqlite3_step(st) == SQLITE_ROW {
+            let ms = sqlite3_column_double(st, 0)
+            add(&u, &perDay, tokens: 1, at: Date(timeIntervalSince1970: ms > 1e11 ? ms / 1000 : ms), now: now)
+        }
+        finish(&u, perDay: perDay, now: now)
+        return u
+    }
+
+    /// GitHub Copilot's monthly quota, through the GitHub CLI's own login (opt-in; Pillbox stores no token).
+    nonisolated static func fetchCopilot() -> ProviderUsage? {
+        guard let gh = ["/opt/homebrew/bin/gh", "/usr/local/bin/gh"].first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else { return nil }
+        let r = ActionRunner.runShell("\"\(gh)\" api /copilot_internal/user", timeout: 15)
+        guard r.status == 0, let data = r.output.data(using: .utf8), let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return copilotUsage(from: json)
+    }
+
+    /// `quota_snapshots.premium_interactions` is the monthly budget of premium requests; `quota_reset_date` when it refills.
+    nonisolated static func copilotUsage(from json: [String: Any], now: Date = Date()) -> ProviderUsage? {
+        guard let snapshots = json["quota_snapshots"] as? [String: Any],
+              let premium = (snapshots["premium_interactions"] ?? snapshots["chat"]) as? [String: Any] else { return nil }
+        var u = ProviderUsage(name: "Copilot", symbol: "circle.hexagongrid.fill", unit: "requests")
+        let entitlement = premium["entitlement"] as? Int ?? 0, remaining = premium["remaining"] as? Int ?? 0
+        if premium["unlimited"] as? Bool != true, entitlement > 0 {
+            u.limitPercent = 100 - (premium["percent_remaining"] as? Double ?? Double(remaining) * 100 / Double(entitlement))
+            u.today = entitlement - remaining; u.week = u.today
+            u.limitWindowMinutes = 30 * 24 * 60
+            if let s = json["quota_reset_date"] as? String {
+                let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = TimeZone(identifier: "UTC")
+                u.limitResetsAt = f.date(from: s)
+            }
+        }
+        u.lastActivity = now
+        finish(&u, perDay: [:], now: now)
+        return u
     }
 }

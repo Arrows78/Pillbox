@@ -64,6 +64,7 @@ struct SettingsView: View {
     @AppStorage(NotificationFeed.codeKey) private var codeIsland = true
     @AppStorage(Updater.autoKey) private var autoUpdate = false
     @AppStorage(BrewUpdates.key) private var brewUpdates = false
+    @AppStorage(AIUsageService.copilotKey) private var copilotUsage = false
     @AppStorage(TypingSounds.profileKey) private var typingProfile = "off"
     @AppStorage(TypingSounds.volumeKey) private var typingVolume = 0.5
     @AppStorage(AmbientNoise.kindKey) private var ambientKind = "off"
@@ -125,8 +126,8 @@ struct SettingsView: View {
                     Picker("", selection: $searchEngine) { ForEach(WebSearch.engines) { Text(verbatim: $0.name).tag($0.key) } }.labelsHidden().frame(width: 170)
                 }
             }
-            SettingsCard(title: "Backup") {
             CalendarsSettings()
+            SettingsCard(title: "Backup") {
                 SettingsRow(title: "Export settings…", subtitle: "Saves your preferences to a file. Notes, clipboard history, the shelf and quick actions are not included.") {
                     Button("Export…") { exportSettings() }.controlSize(.small)
                 }
@@ -300,9 +301,11 @@ struct SettingsView: View {
                 SettingsToggle("Verification codes with a Copy button", "A code in a new notification becomes an island. Needs Full Disk Access.", isOn: $codeIsland)
                 SettingsToggle("Homebrew updates island", "Once a day, the packages with a newer version, with Upgrade in the Terminal tab.", isOn: $brewUpdates)
                 SettingsToggle("Stage new screenshots on the shelf", isOn: $screenshotShelf)
-                SettingsRow(title: "Warn when an AI limit reaches", subtitle: "Claude Code and Codex usage limits.") {
+                SettingsRow(title: "Warn when an AI limit reaches", subtitle: "Codex and Copilot usage limits.") {
                     Picker("", selection: $usageAlert) { Text("Never").tag(0); Text("70%").tag(70); Text("80%").tag(80); Text("90%").tag(90) }.labelsHidden().frame(width: 170)
                 }
+                SettingsToggle("GitHub Copilot quota in AI usage", "Asks GitHub through the gh command and its own login, every 2 minutes while on. Pillbox stores no token.", isOn: $copilotUsage)
+                    .onChange(of: copilotUsage) { _, _ in AIUsageService.shared.refresh() }
                 SettingsRow(title: "Break reminder", subtitle: "Suggests a pause after this long at the keyboard.") {
                     Picker("", selection: $breakReminder) {
                         Text("Off").tag(0); Text("Every 20 min").tag(20); Text("Every 30 min").tag(30); Text("Every 45 min").tag(45); Text("Every hour").tag(60)

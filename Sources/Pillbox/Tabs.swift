@@ -839,7 +839,7 @@ struct AIUsageTab: View {
 
     var body: some View {
         if usage.providers.isEmpty {
-            EmptyState(symbol: "sparkles", title: LocalizedStringKey(usage.loading ? "Reading local logs…" : "No Claude Code or Codex activity in the last 7 days"))
+            EmptyState(symbol: "sparkles", title: LocalizedStringKey(usage.loading ? "Reading local logs…" : "No Claude Code, Codex, Gemini CLI, OpenCode or Cursor activity in the last 7 days"))
                 .onAppear { usage.refresh() }
         } else {
             let p = usage.providers[min(selected, usage.providers.count - 1)]
@@ -851,20 +851,31 @@ struct AIUsageTab: View {
                     if let pct = p.limitPercent {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
-                                Text("\((p.limitWindowMinutes ?? 300) / 60)h limit").foregroundStyle(.secondary); Spacer()
+                                Group { if (p.limitWindowMinutes ?? 300) >= 7 * 24 * 60 { Text("Monthly limit") } else { Text("\((p.limitWindowMinutes ?? 300) / 60)h limit") } }.foregroundStyle(.secondary); Spacer()
                                 Text(String(format: "%.0f%%", pct)).font(.system(size: 12, weight: .semibold, design: .rounded))
                             }.font(.system(size: 11))
                             ProgressBar(value: pct, total: 100) { _ in }.tint(.orange)
                             if let r = p.limitResetsAt { Text("Resets \(r, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
                         }.padding(8).rowCard()
                     }
-                    stat("Last 5 hours", p.fiveHour)
-                    stat("Today", p.today)
-                    stat("7 days", p.week)
-                    if let d = p.lastActivity { Text("Last activity \(d, style: .relative) ago").font(.system(size: 9)).foregroundStyle(.secondary) }
+                    if p.unit == "requests" {
+                        stat("Used this month", p.today)
+                        Text("Premium requests, read through the GitHub CLI").font(.system(size: 9)).foregroundStyle(.secondary)
+                    } else {
+                        stat("Last 5 hours", p.fiveHour)
+                        stat("Today", p.today)
+                        stat("7 days", p.week)
+                    }
+                    if p.unit != "requests", let d = p.lastActivity { Text("Last activity \(d, style: .relative) ago").font(.system(size: 9)).foregroundStyle(.secondary) }
                 }.frame(width: 210, alignment: .leading)
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Tokens per day (cache reads excluded)").font(.system(size: 10)).foregroundStyle(.secondary)
+                    Group {
+                        switch p.unit {
+                        case "edits": Text("AI-written code edits per day")
+                        case "requests": Text("Monthly budget: no daily history")
+                        default: Text("Tokens per day (cache reads excluded)")
+                        }
+                    }.font(.system(size: 10)).foregroundStyle(.secondary)
                     let peak = max(p.days.map(\.tokens).max() ?? 1, 1)
                     HStack(alignment: .bottom, spacing: 8) {
                         ForEach(Array(p.days.enumerated()), id: \.offset) { _, d in
