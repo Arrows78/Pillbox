@@ -772,3 +772,5 @@
 "The private address of a Google, Notion, Luma or Outlook calendar. Read every 30 minutes; recurring events show only when the feed expands them." = "L'adresse privée d'un calendrier Google, Notion, Luma ou Outlook. Lue toutes les 30 minutes ; les événements récurrents n'apparaissent que si le flux les développe.";
 "Open the app" = "Ouvrir l'app";
 "Copy code %@" = "Copier le code %@";
+"Include beta versions" = "Inclure les versions bêta";
+"Also offers pre-releases, which may be less stable." = "Propose aussi les préversions, potentiellement moins stables.";

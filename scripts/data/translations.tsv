@@ -719,3 +719,5 @@ Check the link: it must start with https:// or webcal://	Comprueba el enlace: de
 The private address of a Google, Notion, Luma or Outlook calendar. Read every 30 minutes; recurring events show only when the feed expands them.	La dirección privada de un calendario de Google, Notion, Luma u Outlook. Se lee cada 30 minutos; los eventos recurrentes solo aparecen si el feed los expande.	Die private Adresse eines Google-, Notion-, Luma- oder Outlook-Kalenders. Alle 30 Minuten gelesen; wiederkehrende Termine erscheinen nur, wenn der Feed sie ausschreibt.
 Open the app	Abrir la app	App öffnen
 Copy code %@	Copiar el código %@	Code %@ kopieren
+Include beta versions	Incluir versiones beta	Beta-Versionen einbeziehen
+Also offers pre-releases, which may be less stable.	Ofrece también preversiones, que pueden ser menos estables.	Bietet auch Vorabversionen an, die weniger stabil sein können.

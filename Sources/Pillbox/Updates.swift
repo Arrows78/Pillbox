@@ -49,11 +49,17 @@ final class Updater {
         fetch { [weak self] r in self?.offer(r) }
     }
 
+    /// With the beta switch on, the newest release counts even when it is a pre-release: GitHub lists them newest first.
+    nonisolated static let betaKey = "betaUpdates"
+
     func fetch(_ done: @escaping @MainActor (Release?) -> Void) {
-        guard let url = URL(string: UpdateCheck.api) else { done(nil); return }
+        let beta = UserDefaults.standard.bool(forKey: Self.betaKey)
+        let endpoint = beta ? UpdateCheck.api.replacingOccurrences(of: "/releases/latest", with: "/releases?per_page=1") : UpdateCheck.api
+        guard let url = URL(string: endpoint) else { done(nil); return }
         var req = URLRequest(url: url); req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept"); req.timeoutInterval = 15
         URLSession.shared.dataTask(with: req) { data, resp, _ in
-            let json = (resp as? HTTPURLResponse)?.statusCode == 200 ? data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } : nil
+            let body = (resp as? HTTPURLResponse)?.statusCode == 200 ? data.flatMap { try? JSONSerialization.jsonObject(with: $0) } : nil
+            let json = (body as? [String: Any]) ?? (body as? [[String: Any]])?.first
             let r = json.flatMap(Self.release(from:))
             DispatchQueue.main.async { MainActor.assumeIsolated { done(r) } }
         }.resume()

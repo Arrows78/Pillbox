@@ -63,6 +63,7 @@ struct SettingsView: View {
     @AppStorage(EyeBreaks.key) private var eyeBreaks = false
     @AppStorage(NotificationFeed.codeKey) private var codeIsland = true
     @AppStorage(Updater.autoKey) private var autoUpdate = false
+    @AppStorage(Updater.betaKey) private var betaUpdates = false
     @AppStorage(BrewUpdates.key) private var brewUpdates = false
     @AppStorage(AIUsageService.copilotKey) private var copilotUsage = false
     @AppStorage(TypingSounds.profileKey) private var typingProfile = "off"
@@ -461,6 +462,7 @@ struct SettingsView: View {
                     Button("Check for updates…") { UpdateCheck.run() }.controlSize(.small)
                 }
                 SettingsToggle("Check for updates automatically", "Once a day. Only the version number is asked for; nothing about you is sent.", isOn: $autoUpdate)
+                SettingsToggle("Include beta versions", "Also offers pre-releases, which may be less stable.", isOn: $betaUpdates)
                 SettingsRow(title: "Diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.") {
                     CopyButton(text: { Diagnostics.text }, title: "Copy diagnostics")
                 }
