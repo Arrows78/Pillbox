@@ -1010,6 +1010,9 @@ extension SelfTest {
         check("video speed: Safari and Chromium scripts set the rate, other apps get none",
               safari.contains("front document") && safari.contains("playbackRate = 1.5") && chrome.contains("active tab") && chrome.contains("playbackRate = 2.0")
               && VideoSpeed.script(rate: 1, bundleID: "com.apple.finder") == nil, "\(safari)")
+        let movedTo = WindowDrag.moved(CGPoint(x: 100, y: 100), by: 10, 20), resizedTo = WindowDrag.resized(CGSize(width: 300, height: 200), by: -500, 10)
+        check("window drag: moving up on screen lowers the top-left origin, sizes keep a minimum",
+              movedTo == CGPoint(x: 110, y: 80) && resizedTo == CGSize(width: 200, height: 210), "\(movedTo) \(resizedTo)")
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]

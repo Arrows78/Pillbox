@@ -734,3 +734,5 @@ Video speed 2×	Velocidad de vídeo 2×	Videogeschwindigkeit 2×
 Video speed %@	Velocidad de vídeo %@	Videogeschwindigkeit %@
 Open a browser with a video	Abre un navegador con un vídeo	Einen Browser mit einem Video öffnen
 Allow JavaScript from Apple Events in the browser	Permite JavaScript desde eventos de Apple en el navegador	JavaScript aus Apple-Ereignissen im Browser erlauben
+Move and resize windows with the mouse	Mover y redimensionar ventanas con el ratón	Fenster mit der Maus verschieben und skalieren
+Hold ⌃⌥ and drag a window to move it; add ⇧ to resize it. Needs Accessibility.	Mantén ⌃⌥ y arrastra una ventana para moverla; añade ⇧ para redimensionarla. Requiere accesibilidad.	⌃⌥ gedrückt halten und ein Fenster ziehen, um es zu verschieben; mit ⇧ wird es skaliert. Benötigt Bedienungshilfen.

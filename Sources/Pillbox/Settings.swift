@@ -24,6 +24,7 @@ struct SettingsView: View {
     @AppStorage("desktopWidgets") private var desktopWidgets = false
     @AppStorage("brightnessHUD") private var brightnessHUD = true
     @AppStorage(ExtraBrightness.key) private var extraBrightness = false
+    @AppStorage(WindowDrag.key) private var windowDrag = false
     @AppStorage("focusIsland") private var focusIsland = true
     @AppStorage("callIsland") private var callIsland = true
     @AppStorage("hudStyle") private var hudStyle = "notch"
@@ -213,6 +214,7 @@ struct SettingsView: View {
                 }
                 SettingsToggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
                 SettingsToggle("Shake a dragged file to open the shelf", isOn: $shakeToOpen)
+                SettingsToggle("Move and resize windows with the mouse", "Hold ⌃⌥ and drag a window to move it; add ⇧ to resize it. Needs Accessibility.", isOn: $windowDrag)
                 SettingsToggle("Snap zones when dragging a window to the notch", "Needs Accessibility. Drop the window on a zone to tile it.", isOn: $snapZones)
                 SettingsToggle("Double-press Control to open the notch", "Needs Input Monitoring.", isOn: $doubleTapOpen)
                 SettingsToggle("Copy stack", "Copy several things, then paste them one by one, in order, with the Paste next shortcut.", isOn: $copyStack)

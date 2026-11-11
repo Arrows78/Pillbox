@@ -736,3 +736,5 @@
 "Video speed %@" = "Videogeschwindigkeit %@";
 "Open a browser with a video" = "Einen Browser mit einem Video öffnen";
 "Allow JavaScript from Apple Events in the browser" = "JavaScript aus Apple-Ereignissen im Browser erlauben";
+"Move and resize windows with the mouse" = "Fenster mit der Maus verschieben und skalieren";
+"Hold ⌃⌥ and drag a window to move it; add ⇧ to resize it. Needs Accessibility." = "⌃⌥ gedrückt halten und ein Fenster ziehen, um es zu verschieben; mit ⇧ wird es skaliert. Benötigt Bedienungshilfen.";
