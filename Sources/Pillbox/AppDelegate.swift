@@ -11,6 +11,7 @@ final class ActionBox {
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchWindowController!
     private var statusItem: NSStatusItem!
+    private var statusIcon: StatusIcon?
     private var hotKeys: [GlobalShortcut: HotKey] = [:]
     private var monitors: [Any] = []
     private var interaction: IslandInteraction!
@@ -146,8 +147,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func setupStatusItem() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        statusItem.button?.image = NSImage(systemSymbolName: "capsule.fill", accessibilityDescription: "Pillbox")
+        // Variable length: the icon grows to show the timer's countdown next to the symbol.
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusIcon = StatusIcon(button: statusItem.button)
         let menu = NSMenu()
         menu.delegate = self
         statusItem.menu = menu
@@ -160,10 +162,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func rebuildMenu(_ menu: NSMenu) {
         menu.removeAllItems()
-        func icon(_ symbol: String) -> NSImage? {
-            let image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?.withSymbolConfiguration(.init(pointSize: 13, weight: .regular))
-            image?.isTemplate = true
-            return image
+        let icon = Self.menuIcon
+        let live = liveMenuItems()
+        if !live.isEmpty {
+            live.forEach(menu.addItem)
+            menu.addItem(.separator())
         }
         func add(_ title: String, _ symbol: String, _ action: Selector, key: String = "", mods: NSEvent.ModifierFlags = [.control, .option], target: AnyObject? = nil) -> NSMenuItem {
             let item = NSMenuItem(title: localized(title), action: action, keyEquivalent: key)
@@ -188,21 +191,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         open.image = icon("square.grid.2x2")
         open.submenu = tabs
         menu.addItem(open)
-        let awake = add("Keep Awake", "cup.and.saucer.fill", #selector(toggleAwake), mods: [])
-        awake.state = CaffeineService.shared.active ? .on : .off
-
-        // Everything the palette does, so the features are reachable without knowing the shortcut.
-        let actions = NSMenu()
-        for command in PaletteModel().commands {
-            let item = NSMenuItem(title: command.title, action: #selector(runAction(_:)), keyEquivalent: "")
-            item.target = self
-            item.representedObject = ActionBox(command.run)
-            actions.addItem(item)
-        }
         let more = NSMenuItem(title: localized("Actions"), action: nil, keyEquivalent: "")
         more.image = icon("bolt")
-        more.submenu = actions
+        more.submenu = actionsMenu(PaletteModel().commands)
         menu.addItem(more)
+
+        menu.addItem(.separator())
+        toggleMenuItems().forEach(menu.addItem)
 
         // One click connects a paired device that is off.
         let bluetooth = NSMenu()
@@ -225,7 +220,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleNotch() { NotchModel.shared.toggle() }
 
-    @objc private func runAction(_ sender: NSMenuItem) {
+    @objc func runAction(_ sender: NSMenuItem) {
         guard let box = sender.representedObject as? ActionBox else { return }
         // Clicking the status item activates Pillbox, and commands like snap or video speed act on the app in front.
         // Hand the focus back to the app the user was in first.
@@ -247,7 +242,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     @objc private func palette() { PaletteController.shared.toggle() }
     @objc private func settings() { SettingsWindow.show() }
-    @objc private func toggleAwake() { CaffeineService.shared.toggle() }
     @objc private func openTab(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let tab = Tab(rawValue: raw) else { return }
         NotchModel.shared.expand(tab)

@@ -3,18 +3,28 @@ import AppKit
 import SwiftUI
 import Carbon.HIToolbox
 
+/// Where a command goes in the menu bar's Actions submenu. The palette itself lists them flat.
+/// `tabs` is not shown there: the menu has its own Open Tab submenu.
+enum PaletteCategory: String, CaseIterable {
+    case general = "General", music = "Music and sound", display = "Display", capture = "Capture"
+    case windows = "Windows", focus = "Focus", cleaning = "Cleaning", actions = "Shortcuts and actions", tabs = "Tabs"
+
+    var title: String { localized(rawValue) }
+}
+
 struct PaletteCommand: Identifiable {
     let id = UUID()
     let title: String
     let symbol: String
+    let category: PaletteCategory
     let run: @MainActor () -> Void
 
     /// `title` is an English key, localised here so filtering matches what the user reads.
-    init(title: String, symbol: String, run: @escaping @MainActor () -> Void) {
-        self.title = localized(title); self.symbol = symbol; self.run = run
+    init(title: String, symbol: String, category: PaletteCategory = .general, run: @escaping @MainActor () -> Void) {
+        self.title = localized(title); self.symbol = symbol; self.category = category; self.run = run
     }
-    init(localized title: String, symbol: String, run: @escaping @MainActor () -> Void) {
-        self.title = title; self.symbol = symbol; self.run = run
+    init(localized title: String, symbol: String, category: PaletteCategory = .general, run: @escaping @MainActor () -> Void) {
+        self.title = title; self.symbol = symbol; self.category = category; self.run = run
     }
 }
 
@@ -33,48 +43,53 @@ final class PaletteModel: ObservableObject {
     private func buildCommands() -> [PaletteCommand] {
         let notch = NotchModel.shared, timers = TimerService.shared
         var list = Tab.visible.enumerated().map { i, tab in
-            PaletteCommand(localized: localized("Go to %@", tab.title) + (i < 9 ? "  ⌘\(i + 1)" : ""), symbol: tab.symbol) { notch.expand(tab) }
+            PaletteCommand(localized: localized("Go to %@", tab.title) + (i < 9 ? "  ⌘\(i + 1)" : ""), symbol: tab.symbol, category: .tabs) { notch.expand(tab) }
         }
         list += [
             PaletteCommand(title: CaffeineService.shared.active ? "Turn keep awake off" : "Turn keep awake on", symbol: "cup.and.saucer.fill") { CaffeineService.shared.toggle() },
-            PaletteCommand(title: "Start focus session", symbol: "timer") { timers.mode = .focus; timers.start() },
-            PaletteCommand(title: "Start stopwatch", symbol: "stopwatch") { timers.mode = .stopwatch; timers.start() },
-            PaletteCommand(title: AudioControl.shared.micMuted ? "Unmute microphone" : "Mute microphone", symbol: "mic.slash.fill") { AudioControl.shared.toggleMic() },
-            PaletteCommand(title: "Video speed 1×", symbol: "speedometer") { VideoSpeed.set(1) },
-            PaletteCommand(title: "Video speed 1.5×", symbol: "speedometer") { VideoSpeed.set(1.5) },
-            PaletteCommand(title: "Video speed 2×", symbol: "speedometer") { VideoSpeed.set(2) },
-            PaletteCommand(title: "External display brightness up", symbol: "sun.max.fill") { ExternalBrightness.step(10) },
-            PaletteCommand(title: "External display brightness down", symbol: "sun.min.fill") { ExternalBrightness.step(-10) },
-            PaletteCommand(title: "Keyboard backlight up", symbol: "light.max") { KeyboardBacklight.step(0.25) },
-            PaletteCommand(title: "Keyboard backlight down", symbol: "light.min") { KeyboardBacklight.step(-0.25) },
-            PaletteCommand(title: "Turn keyboard backlight off", symbol: "light.min") { KeyboardBacklight.set(0) },
-            PaletteCommand(title: "Pick a color", symbol: "eyedropper") { SystemActions.pickColor() },
-            PaletteCommand(title: "Capture an area", symbol: "camera.viewfinder") { SystemActions.captureArea() },
-            PaletteCommand(title: "Play / pause music", symbol: "playpause.fill") { MusicService.shared.playPause() },
-            PaletteCommand(title: "Camera mirror", symbol: "video.fill") { CameraMirror.shared.toggle() },
-            PaletteCommand(title: "Lock keyboard to clean it (60 s, ⌘⎋ unlocks)", symbol: "keyboard") { CleaningLock.shared.startKeyboardLock() },
-            PaletteCommand(title: "Black out screens to clean them", symbol: "display") { CleaningLock.shared.startScreenBlackout() },
-            PaletteCommand(title: "Floating player", symbol: "music.note.tv") { FloatingPlayer.shared.toggle() },
-            PaletteCommand(title: "Full-screen lyrics", symbol: "text.quote") { LyricsScreen.shared.show() },
-            PaletteCommand(title: "Paste next from the copy stack", symbol: "square.stack") { CopyStackStore.shared.pasteNext() },
-            PaletteCommand(title: "Clear the copy stack", symbol: "square.stack.3d.up.slash") { CopyStackStore.shared.clear() },
-            PaletteCommand(title: "Ask about screen", symbol: "text.viewfinder") { AskAboutScreen.start() },
-            PaletteCommand(title: WindowWatch.shared.watching ? "Stop watching the screen area" : "Watch a screen area", symbol: "eye") { WindowWatch.shared.watching ? WindowWatch.shared.stop() : WindowWatch.shared.choose() },
-            PaletteCommand(title: ScreenRecorder.shared.recording ? "Stop screen recording" : "Record the screen", symbol: "record.circle") { ScreenRecorder.shared.toggle() },
-            PaletteCommand(title: "Record an area of the screen", symbol: "rectangle.dashed.badge.record") { ScreenRecorder.shared.recordArea() },
-            PaletteCommand(title: "Read QR code on screen", symbol: "qrcode.viewfinder") { QRReader.scanScreen() },
-            PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft") { Teleprompter.shared.show() },
+            PaletteCommand(title: "Start focus session", symbol: "timer", category: .focus) { timers.mode = .focus; timers.start() },
+            PaletteCommand(title: "Start stopwatch", symbol: "stopwatch", category: .focus) { timers.mode = .stopwatch; timers.start() },
+            PaletteCommand(title: AudioControl.shared.micMuted ? "Unmute microphone" : "Mute microphone", symbol: "mic.slash.fill", category: .music) { AudioControl.shared.toggleMic() },
+            PaletteCommand(title: "Video speed 1×", symbol: "speedometer", category: .music) { VideoSpeed.set(1) },
+            PaletteCommand(title: "Video speed 1.5×", symbol: "speedometer", category: .music) { VideoSpeed.set(1.5) },
+            PaletteCommand(title: "Video speed 2×", symbol: "speedometer", category: .music) { VideoSpeed.set(2) },
+            PaletteCommand(title: "Pick a color", symbol: "eyedropper", category: .capture) { SystemActions.pickColor() },
+            PaletteCommand(title: "Capture an area", symbol: "camera.viewfinder", category: .capture) { SystemActions.captureArea() },
+            PaletteCommand(title: "Play / pause music", symbol: "playpause.fill", category: .music) { MusicService.shared.playPause() },
+            PaletteCommand(title: "Camera mirror", symbol: "video.fill", category: .capture) { CameraMirror.shared.toggle() },
+            PaletteCommand(title: "Lock keyboard to clean it (60 s, ⌘⎋ unlocks)", symbol: "keyboard", category: .cleaning) { CleaningLock.shared.startKeyboardLock() },
+            PaletteCommand(title: "Black out screens to clean them", symbol: "display", category: .cleaning) { CleaningLock.shared.startScreenBlackout() },
+            PaletteCommand(title: "Floating player", symbol: "music.note.tv", category: .music) { FloatingPlayer.shared.toggle() },
+            PaletteCommand(title: "Full-screen lyrics", symbol: "text.quote", category: .music) { LyricsScreen.shared.show() },
+            PaletteCommand(title: "Paste next from the copy stack", symbol: "square.stack", category: .windows) { CopyStackStore.shared.pasteNext() },
+            PaletteCommand(title: "Clear the copy stack", symbol: "square.stack.3d.up.slash", category: .windows) { CopyStackStore.shared.clear() },
+            PaletteCommand(title: "Ask about screen", symbol: "text.viewfinder", category: .capture) { AskAboutScreen.start() },
+            PaletteCommand(title: WindowWatch.shared.watching ? "Stop watching the screen area" : "Watch a screen area", symbol: "eye", category: .capture) { WindowWatch.shared.watching ? WindowWatch.shared.stop() : WindowWatch.shared.choose() },
+            PaletteCommand(title: ScreenRecorder.shared.recording ? "Stop screen recording" : "Record the screen", symbol: "record.circle", category: .capture) { ScreenRecorder.shared.toggle() },
+            PaletteCommand(title: "Record an area of the screen", symbol: "rectangle.dashed.badge.record", category: .capture) { ScreenRecorder.shared.recordArea() },
+            PaletteCommand(title: "Read QR code on screen", symbol: "qrcode.viewfinder", category: .capture) { QRReader.scanScreen() },
+            PaletteCommand(title: "Open teleprompter", symbol: "text.alignleft", category: .capture) { Teleprompter.shared.show() },
             PaletteCommand(title: DictationService.shared.active ? "Stop dictation" : "Dictate", symbol: "mic.fill") { DictationService.shared.toggle() },
             PaletteCommand(title: "Activity today", symbol: "chart.bar.fill") { ActivityCounter.shared.showToday() },
-            PaletteCommand(title: AmbientNoise.shared.playing ? "Stop the ambient sound" : "Play ambient sound", symbol: "speaker.wave.2") { AmbientNoise.shared.toggle() },
-            PaletteCommand(title: "Rest your eyes (20 s)", symbol: "eye") { EyeBreaks.shared.begin() },
+            PaletteCommand(title: AmbientNoise.shared.playing ? "Stop the ambient sound" : "Play ambient sound", symbol: "speaker.wave.2", category: .focus) { AmbientNoise.shared.toggle() },
+            PaletteCommand(title: "Rest your eyes (20 s)", symbol: "eye", category: .focus) { EyeBreaks.shared.begin() },
             PaletteCommand(title: "Settings", symbol: "gearshape") { SettingsWindow.show() },
         ]
-        if AppVolumeService.supported { list.append(PaletteCommand(title: "App volume", symbol: "slider.horizontal.3") { AppVolumeService.shared.show() }) }
-        list += QuickActionsStore.shared.actions.map { a in PaletteCommand(localized: localized("Action: %@", a.name), symbol: "bolt.circle") { QuickActionsStore.shared.run(a) } }
-        list += AudioControl.outputDevices().map { d in PaletteCommand(localized: localized("Sound output: %@", d.name), symbol: "hifispeaker.fill") { AudioControl.shared.selectOutput(d) } }
-        list += ShortcutsService.shared.names.map { n in PaletteCommand(localized: localized("Shortcut: %@", n), symbol: "bolt.fill") { ShortcutsService.shared.run(n) } }
-        list += SnapZone.allCases.map { z in PaletteCommand(localized: localized("Snap window: %@", localized(z.rawValue)), symbol: "rectangle.split.2x1") { WindowSnap.snap(z) } }
+        // Only what this Mac can do: an external screen to dim, a keyboard with a backlight.
+        if ExternalBrightness.hasExternalScreen {
+            list += [PaletteCommand(title: "External display brightness up", symbol: "sun.max.fill", category: .display) { ExternalBrightness.step(10) },
+                     PaletteCommand(title: "External display brightness down", symbol: "sun.min.fill", category: .display) { ExternalBrightness.step(-10) }]
+        }
+        if KeyboardBacklight.available {
+            list += [PaletteCommand(title: "Keyboard backlight up", symbol: "light.max", category: .display) { KeyboardBacklight.step(0.25) },
+                     PaletteCommand(title: "Keyboard backlight down", symbol: "light.min", category: .display) { KeyboardBacklight.step(-0.25) },
+                     PaletteCommand(title: "Turn keyboard backlight off", symbol: "light.min", category: .display) { KeyboardBacklight.set(0) }]
+        }
+        if AppVolumeService.supported { list.append(PaletteCommand(title: "App volume", symbol: "slider.horizontal.3", category: .music) { AppVolumeService.shared.show() }) }
+        list += QuickActionsStore.shared.actions.map { a in PaletteCommand(localized: localized("Action: %@", a.name), symbol: "bolt.circle", category: .actions) { QuickActionsStore.shared.run(a) } }
+        list += AudioControl.outputDevices().map { d in PaletteCommand(localized: localized("Sound output: %@", d.name), symbol: "hifispeaker.fill", category: .music) { AudioControl.shared.selectOutput(d) } }
+        list += ShortcutsService.shared.names.map { n in PaletteCommand(localized: localized("Shortcut: %@", n), symbol: "bolt.fill", category: .actions) { ShortcutsService.shared.run(n) } }
+        list += SnapZone.allCases.map { z in PaletteCommand(localized: localized("Snap window: %@", localized(z.rawValue)), symbol: "rectangle.split.2x1", category: .windows) { WindowSnap.snap(z) } }
         let q = query.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else {
             return list + CalcStore.history.entries.prefix(5).map { e in PaletteCommand(localized: e, symbol: "clock.arrow.circlepath") { Pasteboard.copy(CalcHistory.result(of: e)) } }

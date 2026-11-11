@@ -8,6 +8,14 @@ import IOKit
 @MainActor
 enum ExternalBrightness {
     static let key = "externalBrightness"
+
+    /// Whether a screen other than the built-in one is connected, so the brightness commands have something to act on.
+    static var hasExternalScreen: Bool {
+        NSScreen.screens.contains { screen in
+            guard let id = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value else { return false }
+            return CGDisplayIsBuiltin(id) == 0
+        }
+    }
     private typealias Create = @convention(c) (CFAllocator?, io_service_t) -> Unmanaged<AnyObject>?
     private typealias Write = @convention(c) (AnyObject, UInt32, UInt32, UnsafeRawPointer, UInt32) -> Int32
     private static let handle = dlopen(nil, RTLD_LAZY)

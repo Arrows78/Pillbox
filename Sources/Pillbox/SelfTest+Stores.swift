@@ -155,6 +155,21 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// The menu bar icon shows the most urgent state, and the menu's header only the event of the coming hours.
+    static func statusMenu() {
+        check("status icon: a recording wins and is red", StatusIconLook.resolve(recording: true, timer: "12:00", micMuted: true, awake: true) == StatusIconLook(symbol: "record.circle.fill", title: "", alert: true))
+        check("status icon: a timer shows its countdown", StatusIconLook.resolve(recording: false, timer: "04:59", micMuted: true, awake: true).title == "04:59")
+        check("status icon: muted microphone before keep awake", StatusIconLook.resolve(recording: false, timer: nil, micMuted: true, awake: true).symbol == "mic.slash.fill")
+        check("status icon: plain capsule when nothing is live", StatusIconLook.resolve(recording: false, timer: nil, micMuted: false, awake: false).symbol == "capsule.fill")
+        let now = Date()
+        func event(_ id: String, in minutes: Double, allDay: Bool = false) -> AgendaEvent {
+            AgendaEvent(id: id, title: id, start: now.addingTimeInterval(minutes * 60), end: now.addingTimeInterval(minutes * 60 + 1800), allDay: allDay, calendar: "", color: .blue, join: nil)
+        }
+        check("status menu: the soonest timed event of the coming hours", AppDelegate.nextEvent(in: [event("later", in: 120), event("soon", in: 20), event("day", in: 5, allDay: true)], now: now)?.id == "soon")
+        check("status menu: an event in progress counts", AppDelegate.nextEvent(in: [event("now", in: -10)], now: now)?.id == "now")
+        check("status menu: nothing beyond three hours", AppDelegate.nextEvent(in: [event("tonight", in: 300)], now: now) == nil)
+    }
+
     /// The settings search finds panes by their titles and their card and row titles.
     static func settingsSearch() {
         check("settings search: an empty query shows every pane", SettingsPane.matching("  ").count == SettingsPane.allCases.count)
