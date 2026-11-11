@@ -283,6 +283,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func mouseMoved() {
         let model = NotchModel.shared
         let p = NSEvent.mouseLocation
+        controller.updateMouseRouting(at: p)
         let rect = controller.shapeRectOnScreen
         if !model.expanded {
             leaveTask?.cancel()
@@ -329,6 +330,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     let model = NotchModel.shared, p = NSEvent.mouseLocation
+                    // A file dragged onto the island must reach it, so the window takes the drag while the pointer is over it.
+                    self.controller.updateMouseRouting(at: p)
                     if self.isDataDrag {
                         guard !model.expanded else { return }
                         let pb = NSPasteboard(name: .drag)

@@ -77,6 +77,14 @@ final class NotchWindowController {
         // NSHostingView is flipped (origin top-left); plain NSViews are not.
         let y = hosting.isFlipped ? b.minY : b.maxY - s.height
         hosting.activeRect = NSRect(x: b.midX - s.width / 2, y: y, width: s.width, height: s.height)
+        updateMouseRouting(at: NSEvent.mouseLocation)
+    }
+
+    /// The panel is larger than the shape, and a view that returns no hit still swallows the click there.
+    /// So the window only takes the mouse while the pointer is over the visible shape; elsewhere clicks reach the windows below.
+    func updateMouseRouting(at point: NSPoint) {
+        let hidden = UserDefaults.standard.bool(forKey: "hideEverywhere")
+        panel.ignoresMouseEvents = hidden || !shapeRectOnScreen.insetBy(dx: -4, dy: -4).contains(point)
     }
 
     /// Asks capture apps to leave the island out of screenshots, recordings and screen shares.
@@ -85,7 +93,7 @@ final class NotchWindowController {
         // Hidden everywhere: the island is transparent and lets clicks through, but its shortcuts keep working.
         let hidden = UserDefaults.standard.bool(forKey: "hideEverywhere")
         panel.alphaValue = hidden ? 0 : 1
-        panel.ignoresMouseEvents = hidden
+        updateMouseRouting(at: NSEvent.mouseLocation)
         panel.collectionBehavior = UserDefaults.standard.bool(forKey: "hideInFullScreen") ? [.canJoinAllSpaces, .stationary, .ignoresCycle] : [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
         let detected = NotchGeometry.detect()
         // The pill width setting changes the geometry without changing the screen.
