@@ -155,6 +155,18 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// A file written before versions still loads, and the next save writes its version beside the data.
+    static func storeSchema() {
+        let name = "schema-check.json"
+        let url = Store.dir.appendingPathComponent(name)
+        defer { try? FileManager.default.removeItem(at: url) }
+        try? Data("[1,2,3]".utf8).write(to: url)
+        check("store schema: a file from before versions still loads", Store.load(name, as: [Int].self) == [1, 2, 3])
+        Store.save([4, 5], name)
+        check("store schema: saving writes the version", (try? String(contentsOf: url))?.contains("\"version\"") == true)
+        check("store schema: a versioned file loads its data", Store.load(name, as: [Int].self) == [4, 5])
+    }
+
     /// Each pane knows the preferences it edits; the permissions pane edits none, so it has no reset.
     static func paneReset() {
         check("reset: the island pane lists its own preferences", (SettingsPane.preferenceKeys[.island] ?? []).contains(Preferences.hoverOpen.key))
