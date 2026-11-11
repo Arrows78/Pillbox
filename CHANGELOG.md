@@ -4,6 +4,17 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.12.0] - 2026-11-11
+
+### Added
+
+- **palette**: Aliases, shortcuts, apps, files, windows and unit conversions
+- **island**: Choose what shows on the pill's wings and at rest
+- **timer**: Pomodoro cycles with a long break
+- **timer**: Choose the end sound and export focus sessions to CSV
+- **shelf**: Copy a file itself, and share through the system menu
+- **reminders**: Filter the list to all, today or overdue
+
 ## [0.11.0] - 2026-11-11
 
 ### Added
@@ -234,6 +245,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.12.0]: https://github.com/Arrows78/Pillbox/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/Arrows78/Pillbox/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/Arrows78/Pillbox/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/Arrows78/Pillbox/compare/v0.8.0...v0.9.0
