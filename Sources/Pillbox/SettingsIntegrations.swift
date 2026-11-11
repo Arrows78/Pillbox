@@ -6,7 +6,8 @@ import ServiceManagement
 struct SettingsIntegrationsPane: View {
     @State private var apiKey = ""
     @State private var keySaved = Keychain.get(AskModel.keyService) != nil
-    @AppStorage(Preferences.prProvider.key) private var prProvider = Preferences.prProvider.defaultValue
+    @AppStorage(Preferences.prUseGitHub.key) private var prUseGitHub = Preferences.prUseGitHub.defaultValue
+    @AppStorage(Preferences.prUseGitLab.key) private var prUseGitLab = Preferences.prUseGitLab.defaultValue
     @AppStorage(Preferences.prGitLabHost.key) private var prGitLabHost = Preferences.prGitLabHost.defaultValue
     @AppStorage(Preferences.devAPI.key) private var devAPI = Preferences.devAPI.defaultValue
     @AppStorage(Preferences.terminalFontSize.key) private var terminalFontSize = Preferences.terminalFontSize.defaultValue
@@ -47,12 +48,11 @@ struct SettingsIntegrationsPane: View {
     var body: some View {
         SettingsPage(pane: .integrations) {
             SettingsCard(title: "Pull requests") {
-                SettingsRow(title: "Where the pull requests come from", subtitle: "GitHub uses the gh command, GitLab the glab command. Each must be installed and logged in.") {
-                    Picker("", selection: $prProvider) { Text("GitHub").tag("github"); Text("GitLab").tag("gitlab") }
-                        .labelsHidden().frame(width: 130)
-                        .onChange(of: prProvider) { _, _ in PullRequestsService.shared.refresh() }
-                }
-                if prProvider == "gitlab" {
+                SettingsToggle("GitHub", "Pull requests through the gh command, which must be installed and logged in.", isOn: $prUseGitHub)
+                    .onChange(of: prUseGitHub) { _, _ in PullRequestsService.shared.refresh() }
+                SettingsToggle("GitLab", "Merge requests through the glab command, which must be installed and logged in. Both can be on at once.", isOn: $prUseGitLab)
+                    .onChange(of: prUseGitLab) { _, _ in PullRequestsService.shared.refresh() }
+                if prUseGitLab {
                     SettingsRow(title: "GitLab server", subtitle: "Empty for gitlab.com. For a company server, its host name, for example gitlab.example.com.") {
                         TextField("gitlab.com", text: $prGitLabHost).textFieldStyle(.roundedBorder).frame(width: 180)
                             .onSubmit { PullRequestsService.shared.refresh() }

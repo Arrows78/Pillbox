@@ -112,7 +112,9 @@ enum Preferences {
     /// The macOS sound played when a timer ends.
     static let timerSound = Preference<String>("timerSound", "Glass")
     /// Where the pull requests come from: "github" (the gh CLI) or "gitlab" (the glab CLI).
-    static let prProvider = Preference<String>("prProvider", "github")
+    static let prUseGitHub = Preference<Bool>("prUseGitHub", true)
+    /// Read GitLab merge requests too, through glab (the server is set below).
+    static let prUseGitLab = Preference<Bool>("prUseGitLab", false)
     /// The GitLab server for glab, for a self-hosted instance (for example gitlab.example.com). Empty means gitlab.com.
     static let prGitLabHost = Preference<String>("prGitLabHost", "")
     /// Show an island when rain is likely in the next hours (60% or more). Off by default.

@@ -119,24 +119,42 @@ final class PullRequestsService: ObservableObject {
     @Published private(set) var failed = false
     @Published private(set) var loading = false
 
+    /// The message when nothing can be read, for the services turned on in Settings.
+    var needsSetup: LocalizedStringKey {
+        switch (Preferences.prUseGitHub.value, Preferences.prUseGitLab.value) {
+        case (false, false): "Turn on GitHub or GitLab in Settings"
+        case (true, true): "Needs the GitHub (gh) or GitLab (glab) CLI, logged in"
+        case (false, true): "Needs the GitLab CLI (glab), logged in"
+        default: "Needs the GitHub CLI (gh), logged in"
+        }
+    }
+
     func refresh() {
         guard !loading else { return }
         loading = true
         DispatchQueue.global(qos: .utility).async {
-            let provider = Preferences.prProvider.value, host = Preferences.prGitLabHost.value
-            let m: [PullRequest]?, r: [PullRequest]?
-            if provider == "gitlab" {
-                m = GitLabMRs.fetch("--author", host: host); r = GitLabMRs.fetch("--review-requested", host: host)
-            } else {
-                m = GitHubPRs.fetch("--author"); r = GitHubPRs.fetch("--review-requested")
+            // Each enabled service contributes its lists; GitHub's pull requests get their checks and review state,
+            // GitLab's are not read for those yet. The tab fails only when every enabled service failed.
+            var mine: [PullRequest] = [], review: [PullRequest] = []
+            var anyEnabled = false, allFailed = true
+            if Preferences.prUseGitHub.value {
+                anyEnabled = true
+                let m = GitHubPRs.fetch("--author"), r = GitHubPRs.fetch("--review-requested")
+                mine += GitHubPRs.withDetails(m ?? []); review += GitHubPRs.withDetails(r ?? [])
+                if m != nil || r != nil { allFailed = false }
             }
-            // GitHub's state per pull request; GitLab's is not read yet.
-            let withState: ([PullRequest]?, [PullRequest]?) = provider == "gitlab" ? (m, r)
-                : (m.map { GitHubPRs.withDetails($0) }, r.map { GitHubPRs.withDetails($0) })
+            if Preferences.prUseGitLab.value {
+                anyEnabled = true
+                let host = Preferences.prGitLabHost.value
+                let m = GitLabMRs.fetch("--author", host: host), r = GitLabMRs.fetch("--review-requested", host: host)
+                mine += m ?? []; review += r ?? []
+                if m != nil || r != nil { allFailed = false }
+            }
+            let failed = !anyEnabled || allFailed
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    self.loading = false; self.failed = m == nil || r == nil
-                    self.mine = withState.0 ?? []; self.review = withState.1 ?? []
+                    self.loading = false; self.failed = failed
+                    self.mine = mine; self.review = review
                 }
             }
         }
@@ -149,11 +167,7 @@ struct PullRequestsTab: View {
     var body: some View {
         Group {
             if svc.failed {
-                if Preferences.prProvider.value == "gitlab" {
-                    EmptyState(symbol: "arrow.triangle.pull", title: "Needs the GitLab CLI (glab), logged in", actionTitle: "Try again", tint: .teal) { svc.refresh() }
-                } else {
-                    EmptyState(symbol: "arrow.triangle.pull", title: "Needs the GitHub CLI (gh), logged in", actionTitle: "Try again", tint: .teal) { svc.refresh() }
-                }
+                EmptyState(symbol: "arrow.triangle.pull", title: svc.needsSetup, actionTitle: "Try again", tint: .teal) { svc.refresh() }
             } else if svc.loading && svc.mine.isEmpty && svc.review.isEmpty {
                 EmptyState(symbol: "arrow.triangle.pull", title: "Loading pull requests…")
             } else {
@@ -192,7 +206,7 @@ struct PullRequestsTab: View {
                             .rowCard()
                         }.buttonStyle(.plain)
                         .contextMenu {
-                            Button("Open on GitHub") { if let u = URL(string: pr.url) { NSWorkspace.shared.open(u) } }
+                            Button("Open in browser") { if let u = URL(string: pr.url) { NSWorkspace.shared.open(u) } }
                             Button("Copy link") { TextCopy.copy(pr.url) }
                         }
                     }

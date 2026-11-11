@@ -1010,3 +1010,8 @@ Checks running	Verificaciones en curso	Prüfungen laufen
 Review approved	Revisión aprobada	Review genehmigt
 Changes requested	Cambios solicitados	Änderungen angefordert
 Review requested	Revisión solicitada	Review angefordert
+Pull requests through the gh command, which must be installed and logged in.	Pull requests mediante el comando gh, que debe estar instalado y con sesión iniciada.	Pull Requests über den Befehl gh, der installiert und angemeldet sein muss.
+Merge requests through the glab command, which must be installed and logged in. Both can be on at once.	Merge requests mediante el comando glab, que debe estar instalado y con sesión iniciada. Pueden estar activos ambos a la vez.	Merge Requests über den Befehl glab, der installiert und angemeldet sein muss. Beide können gleichzeitig aktiv sein.
+Turn on GitHub or GitLab in Settings	Activa GitHub o GitLab en los ajustes	GitHub oder GitLab in den Einstellungen aktivieren
+Needs the GitHub (gh) or GitLab (glab) CLI, logged in	Necesita la CLI de GitHub (gh) o de GitLab (glab), con sesión iniciada	Benötigt die GitHub-CLI (gh) oder GitLab-CLI (glab), angemeldet
+Open in browser	Abrir en el navegador	Im Browser öffnen

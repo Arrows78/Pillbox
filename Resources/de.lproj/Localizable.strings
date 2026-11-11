@@ -1011,3 +1011,8 @@
 "Review approved" = "Review genehmigt";
 "Changes requested" = "Änderungen angefordert";
 "Review requested" = "Review angefordert";
+"Pull requests through the gh command, which must be installed and logged in." = "Pull Requests über den Befehl gh, der installiert und angemeldet sein muss.";
+"Merge requests through the glab command, which must be installed and logged in. Both can be on at once." = "Merge Requests über den Befehl glab, der installiert und angemeldet sein muss. Beide können gleichzeitig aktiv sein.";
+"Turn on GitHub or GitLab in Settings" = "GitHub oder GitLab in den Einstellungen aktivieren";
+"Needs the GitHub (gh) or GitLab (glab) CLI, logged in" = "Benötigt die GitHub-CLI (gh) oder GitLab-CLI (glab), angemeldet";
+"Open in browser" = "Im Browser öffnen";
