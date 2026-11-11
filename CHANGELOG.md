@@ -4,6 +4,19 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.6.1] - 2026-11-11
+
+### Changed
+
+- Name files and types after what they hold
+
+### Fixed
+
+- Keep unreadable data files and stop false warnings at launch
+- Prompter, CPU load, update install and stale island state
+- Correct the review findings across the app
+- Show every snap zone, bound accessibility waits, share one event store
+
 ## [0.6.0] - 2026-11-11
 
 ### Added
@@ -141,6 +154,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.6.1]: https://github.com/Arrows78/Pillbox/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Arrows78/Pillbox/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Arrows78/Pillbox/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Arrows78/Pillbox/compare/v0.3.1...v0.4.0
