@@ -264,24 +264,52 @@ struct AppVolumeView: View {
 struct AppVolumeRow: View {
     let app: AppAudio
     @ObservedObject var mixer = AppVolumeService.shared
+    @State private var editing = false
 
     var body: some View {
         let muted = mixer.isMuted(app.id), g = mixer.gain(app.id)
-        HStack(spacing: 8) {
-            Group {
-                if let i = app.icon { Image(nsImage: i).resizable() } else { Image(systemName: "app.fill").resizable() }
-            }.frame(width: 18, height: 18)
-            Text(verbatim: app.name).font(.system(size: 11, weight: .medium)).lineLimit(1).frame(width: 120, alignment: .leading)
-            Button { mixer.toggleMute(app.id) } label: {
-                Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").foregroundStyle(muted ? Color.red : .white.opacity(0.7))
-                    .frame(width: 18)
-            }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey(muted ? "Unmute" : "Mute")).hoverTip(L(muted ? "Unmute" : "Mute"))
-            VolumeBar(value: Double(muted ? 0 : g)) { mixer.setGain(Float($0), for: app.id) }
-                .opacity(muted ? 0.4 : 1).accessibilityLabel(Text(verbatim: app.name))
-            Text(verbatim: "\(Int((muted ? 0 : g) * 100)) %").font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
-                .frame(width: 40, alignment: .trailing)
+        let shaped = mixer.equalizer(app.id).contains { $0 != 0 }
+        VStack(spacing: 6) {
+            HStack(spacing: 8) {
+                Group {
+                    if let i = app.icon { Image(nsImage: i).resizable() } else { Image(systemName: "app.fill").resizable() }
+                }.frame(width: 18, height: 18)
+                Text(verbatim: app.name).font(.system(size: 11, weight: .medium)).lineLimit(1).frame(width: 120, alignment: .leading)
+                Button { mixer.toggleMute(app.id) } label: {
+                    Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").foregroundStyle(muted ? Color.red : .white.opacity(0.7))
+                        .frame(width: 18)
+                }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey(muted ? "Unmute" : "Mute")).hoverTip(L(muted ? "Unmute" : "Mute"))
+                VolumeBar(value: Double(muted ? 0 : g)) { mixer.setGain(Float($0), for: app.id) }
+                    .opacity(muted ? 0.4 : 1).accessibilityLabel(Text(verbatim: app.name))
+                Text(verbatim: "\(Int((muted ? 0 : g) * 100)) %").font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                    .frame(width: 40, alignment: .trailing)
+                Button { editing.toggle() } label: {
+                    Image(systemName: "slider.horizontal.3").foregroundStyle(shaped || editing ? Color.accentColor : .white.opacity(0.7))
+                }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey("Equalizer")).hoverTip(L("Equalizer"))
+            }
+            .frame(height: 26)
+            if editing {
+                ForEach(0..<3, id: \.self) { i in
+                    HStack(spacing: 8) {
+                        Text(LocalizedStringKey(["Bass", "Mid", "Treble"][i])).font(.system(size: 10, weight: .medium)).frame(width: 120, alignment: .leading)
+                        Slider(value: band(i), in: -12...12).controlSize(.small)
+                        Text(verbatim: String(format: "%+.0f dB", mixer.equalizer(app.id)[i])).font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
+                            .frame(width: 48, alignment: .trailing)
+                    }
+                }
+            }
         }
-        .padding(.horizontal, 8).frame(height: 26).background(card, in: RoundedRectangle(cornerRadius: 7))
+        .padding(.horizontal, 8).padding(.vertical, editing ? 6 : 0)
+        .background(card, in: RoundedRectangle(cornerRadius: 7))
+    }
+
+    /// One band of this app's equalizer; each move is stored and applied to its tap.
+    private func band(_ i: Int) -> Binding<Double> {
+        Binding(get: { mixer.equalizer(app.id)[i] }, set: { v in
+            var bands = mixer.equalizer(app.id)
+            bands[i] = v
+            mixer.setEqualizer(bands, for: app.id)
+        })
     }
 }
 

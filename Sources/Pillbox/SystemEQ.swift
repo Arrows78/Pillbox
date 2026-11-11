@@ -115,7 +115,7 @@ final class SystemEQ {
         return status == noErr && object != kAudioObjectUnknown ? object : nil
     }
 
-    private static func sampleRate(_ device: AudioObjectID) -> Double {
+    static func sampleRate(_ device: AudioObjectID) -> Double {
         var addr = address(kAudioDevicePropertyNominalSampleRate), rate = 48_000.0, size = UInt32(MemoryLayout<Double>.size)
         return AudioObjectGetPropertyData(device, &addr, 0, nil, &size, &rate) == noErr ? rate : 48_000
     }

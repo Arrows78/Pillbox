@@ -21,7 +21,7 @@ enum AppVolumeMath {
     }
 
     /// A tap is only needed while the app is quieter than normal or muted.
-    static func needsTap(gain: Float, muted: Bool) -> Bool { muted || gain < 0.995 }
+    static func needsTap(gain: Float, muted: Bool, equalized: Bool = false) -> Bool { muted || gain < 0.995 || equalized }
 
     /// The tapped channel that feeds an output channel: same index, a mono tap feeds every channel, extra ones stay silent.
     static func source(for out: Int, inputs: Int) -> Int? { inputs == 1 ? 0 : out < inputs ? out : nil }
@@ -91,13 +91,17 @@ final class AppTap {
     private var procID: AudioDeviceIOProcID?
     private let gain = UnsafeMutablePointer<Float>.allocate(capacity: 1)
     private let heardFlag = UnsafeMutablePointer<Bool>.allocate(capacity: 1)
+    private let eqOn = UnsafeMutablePointer<Bool>.allocate(capacity: 1)
+    /// Bass, mid and treble of this app's own equalizer; flat leaves the audio untouched.
+    let eq = EQProcessor()
+    private var rate: Double = 48_000
     private let queue = DispatchQueue(label: "pillbox.appvolume", qos: .userInteractive)
     /// False while the tap has only delivered silence (no audio capture permission, or nothing played yet).
     var heard: Bool { heardFlag.pointee }
 
-    init?(processes: [AudioObjectID], gain g: Float, muted: Bool) {
+    init?(processes: [AudioObjectID], gain g: Float, muted: Bool, bands: [Double] = [0, 0, 0]) {
         self.processes = processes; self.muted = muted
-        gain.initialize(to: g); heardFlag.initialize(to: false)
+        gain.initialize(to: g); heardFlag.initialize(to: false); eqOn.initialize(to: false)
         let desc = CATapDescription(stereoMixdownOfProcesses: processes)
         desc.name = "Pillbox Volume"; desc.isPrivate = true
         desc.muteBehavior = muted ? .muted : .mutedWhenTapped
@@ -110,7 +114,9 @@ final class AppTap {
                                   kAudioAggregateDeviceSubDeviceListKey: [[kAudioSubDeviceUIDKey: out]],
                                   kAudioAggregateDeviceTapListKey: [[kAudioSubTapUIDKey: desc.uuid.uuidString, kAudioSubTapDriftCompensationKey: true]]]
         guard AudioHardwareCreateAggregateDevice(agg as CFDictionary, &aggregateID) == noErr else { stop(); return nil }
-        let tapBuffers = Self.tapBufferCount(tapID), gain = self.gain, heard = self.heardFlag
+        rate = SystemEQ.sampleRate(aggregateID)
+        setBands(bands)
+        let tapBuffers = Self.tapBufferCount(tapID), gain = self.gain, heard = self.heardFlag, eqOn = self.eqOn, eq = self.eq
         let status = AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateID, queue) { _, inData, _, outData, _ in
             let ins = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inData))
             let outs = UnsafeMutableAudioBufferListPointer(outData)
@@ -129,12 +135,20 @@ final class AppTap {
                     }
                 }
                 for f in n..<d.3 { d.0[f * d.2 + d.1] = 0 }
+                if eqOn.pointee { eq.process(d.0 + d.1, stride: d.2, frames: d.3, channel: j) }
             }
         }
         guard status == noErr, let id = procID, AudioDeviceStart(aggregateID, id) == noErr else { stop(); return nil }
     }
 
-    deinit { stop(); gain.deallocate(); heardFlag.deallocate() }
+    /// Sets this app's bass, mid and treble in dB (-12...12) and switches its equalizer on or off as they are set.
+    func setBands(_ bands: [Double]) {
+        guard bands.count == 3 else { return }
+        eq.configure(bassDB: bands[0], midDB: bands[1], trebleDB: bands[2], rate: rate)
+        eqOn.pointee = bands.contains { $0 != 0 }
+    }
+
+    deinit { stop(); gain.deallocate(); heardFlag.deallocate(); eqOn.deallocate() }
 
     func setGain(_ g: Float) { gain.pointee = g }
 
@@ -170,6 +184,9 @@ final class AppVolumeService: ObservableObject {
     @Published var apps: [AppAudio] = []
     @Published private(set) var gains: [String: Float] = [:]
     @Published private(set) var muted: Set<String> = []
+    /// Per-app bass, mid and treble, kept across launches.
+    @Published private(set) var eqBands: [String: [Double]] = UserDefaults.standard.dictionary(forKey: AppVolumeService.eqKey) as? [String: [Double]] ?? [:]
+    nonisolated static let eqKey = "appEqualizer"
     private var taps: [String: AnyObject] = [:]
     private var timer: Timer?
     private var listening = false
@@ -209,11 +226,19 @@ final class AppVolumeService: ObservableObject {
         }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         // Drop settings of apps that quit; rebuild a tap when the app gained or lost a helper.
         for id in Array(taps.keys) where !groups.keys.contains(id) { forget(id) }
-        for a in apps where taps[a.id] != nil { apply(a.id) }
+        for a in apps where taps[a.id] != nil || equalizer(a.id).contains(where: { $0 != 0 }) { apply(a.id) }
     }
 
     func setGain(_ g: Float, for id: String) {
         gains[id] = min(max(g, 0), 1)
+        apply(id)
+    }
+
+    func equalizer(_ id: String) -> [Double] { eqBands[id] ?? [0, 0, 0] }
+
+    func setEqualizer(_ bands: [Double], for id: String) {
+        eqBands[id] = bands
+        UserDefaults.standard.set(eqBands, forKey: Self.eqKey)
         apply(id)
     }
 
@@ -231,11 +256,12 @@ final class AppVolumeService: ObservableObject {
 
     private func apply(_ id: String) {
         guard #available(macOS 14.4, *), let app = apps.first(where: { $0.id == id }) else { return }
-        let g = gain(id), m = isMuted(id)
-        guard AppVolumeMath.needsTap(gain: g, muted: m) else { drop(id); return }
-        if let t = taps[id] as? AppTap, t.processes == app.processes, t.muted == m { t.setGain(g); return }
+        let g = gain(id), m = isMuted(id), bands = equalizer(id)
+        let equalized = bands.contains { $0 != 0 }
+        guard AppVolumeMath.needsTap(gain: g, muted: m, equalized: equalized) else { drop(id); return }
+        if let t = taps[id] as? AppTap, t.processes == app.processes, t.muted == m { t.setGain(g); t.setBands(bands); return }
         drop(id)
-        guard let t = AppTap(processes: app.processes, gain: g, muted: m) else {
+        guard let t = AppTap(processes: app.processes, gain: g, muted: m, bands: bands) else {
             gains[id] = nil; muted.remove(id)
             NotchModel.shared.show(Activity(symbol: "speaker.slash", title: "Could not change this app's volume", tint: .orange, duration: 2))
             return
