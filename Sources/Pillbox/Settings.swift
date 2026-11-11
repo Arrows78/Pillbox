@@ -333,6 +333,7 @@ struct SettingsView: View {
                 }
                 SettingsToggle("GitHub Copilot quota in AI usage", "Asks GitHub through the gh command and its own login, every 2 minutes while on. Pillbox stores no token.", isOn: $copilotUsage)
                     .onChange(of: copilotUsage) { _, _ in AIUsageService.shared.refresh() }
+                AIUsageOrderRows()
                 SettingsRow(title: "Break reminder", subtitle: "Suggests a pause after this long at the keyboard.") {
                     Picker("", selection: $breakReminder) {
                         Text("Off").tag(0); Text("Every 20 min").tag(20); Text("Every 30 min").tag(30); Text("Every 45 min").tag(45); Text("Every hour").tag(60)
@@ -530,6 +531,50 @@ struct Keycaps: View {
                     .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
             }
         }
+    }
+}
+
+/// The AI usage providers: which ones the tab shows, and in what order. Arrows move a provider; the switch hides it.
+struct AIUsageOrderRows: View {
+    @AppStorage(AIUsageService.orderKey) private var order = AIUsageService.allNames.joined(separator: ",")
+    @AppStorage(AIUsageService.hiddenKey) private var hidden = ""
+
+    /// Stored order first, then any provider the stored order does not mention yet.
+    private var names: [String] {
+        let stored = order.split(separator: ",").map(String.init)
+        return stored + AIUsageService.allNames.filter { !stored.contains($0) }
+    }
+
+    private var hiddenSet: Set<String> { Set(hidden.split(separator: ",").map(String.init)) }
+
+    var body: some View {
+        ForEach(Array(names.enumerated()), id: \.element) { index, name in
+            SettingsRow(title: LocalizedStringKey(name)) {
+                HStack(spacing: 6) {
+                    Button { move(index, by: -1) } label: { Image(systemName: "chevron.up") }
+                        .disabled(index == 0).accessibilityLabel(Text("Move up"))
+                    Button { move(index, by: 1) } label: { Image(systemName: "chevron.down") }
+                        .disabled(index == names.count - 1).accessibilityLabel(Text("Move down"))
+                    Toggle("", isOn: Binding(get: { !hiddenSet.contains(name) }, set: { setShown(name, $0) }))
+                        .labelsHidden().toggleStyle(.switch).tint(SettingsStyle.accent)
+                }
+                .buttonStyle(.borderless).controlSize(.small)
+            }
+        }
+    }
+
+    private func move(_ index: Int, by step: Int) {
+        var list = names
+        let target = index + step
+        guard list.indices.contains(target) else { return }
+        list.swapAt(index, target)
+        order = list.joined(separator: ",")
+    }
+
+    private func setShown(_ name: String, _ shown: Bool) {
+        var set = hiddenSet
+        if shown { set.remove(name) } else { set.insert(name) }
+        hidden = set.sorted().joined(separator: ",")
     }
 }
 

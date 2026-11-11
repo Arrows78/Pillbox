@@ -38,14 +38,36 @@ final class AIUsageService: ObservableObject {
         guard !loading else { return }
         loading = true
         let copilot = UserDefaults.standard.bool(forKey: Self.copilotKey)
+        let order = Self.storedList(Self.orderKey) ?? Self.allNames, hidden = Set(Self.storedList(Self.hiddenKey) ?? [])
         DispatchQueue.global(qos: .utility).async {
             var all = [Self.scanClaude(), Self.scanCodex(), Self.scanGemini(), Self.scanOpenCode(), Self.scanCursor()].filter { $0.week > 0 || $0.lastActivity != nil }
             if copilot, let c = Self.fetchCopilot() { all.append(c) }
-            DispatchQueue.main.async { MainActor.assumeIsolated { self.providers = all; self.loading = false; self.checkAlerts(all) } }
+            // Alerts watch every provider; the tab shows only the chosen ones, in the chosen order.
+            let shown = Self.arranged(all, order: order, hidden: hidden)
+            DispatchQueue.main.async { MainActor.assumeIsolated { self.providers = shown; self.loading = false; self.checkAlerts(all) } }
         }
     }
 
     nonisolated static let copilotKey = "copilotUsage"
+
+    /// Every provider the tab can show, in its default order.
+    static let allNames = ["Claude Code", "Codex", "Gemini CLI", "OpenCode", "Cursor", "Copilot"]
+    nonisolated static let orderKey = "aiUsageOrder", hiddenKey = "aiUsageHidden"
+
+    /// A comma-separated setting read as a list; nil when it was never set.
+    nonisolated static func storedList(_ key: String) -> [String]? {
+        UserDefaults.standard.string(forKey: key).map { $0.split(separator: ",").map(String.init) }
+    }
+
+    /// The providers in the chosen order without the hidden ones. Names missing from the order keep their place at the end.
+    nonisolated static func arranged(_ list: [ProviderUsage], order: [String], hidden: Set<String>) -> [ProviderUsage] {
+        let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: { first, _ in first })
+        return list.enumerated().filter { !hidden.contains($0.element.name) }
+            .sorted { a, b in
+                let ra = rank[a.element.name] ?? Int.max, rb = rank[b.element.name] ?? Int.max
+                return ra != rb ? ra < rb : a.offset < b.offset
+            }.map(\.element)
+    }
 
     // MARK: Shared helpers
 

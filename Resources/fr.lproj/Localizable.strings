@@ -811,3 +811,5 @@
 "No paired device to connect" = "Aucun appareil appairé à connecter";
 "Connected to %@" = "Connecté à %@";
 "Could not connect to %@" = "Connexion à %@ impossible";
+"Move up" = "Monter";
+"Move down" = "Descendre";

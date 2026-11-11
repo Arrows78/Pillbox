@@ -760,3 +760,5 @@
 "No paired device to connect" = "Ningún dispositivo emparejado para conectar";
 "Connected to %@" = "Conectado a %@";
 "Could not connect to %@" = "No se pudo conectar a %@";
+"Move up" = "Subir";
+"Move down" = "Bajar";

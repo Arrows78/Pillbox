@@ -1035,6 +1035,10 @@ extension SelfTest {
               ExtraBrightness.allowed(lowPower: false, batteryLevel: 80, pluggedIn: false, thermal: .nominal) && !ExtraBrightness.allowed(lowPower: true, batteryLevel: 80, pluggedIn: true, thermal: .nominal)
               && !ExtraBrightness.allowed(lowPower: false, batteryLevel: 15, pluggedIn: false, thermal: .nominal) && ExtraBrightness.allowed(lowPower: false, batteryLevel: 15, pluggedIn: true, thermal: .fair)
               && !ExtraBrightness.allowed(lowPower: false, batteryLevel: 80, pluggedIn: true, thermal: .serious))
+        let sample = ["Claude Code", "Codex", "Cursor", "Gemini CLI"].map { ProviderUsage(name: $0) }
+        let arranged = AIUsageService.arranged(sample, order: ["Codex", "Claude Code", "Codex"], hidden: ["Cursor"]).map(\.name)
+        check("ai usage: chosen order first, hidden providers left out, unknown names keep their place at the end",
+              arranged == ["Codex", "Claude Code", "Gemini CLI"], "\(arranged)")
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]

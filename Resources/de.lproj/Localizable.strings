@@ -760,3 +760,5 @@
 "No paired device to connect" = "Kein gekoppeltes Gerät zum Verbinden";
 "Connected to %@" = "Verbunden mit %@";
 "Could not connect to %@" = "Verbindung mit %@ nicht möglich";
+"Move up" = "Nach oben";
+"Move down" = "Nach unten";
