@@ -23,6 +23,7 @@ struct SettingsView: View {
     @AppStorage("peekOnHover") private var peekOnHover = false
     @AppStorage("desktopWidgets") private var desktopWidgets = false
     @AppStorage("brightnessHUD") private var brightnessHUD = true
+    @AppStorage(ExtraBrightness.key) private var extraBrightness = false
     @AppStorage("focusIsland") private var focusIsland = true
     @AppStorage("callIsland") private var callIsland = true
     @AppStorage("hudStyle") private var hudStyle = "notch"
@@ -279,6 +280,7 @@ struct SettingsView: View {
                 SettingsToggle("Caps Lock island", isOn: $capsHUD)
                 SettingsToggle("Volume island", isOn: $volumeHUD)
                 SettingsToggle("Brightness island", isOn: $brightnessHUD)
+                SettingsToggle("Extra brightness on XDR screens", "Lifts the built-in XDR screen slightly above standard white. Uses more power.", isOn: $extraBrightness)
                 SettingsRow(title: "Charged island", subtitle: "Shows when the battery reaches this level while plugged in.") {
                     HStack(spacing: 6) {
                         Text(verbatim: "\(fullCharge)%").monospacedDigit().foregroundStyle(SettingsStyle.dim)

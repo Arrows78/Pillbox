@@ -52,9 +52,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         Updater.shared.start()
         BrewUpdates.shared.start()
         ICSFeeds.shared.start()
+        ExtraBrightness.shared.start()
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                HyperKey.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
+                HyperKey.shared.apply(); ExtraBrightness.shared.apply(); MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
                 AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
                 SettingsWindow.applyTheme(); self?.applyStatusItemVisibility()
                 self?.applyHotKeys(); ActivityCounter.shared.apply(); PointerHider.shared.apply(); TypingSounds.shared.apply()

@@ -728,3 +728,5 @@
 "Keyboard backlight up" = "Tastaturbeleuchtung heller";
 "Keyboard backlight down" = "Tastaturbeleuchtung dunkler";
 "Turn keyboard backlight off" = "Tastaturbeleuchtung ausschalten";
+"Extra brightness on XDR screens" = "Zusätzliche Helligkeit auf XDR-Bildschirmen";
+"Lifts the built-in XDR screen slightly above standard white. Uses more power." = "Hebt den eingebauten XDR-Bildschirm etwas über das Standardweiß hinaus. Verbraucht mehr Energie.";

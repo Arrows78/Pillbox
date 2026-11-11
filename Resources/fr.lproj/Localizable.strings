@@ -779,3 +779,5 @@
 "Keyboard backlight up" = "Rétroéclairage du clavier plus fort";
 "Keyboard backlight down" = "Rétroéclairage du clavier plus faible";
 "Turn keyboard backlight off" = "Éteindre le rétroéclairage du clavier";
+"Extra brightness on XDR screens" = "Luminosité supplémentaire sur les écrans XDR";
+"Lifts the built-in XDR screen slightly above standard white. Uses more power." = "Éclaire légèrement l'écran XDR intégré au-delà du blanc standard. Consomme plus d'énergie.";

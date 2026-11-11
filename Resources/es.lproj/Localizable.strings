@@ -728,3 +728,5 @@
 "Keyboard backlight up" = "Retroiluminación del teclado más alta";
 "Keyboard backlight down" = "Retroiluminación del teclado más baja";
 "Turn keyboard backlight off" = "Apagar la retroiluminación del teclado";
+"Extra brightness on XDR screens" = "Brillo extra en pantallas XDR";
+"Lifts the built-in XDR screen slightly above standard white. Uses more power." = "Eleva ligeramente la pantalla XDR integrada por encima del blanco estándar. Consume más energía.";
