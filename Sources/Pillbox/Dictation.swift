@@ -160,8 +160,8 @@ final class DictationService: ObservableObject {
         SpeechListener.requestAccess { [weak self] ok in
             guard let self else { return }
             guard ok else {
-                NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: L("Microphone needed"),
-                                                subtitle: L("Also allow speech recognition"), tint: .orange, actionTitle: "Settings", action: {
+                NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: localized("Microphone needed"),
+                                                subtitle: localized("Also allow speech recognition"), tint: .orange, actionTitle: "Settings", action: {
                     if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") { NSWorkspace.shared.open(u) }
                 }, duration: 6))
                 return
@@ -180,7 +180,7 @@ final class DictationService: ObservableObject {
             if finished, self.finishing { self.deliver() }
         }
         guard ok else {
-            NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: L("Speech recognition is not available"), tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: localized("Speech recognition is not available"), tint: .orange))
             return
         }
         NotchModel.shared.collapse()
@@ -215,11 +215,11 @@ final class DictationService: ObservableObject {
         let out = text.full
         end()
         guard !out.isEmpty else {
-            NotchModel.shared.show(Activity(symbol: "mic.fill", title: L("Nothing was heard"), tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "mic.fill", title: localized("Nothing was heard"), tint: .orange)); return
         }
         ClipboardService.shared.paste(ClipItem(text: out))
         if !AXIsProcessTrusted() {
-            NotchModel.shared.show(Activity(symbol: "doc.on.clipboard.fill", title: L("Dictation copied"), subtitle: L("Allow Accessibility to paste it for you"), tint: .green))
+            NotchModel.shared.show(Activity(symbol: "doc.on.clipboard.fill", title: localized("Dictation copied"), subtitle: localized("Allow Accessibility to paste it for you"), tint: .green))
         }
     }
 

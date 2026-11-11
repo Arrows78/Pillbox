@@ -294,7 +294,7 @@ final class AppVolumeService: ObservableObject {
         drop(id)
         guard let t = AppTap(processes: app.processes, gain: g, muted: m, bands: bands) else {
             gains[id] = nil; muted.remove(id)
-            NotchModel.shared.show(Activity(symbol: "speaker.slash", title: L("Could not change this app's volume"), tint: .orange, duration: 2))
+            NotchModel.shared.show(Activity(symbol: "speaker.slash", title: localized("Could not change this app's volume"), tint: .orange, duration: 2))
             return
         }
         taps[id] = t
@@ -308,7 +308,7 @@ final class AppVolumeService: ObservableObject {
             MainActor.assumeIsolated {
                 guard let self, let t, self.taps[id] === t, !t.heard, self.apps.first(where: { $0.id == id })?.playing == true else { return }
                 self.drop(id); self.gains[id] = nil; self.denied.insert(id)
-                NotchModel.shared.show(Activity(symbol: "waveform.slash", title: L("Allow audio capture for Pillbox"), subtitle: L("Privacy & Security › Screen & System Audio Recording"), tint: .orange, duration: 3.5))
+                NotchModel.shared.show(Activity(symbol: "waveform.slash", title: localized("Allow audio capture for Pillbox"), subtitle: localized("Privacy & Security › Screen & System Audio Recording"), tint: .orange, duration: 3.5))
             }
         }
     }

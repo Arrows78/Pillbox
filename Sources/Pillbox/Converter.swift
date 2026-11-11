@@ -47,7 +47,7 @@ enum ConvertTarget: String, CaseIterable, Identifiable {
 enum ConvertError: Error, LocalizedError {
     case unsupported, failed(String)
     var errorDescription: String? {
-        switch self { case .unsupported: L("Unsupported conversion"); case .failed(let m): m }
+        switch self { case .unsupported: localized("Unsupported conversion"); case .failed(let m): m }
     }
 }
 
@@ -70,21 +70,21 @@ enum Converter {
 
     /// The picture with its EXIF orientation applied (phone photos are stored sideways), as Annotator opens them.
     private nonisolated static func cgImage(_ url: URL) throws -> CGImage {
-        guard let i = Annotator.load(url) else { throw ConvertError.failed(L("Cannot read the image")) }
+        guard let i = Annotator.load(url) else { throw ConvertError.failed(localized("Cannot read the image")) }
         return i
     }
 
     nonisolated static func image(_ src: URL, to out: URL, type: UTType) throws {
         let img = try cgImage(src)
-        guard let d = CGImageDestinationCreateWithURL(out as CFURL, type.identifier as CFString, 1, nil) else { throw ConvertError.failed(L("Cannot write %@", type.preferredFilenameExtension ?? "")) }
+        guard let d = CGImageDestinationCreateWithURL(out as CFURL, type.identifier as CFString, 1, nil) else { throw ConvertError.failed(localized("Cannot write %@", type.preferredFilenameExtension ?? "")) }
         CGImageDestinationAddImage(d, img, [kCGImageDestinationLossyCompressionQuality: 0.9] as CFDictionary)
-        guard CGImageDestinationFinalize(d) else { throw ConvertError.failed(L("Encoding failed")) }
+        guard CGImageDestinationFinalize(d) else { throw ConvertError.failed(localized("Encoding failed")) }
     }
 
     nonisolated static func pdf(_ src: URL, to out: URL) throws {
-        guard let nsimg = NSImage(contentsOf: src), let page = PDFPage(image: nsimg) else { throw ConvertError.failed(L("Cannot read the image")) }
+        guard let nsimg = NSImage(contentsOf: src), let page = PDFPage(image: nsimg) else { throw ConvertError.failed(localized("Cannot read the image")) }
         let doc = PDFDocument(); doc.insert(page, at: 0)
-        guard doc.write(to: out) else { throw ConvertError.failed(L("Cannot write the PDF")) }
+        guard doc.write(to: out) else { throw ConvertError.failed(localized("Cannot write the PDF")) }
     }
 
     /// Foreground cut-out with Vision (no network); keeps the original size, transparent background.
@@ -92,12 +92,12 @@ enum Converter {
         let handler = VNImageRequestHandler(url: src)
         let req = VNGenerateForegroundInstanceMaskRequest()
         try handler.perform([req])
-        guard let obs = req.results?.first else { throw ConvertError.failed(L("No subject found")) }
+        guard let obs = req.results?.first else { throw ConvertError.failed(localized("No subject found")) }
         let buffer = try obs.generateMaskedImage(ofInstances: obs.allInstances, from: handler, croppedToInstancesExtent: false)
         let ci = CIImage(cvPixelBuffer: buffer)
-        guard let cg = CIContext().createCGImage(ci, from: ci.extent), let d = CGImageDestinationCreateWithURL(out as CFURL, UTType.png.identifier as CFString, 1, nil) else { throw ConvertError.failed(L("Cannot write the image")) }
+        guard let cg = CIContext().createCGImage(ci, from: ci.extent), let d = CGImageDestinationCreateWithURL(out as CFURL, UTType.png.identifier as CFString, 1, nil) else { throw ConvertError.failed(localized("Cannot write the image")) }
         CGImageDestinationAddImage(d, cg, nil)
-        guard CGImageDestinationFinalize(d) else { throw ConvertError.failed(L("Encoding failed")) }
+        guard CGImageDestinationFinalize(d) else { throw ConvertError.failed(localized("Encoding failed")) }
     }
 
     nonisolated static func export(_ src: URL, to out: URL, preset: String, type: AVFileType) async throws {
@@ -112,23 +112,7 @@ enum Converter {
                                        AVNumberOfChannelsKey: input.processingFormat.channelCount, AVLinearPCMBitDepthKey: 16,
                                        AVLinearPCMIsFloatKey: false, AVLinearPCMIsBigEndianKey: !wav]
         let output = try AVAudioFile(forWriting: out, settings: settings, commonFormat: input.processingFormat.commonFormat, interleaved: input.processingFormat.isInterleaved)
-        guard let buf = AVAudioPCMBuffer(pcmFormat: input.processingFormat, frameCapacity: 8192) else { throw ConvertError.failed(L("Buffer")) }
+        guard let buf = AVAudioPCMBuffer(pcmFormat: input.processingFormat, frameCapacity: 8192) else { throw ConvertError.failed(localized("Buffer")) }
         while input.framePosition < input.length { try input.read(into: buf); try output.write(from: buf) }
-    }
-}
-
-extension ShelfService {
-    func convert(_ list: [ShelfItem], to target: ConvertTarget) {
-        for item in list {
-            Task { @MainActor in
-                do {
-                    let out = try await Converter.convert(item.url, to: target)
-                    add([out])
-                    NotchModel.shared.show(Activity(symbol: "arrow.triangle.2.circlepath", title: L("Converted"), subtitle: out.lastPathComponent, tint: .green))
-                } catch {
-                    NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: L("Conversion failed"), subtitle: error.localizedDescription, tint: .red))
-                }
-            }
-        }
     }
 }

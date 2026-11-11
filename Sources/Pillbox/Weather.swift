@@ -95,7 +95,7 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
               let code = cur["weather_code"] as? Int else { return nil }
         let day = (cur["is_day"] as? Int ?? 1) == 1
         let (sym, text) = describe(code, day: day)
-        return WeatherReading(temperature: Int(t.rounded()), symbol: sym, summary: L(text))
+        return WeatherReading(temperature: Int(t.rounded()), symbol: sym, summary: localized(text))
     }
 
     /// WMO weather interpretation codes.

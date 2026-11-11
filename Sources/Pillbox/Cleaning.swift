@@ -29,11 +29,11 @@ final class CleaningLock: ObservableObject {
         guard AXIsProcessTrusted() else {
             let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
             _ = AXIsProcessTrustedWithOptions(opts)
-            NotchModel.shared.show(Activity(symbol: "lock.open", title: L("Accessibility needed"), subtitle: L("Allow Pillbox, then try again"), tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "lock.open", title: localized("Accessibility needed"), subtitle: localized("Allow Pillbox, then try again"), tint: .orange)); return
         }
         let mask: CGEventMask = [CGEventType.keyDown, .keyUp, .flagsChanged].reduce(0) { $0 | (1 << $1.rawValue) } | (1 << 14)
         guard let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask, callback: cleaningTap, userInfo: nil) else {
-            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: L("Could not lock the keyboard"), subtitle: L("Allow Pillbox in Privacy & Security › Accessibility"), tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: localized("Could not lock the keyboard"), subtitle: localized("Allow Pillbox in Privacy & Security › Accessibility"), tint: .orange))
             return
         }
         tap = t; source = CFMachPortCreateRunLoopSource(nil, t, 0)
@@ -90,6 +90,6 @@ final class CleaningLock: ObservableObject {
         tap = nil; source = nil
         if !blackouts.isEmpty { blackouts.forEach { $0.orderOut(nil) }; blackouts = []; NSCursor.unhide() }
         keyMonitors.forEach { NSEvent.removeMonitor($0) }; keyMonitors = []
-        NotchModel.shared.show(Activity(symbol: "sparkles", title: L("All clean"), tint: .green, duration: 2))
+        NotchModel.shared.show(Activity(symbol: "sparkles", title: localized("All clean"), tint: .green, duration: 2))
     }
 }

@@ -116,9 +116,9 @@ enum ViewRenderer {
         save("widgets", DesktopWidgetView(), size: CGSize(width: 330, height: 190))
         let appr = Approval(tool: "Bash", detail: "rm -rf ./build && swift build", respond: { _ in })
         save("approval", island(ApprovalView(approval: appr), CGSize(width: 520, height: 124)), size: CGSize(width: 520, height: 124))
-        let aw = [Activity(symbol: SpaceWatcher.symbol, title: L("Desktop %d", 3), tint: .cyan),
-                  Activity(symbol: "hand.raised.fill", title: L("Blocked while focusing"), subtitle: "Discord", tint: .orange, image: BlockedAppsStore.bitmap(NSWorkspace.shared.icon(forFile: "/System/Applications/Messages.app")), actionTitle: L("Allow 5 min")),
-                  Activity(symbol: "video.fill", title: L("Camera turned on"), subtitle: L("Probably %@", "Microsoft Teams (work or school)"), tint: .green)]
+        let aw = [Activity(symbol: SpaceWatcher.symbol, title: localized("Desktop %d", 3), tint: .cyan),
+                  Activity(symbol: "hand.raised.fill", title: localized("Blocked while focusing"), subtitle: "Discord", tint: .orange, image: BlockedAppsStore.bitmap(NSWorkspace.shared.icon(forFile: "/System/Applications/Messages.app")), actionTitle: localized("Allow 5 min")),
+                  Activity(symbol: "video.fill", title: localized("Camera turned on"), subtitle: localized("Probably %@", "Microsoft Teams (work or school)"), tint: .green)]
         for (i, a) in aw.enumerated() { save("awareness-\(i)", island(ActivityView(activity: a), CGSize(width: 330, height: 66)), size: CGSize(width: 330, height: 66)) }
         let dic = DictationService.shared
         dic.text = DictationText(); dic.forceActive(true)
@@ -133,7 +133,7 @@ enum ViewRenderer {
             demo.add(keys: n, clicks: n / 6, metres: Double(n) / 20, on: Calendar.current.date(byAdding: .day, value: i - 6, to: Date())!)
         }
         ActivityCounter.shared.preview(demo)
-        for (i, a) in [Activity(symbol: "chart.bar.fill", title: L("%@ keys · %@ clicks", 12_345.formatted(), 2_345.formatted()), subtitle: L("%@ of mouse travel", ActivityCounter.distance(1234)), tint: .cyan),
+        for (i, a) in [Activity(symbol: "chart.bar.fill", title: localized("%@ keys · %@ clicks", 12_345.formatted(), 2_345.formatted()), subtitle: localized("%@ of mouse travel", ActivityCounter.distance(1234)), tint: .cyan),
                        Activity(symbol: "chart.bar.fill", title: "Activity counter is off", tint: .orange, actionTitle: "Turn on"),
                        Activity(symbol: "mic.slash.fill", title: "Microphone needed", subtitle: "Also allow speech recognition", tint: .orange, actionTitle: "Settings")].enumerated() {
             let size = CGSize(width: 330, height: 66)

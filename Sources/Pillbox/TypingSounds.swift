@@ -12,7 +12,7 @@ final class TypingSounds {
         case off, soft, clicky, thock
         var id: String { rawValue }
         var title: String {
-            switch self { case .off: L("Off"); case .soft: L("Soft"); case .clicky: L("Clicky"); case .thock: L("Thock") }
+            switch self { case .off: localized("Off"); case .soft: localized("Soft"); case .clicky: localized("Clicky"); case .thock: localized("Thock") }
         }
     }
     static var profile: Profile { Profile(rawValue: UserDefaults.standard.string(forKey: profileKey) ?? "off") ?? .off }
@@ -36,8 +36,8 @@ final class TypingSounds {
         guard monitors.isEmpty else { return }
         if !CGPreflightListenEventAccess(), !warned {
             warned = true; _ = CGRequestListenEventAccess()
-            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: L("Input Monitoring needed"), subtitle: L("Allow Pillbox to hear your keys"), tint: .orange,
-                                            actionTitle: L("Settings"), action: { PermissionsCenter.shared.openSettings(.inputMonitoring) }, duration: 6))
+            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: localized("Input Monitoring needed"), subtitle: localized("Allow Pillbox to hear your keys"), tint: .orange,
+                                            actionTitle: localized("Settings"), action: { PermissionsCenter.shared.openSettings(.inputMonitoring) }, duration: 6))
         }
         // A monitor that could not be installed is nil and is dropped, so the list only holds live tokens.
         monitors += [
@@ -85,7 +85,7 @@ final class TypingSounds {
         if !e.isRunning, (try? e.start()) == nil, !audioWarned {
             // No output device: the keys cannot be heard, so say so once instead of staying silent.
             audioWarned = true
-            NotchModel.shared.show(Activity(symbol: "speaker.slash.fill", title: L("Typing sounds cannot play"), subtitle: L("No audio output is available"), tint: .orange, duration: 5))
+            NotchModel.shared.show(Activity(symbol: "speaker.slash.fill", title: localized("Typing sounds cannot play"), subtitle: localized("No audio output is available"), tint: .orange, duration: 5))
         }
         let buffer: AVAudioPCMBuffer?
         if !down { buffer = release.randomElement() }

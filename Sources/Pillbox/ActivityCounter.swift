@@ -195,8 +195,8 @@ final class ActivityCounter: ObservableObject {
         }
         flush()
         let d = log.today()
-        NotchModel.shared.show(Activity(symbol: "chart.bar.fill", title: L("%@ keys · %@ clicks", d.keys.formatted(), d.clicks.formatted()),
-                                        subtitle: L("%@ of mouse travel", Self.distance(d.metres)), tint: .cyan, duration: 5))
+        NotchModel.shared.show(Activity(symbol: "chart.bar.fill", title: localized("%@ keys · %@ clicks", d.keys.formatted(), d.clicks.formatted()),
+                                        subtitle: localized("%@ of mouse travel", Self.distance(d.metres)), tint: .cyan, duration: 5))
     }
 }
 

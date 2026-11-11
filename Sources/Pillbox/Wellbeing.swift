@@ -38,7 +38,7 @@ final class EyeBreaks {
         var shown: UUID?      // the island this countdown last put up
         var onScreen = false
         func show() {
-            let a = Activity(symbol: "eye", title: L("Rest your eyes"), subtitle: L("Look far away for %d s · break %d today", left, today),
+            let a = Activity(symbol: "eye", title: localized("Rest your eyes"), subtitle: localized("Look far away for %d s · break %d today", left, today),
                              tint: .mint, progress: Double(left) / Double(Self.rest), duration: Double(left) + 1)
             shown = a.id
             NotchModel.shared.show(a)
@@ -69,7 +69,7 @@ final class AmbientNoise: ObservableObject {
         case off, white, pink, brown
         var id: String { rawValue }
         var title: String {
-            switch self { case .off: L("Off"); case .white: L("White noise"); case .pink: L("Pink noise"); case .brown: L("Brown noise") }
+            switch self { case .off: localized("Off"); case .white: localized("White noise"); case .pink: localized("Pink noise"); case .brown: localized("Brown noise") }
         }
     }
     static var kind: Kind { Kind(rawValue: UserDefaults.standard.string(forKey: kindKey) ?? "off") ?? .off }
@@ -104,7 +104,7 @@ final class AmbientNoise: ObservableObject {
         if engine?.isRunning != true {
             // Without an output device the engine does not start: say so rather than show "playing" in silence.
             do { try engine?.start() } catch {
-                NotchModel.shared.show(Activity(symbol: "speaker.slash.fill", title: L("Could not play the sound"), subtitle: L("No audio output is available"), tint: .orange, duration: 4))
+                NotchModel.shared.show(Activity(symbol: "speaker.slash.fill", title: localized("Could not play the sound"), subtitle: localized("No audio output is available"), tint: .orange, duration: 4))
                 return
             }
         }
@@ -177,6 +177,6 @@ struct AmbientMenu: View {
             Image(systemName: noise.playing ? "speaker.wave.2.fill" : "speaker.wave.2").foregroundStyle(noise.playing ? Color.orange : .white.opacity(0.6))
         }
         .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().font(.system(size: 13))
-        .hoverTip(L("Ambient sound during focus")).accessibilityLabel("Ambient sound during focus")
+        .hoverTip(localized("Ambient sound during focus")).accessibilityLabel("Ambient sound during focus")
     }
 }

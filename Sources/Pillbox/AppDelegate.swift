@@ -38,7 +38,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         DownloadsWatcher.shared.start()
         ScreenshotWatcher.shared.start()
         DriveWatcher.shared.start()
-        Tools.startCapsLockHUD()
+        SystemActions.startCapsLockHUD()
         KeystrokeHUD.shared.start()
         BrightnessHUD.shared.start()
         BreakReminder.shared.start()
@@ -166,11 +166,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let main = NSMenu()
         let appItem = NSMenuItem()
         let appMenu = NSMenu(title: "Pillbox")
-        let settingsItem = NSMenuItem(title: L("Settings…"), action: #selector(settings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: localized("Settings…"), action: #selector(settings), keyEquivalent: ",")
         settingsItem.target = self
         appMenu.addItem(settingsItem)
         appMenu.addItem(.separator())
-        appMenu.addItem(NSMenuItem(title: L("Quit Pillbox"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appMenu.addItem(NSMenuItem(title: localized("Quit Pillbox"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         appItem.submenu = appMenu
         main.addItem(appItem)
         NSApp.mainMenu = main
@@ -207,7 +207,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return image
         }
         func add(_ title: String, _ symbol: String, _ action: Selector, key: String = "", mods: NSEvent.ModifierFlags = [.control, .option], target: AnyObject? = nil) -> NSMenuItem {
-            let item = NSMenuItem(title: L(title), action: action, keyEquivalent: key)
+            let item = NSMenuItem(title: localized(title), action: action, keyEquivalent: key)
             item.keyEquivalentModifierMask = mods
             item.image = icon(symbol)
             item.target = target ?? self
@@ -225,7 +225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.image = icon(tab.symbol)
             tabs.addItem(item)
         }
-        let open = NSMenuItem(title: L("Open Tab"), action: nil, keyEquivalent: "")
+        let open = NSMenuItem(title: localized("Open Tab"), action: nil, keyEquivalent: "")
         open.image = icon("square.grid.2x2")
         open.submenu = tabs
         menu.addItem(open)
@@ -240,7 +240,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.representedObject = ActionBox(command.run)
             actions.addItem(item)
         }
-        let more = NSMenuItem(title: L("Actions"), action: nil, keyEquivalent: "")
+        let more = NSMenuItem(title: localized("Actions"), action: nil, keyEquivalent: "")
         more.image = icon("bolt")
         more.submenu = actions
         menu.addItem(more)
@@ -253,8 +253,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.representedObject = device.id
             bluetooth.addItem(item)
         }
-        if bluetooth.items.isEmpty { bluetooth.addItem(NSMenuItem(title: L("No paired device to connect"), action: nil, keyEquivalent: "")) }
-        let connect = NSMenuItem(title: L("Connect a Bluetooth Device"), action: nil, keyEquivalent: "")
+        if bluetooth.items.isEmpty { bluetooth.addItem(NSMenuItem(title: localized("No paired device to connect"), action: nil, keyEquivalent: "")) }
+        let connect = NSMenuItem(title: localized("Connect a Bluetooth Device"), action: nil, keyEquivalent: "")
         connect.image = icon("airpodspro")
         connect.submenu = bluetooth
         menu.addItem(connect)
@@ -282,7 +282,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let id = sender.representedObject as? String, let name = BluetoothConnect.name(of: id) else { return }
         BluetoothConnect.connect(id) { ok in
             NotchModel.shared.show(Activity(symbol: ok ? "checkmark.circle" : "exclamationmark.triangle",
-                                            title: ok ? L("Connected to %@", name) : L("Could not connect to %@", name),
+                                            title: ok ? localized("Connected to %@", name) : localized("Could not connect to %@", name),
                                             tint: ok ? .green : .orange, duration: 2.5))
         }
     }

@@ -57,11 +57,11 @@ enum ExternalBrightness {
         switch set(v) {
         case .written:
             UserDefaults.standard.set(v, forKey: key)
-            NotchModel.shared.show(Activity(symbol: "sun.max.fill", title: L("External display brightness"), tint: .yellow, progress: Double(v) / 100, duration: 1.4))
+            NotchModel.shared.show(Activity(symbol: "sun.max.fill", title: localized("External display brightness"), tint: .yellow, progress: Double(v) / 100, duration: 1.4))
         case .rejected:
-            NotchModel.shared.show(Activity(symbol: "display", title: L("External display did not respond"), duration: 2))
+            NotchModel.shared.show(Activity(symbol: "display", title: localized("External display did not respond"), duration: 2))
         case .noDisplay:
-            NotchModel.shared.show(Activity(symbol: "display", title: L("No external display found"), duration: 2))
+            NotchModel.shared.show(Activity(symbol: "display", title: localized("No external display found"), duration: 2))
         }
     }
 }

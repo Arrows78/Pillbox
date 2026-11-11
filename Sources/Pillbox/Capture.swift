@@ -127,7 +127,7 @@ final class ScreenRecorder: ObservableObject {
             } catch {
                 // A failed start must not leave a partial .mov on the Desktop.
                 pending?.cancel()
-                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not start recording"), subtitle: error.localizedDescription, tint: .orange, duration: 5))
+                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not start recording"), subtitle: error.localizedDescription, tint: .orange, duration: 5))
             }
         }
     }
@@ -141,11 +141,11 @@ final class ScreenRecorder: ObservableObject {
             let ok = await sink.finish()
             if ok {
                 ShelfService.shared.add([sink.url])
-                NotchModel.shared.show(Activity(symbol: "record.circle", title: L("Recording saved"), subtitle: sink.url.lastPathComponent, tint: .red,
-                                                actionTitle: L("Reveal"), action: { NSWorkspace.shared.activateFileViewerSelecting([sink.url]) }, duration: 6))
+                NotchModel.shared.show(Activity(symbol: "record.circle", title: localized("Recording saved"), subtitle: sink.url.lastPathComponent, tint: .red,
+                                                actionTitle: localized("Reveal"), action: { NSWorkspace.shared.activateFileViewerSelecting([sink.url]) }, duration: 6))
             } else {
                 try? FileManager.default.removeItem(at: sink.url)
-                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Recording failed"), tint: .orange))
+                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Recording failed"), tint: .orange))
             }
         }
     }
@@ -165,7 +165,7 @@ struct RecordingStopButton: View {
                     Image(systemName: "stop.fill").font(.system(size: 8))
                     Text(s, style: .timer).font(.system(size: 10, weight: .semibold, design: .monospaced)).lineLimit(1)
                 }.foregroundStyle(.white).padding(.horizontal, 6).padding(.vertical, 3).background(.red, in: Capsule()).fixedSize()
-            }.buttonStyle(.plain).hoverTip(L("Stop recording")).accessibilityLabel("Stop recording")
+            }.buttonStyle(.plain).hoverTip(localized("Stop recording")).accessibilityLabel("Stop recording")
         }
     }
 }
@@ -209,22 +209,53 @@ enum QRReader {
                     do {
                         codes += try await Task.detached { try scan(img) }.value.filter { !codes.contains($0) }
                     } catch {
-                        NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not read the QR code"), subtitle: error.localizedDescription, tint: .orange)); return
+                        NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not read the QR code"), subtitle: error.localizedDescription, tint: .orange)); return
                     }
                 }
             } catch {
-                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not capture the screen"), tint: .orange)); return
+                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not capture the screen"), tint: .orange)); return
             }
             guard let code = codes.first else {
-                NotchModel.shared.show(Activity(symbol: "qrcode.viewfinder", title: L("No QR code on screen"), tint: .orange)); return
+                NotchModel.shared.show(Activity(symbol: "qrcode.viewfinder", title: localized("No QR code on screen"), tint: .orange)); return
             }
             let more = codes.count > 1 ? " (+\(codes.count - 1))" : ""
             if let u = webLink(code) {
-                NotchModel.shared.show(Activity(symbol: "qrcode", title: L("QR code link"), subtitle: code + more, tint: .green, actionTitle: L("Open link"), action: { NSWorkspace.shared.open(u) }, duration: 10))
+                NotchModel.shared.show(Activity(symbol: "qrcode", title: localized("QR code link"), subtitle: code + more, tint: .green, actionTitle: localized("Open link"), action: { NSWorkspace.shared.open(u) }, duration: 10))
             } else {
-                NotchModel.shared.show(Activity(symbol: "qrcode", title: L("QR code"), subtitle: code + more, tint: .green, actionTitle: L("Copy"), action: {
+                NotchModel.shared.show(Activity(symbol: "qrcode", title: localized("QR code"), subtitle: code + more, tint: .green, actionTitle: localized("Copy"), action: {
                     NSPasteboard.general.clearContents(); NSPasteboard.general.setString(code, forType: .string)
                 }, duration: 10))
+            }
+        }
+    }
+}
+
+enum QuickCapture {
+    /// "event dinner with Sam tomorrow 8pm" gives the text after the keyword, or nil.
+    static func argument(_ query: String, keywords: [String]) -> String? {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        for k in keywords where q.lowercased().hasPrefix(k + " ") {
+            let rest = q.dropFirst(k.count + 1).trimmingCharacters(in: .whitespaces)
+            return rest.isEmpty ? nil : rest
+        }
+        return nil
+    }
+
+    /// An AppleScript string expression for arbitrary text (quotes, backslashes and line breaks are safe).
+    static func appleScriptString(_ s: String) -> String {
+        let lines = s.components(separatedBy: .newlines).map { "\"" + $0.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"") + "\"" }
+        return lines.joined(separator: " & linefeed & ")
+    }
+
+    static func addNote(_ text: String) {
+        let script = "tell application \"Notes\" to make new note with properties {body:\(appleScriptString(text))}"
+        DispatchQueue.global(qos: .userInitiated).async {
+            let ok = MusicService.run(script) != nil
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    NotchModel.shared.show(Activity(symbol: ok ? "note.text.badge.plus" : "exclamationmark.triangle", title: ok ? localized("Saved to Notes") : localized("Could not save to Notes"),
+                                                    subtitle: ok ? String(text.prefix(60)) : localized("Allow Pillbox to control Notes"), tint: ok ? .yellow : .orange))
+                }
             }
         }
     }

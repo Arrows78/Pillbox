@@ -26,8 +26,8 @@ extension SelfTest {
         // Menu bar
         check("menu bar: collapsing pushes icons away", MenuBarHider.separatorLength(collapsed: true) > 5_000 && MenuBarHider.separatorLength(collapsed: false) < 20)
         let now = Date()
-        check("menu bar calendar: ongoing", MenuBarCalendar.label(title: "Standup", start: now.addingTimeInterval(-60), end: now.addingTimeInterval(600), now: now) == L("%@ · now", "Standup"))
-        check("menu bar calendar: soon", MenuBarCalendar.label(title: "Standup", start: now.addingTimeInterval(12 * 60 - 5), end: now.addingTimeInterval(3600), now: now) == L("%@ · in %d min", "Standup", 12))
+        check("menu bar calendar: ongoing", MenuBarCalendar.label(title: "Standup", start: now.addingTimeInterval(-60), end: now.addingTimeInterval(600), now: now) == localized("%@ · now", "Standup"))
+        check("menu bar calendar: soon", MenuBarCalendar.label(title: "Standup", start: now.addingTimeInterval(12 * 60 - 5), end: now.addingTimeInterval(3600), now: now) == localized("%@ · in %d min", "Standup", 12))
         check("menu bar calendar: long titles are cut", MenuBarCalendar.label(title: String(repeating: "x", count: 40), start: now.addingTimeInterval(300), end: now.addingTimeInterval(900), now: now).count < 40)
         check("menu bar: six tabs can be detached", MenuBarDetach.detachable.count == 6 && !MenuBarDetach.detachable.contains(.terminal))
     }
@@ -37,7 +37,7 @@ extension SelfTest {
         let focus = #"{"data":[{"storeAssertionRecords":[{"assertionDetails":{"assertionDetailsModeIdentifier":"com.apple.focus.work"}}]}]}"#
         check("focus: mode name from the assertions file", FocusMonitor.parse(Data(focus.utf8)) == "Work")
         let dnd = #"{"data":[{"storeAssertionRecords":[{"assertionDetails":{"assertionDetailsModeIdentifier":"com.apple.donotdisturb.mode.default"}}]}]}"#
-        check("focus: Do Not Disturb", FocusMonitor.parse(Data(dnd.utf8)) == L("Do Not Disturb"))
+        check("focus: Do Not Disturb", FocusMonitor.parse(Data(dnd.utf8)) == localized("Do Not Disturb"))
         check("focus: no record means no focus", FocusMonitor.parse(Data(#"{"data":[{"storeAssertionRecords":[]}]}"#.utf8)) == nil && FocusMonitor.parse(Data("junk".utf8)) == nil)
 
         // Notifications: parse a real binary plist and read a real SQLite file

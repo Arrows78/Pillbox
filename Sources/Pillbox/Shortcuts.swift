@@ -32,7 +32,7 @@ final class ShortcutsService: ObservableObject {
                 MainActor.assumeIsolated {
                     self.running = nil
                     NotchModel.shared.show(Activity(symbol: r.status == 0 ? "checkmark.circle.fill" : "xmark.octagon.fill", title: name,
-                                                    subtitle: r.status == 0 ? L("Shortcut finished") : L("Shortcut failed"), tint: r.status == 0 ? .green : .red))
+                                                    subtitle: r.status == 0 ? localized("Shortcut finished") : localized("Shortcut failed"), tint: r.status == 0 ? .green : .red))
                 }
             }
         }

@@ -40,11 +40,11 @@ enum KeyboardBacklight {
     /// Moves the level by `delta` (between 0 and 1 in total) and shows the new level on the island.
     static func step(_ delta: Float) {
         guard let now = level else {
-            NotchModel.shared.show(Activity(symbol: "light.min", title: L("Keyboard backlight not available"), duration: 2))
+            NotchModel.shared.show(Activity(symbol: "light.min", title: localized("Keyboard backlight not available"), duration: 2))
             return
         }
         let v = min(max(now + delta, 0), 1)
         set(v)
-        NotchModel.shared.show(Activity(symbol: v > 0 ? "light.max" : "light.min", title: L("Keyboard backlight"), tint: .white, progress: Double(v), duration: 1.4))
+        NotchModel.shared.show(Activity(symbol: v > 0 ? "light.max" : "light.min", title: localized("Keyboard backlight"), tint: .white, progress: Double(v), duration: 1.4))
     }
 }

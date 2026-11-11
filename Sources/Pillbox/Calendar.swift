@@ -29,23 +29,6 @@ enum MeetingLink {
     }
 }
 
-extension CalendarService {
-    /// Events from the start of today to the end of tomorrow, all-day ones first.
-    func agenda(calendars: [EKCalendar]? = nil) -> [AgendaEvent] {
-        let cal = Calendar.current, start = cal.startOfDay(for: Date())
-        guard let end = cal.date(byAdding: .day, value: 2, to: start) else { return [] }
-        let store = EKEventStore()
-        let pred = store.predicateForEvents(withStart: start, end: end, calendars: calendars ?? CalendarChoice.visible(in: store))
-        return store.events(matching: pred)
-            .sorted { ($0.isAllDay ? 0 : 1, $0.startDate) < ($1.isAllDay ? 0 : 1, $1.startDate) }
-            .map { e in
-                AgendaEvent(id: (e.eventIdentifier ?? UUID().uuidString) + "\(e.startDate.timeIntervalSince1970)", title: e.title ?? "Event",
-                            start: e.startDate, end: e.endDate, allDay: e.isAllDay, calendar: e.calendar.title,
-                            color: Color(nsColor: e.calendar.color ?? .systemRed), join: MeetingLink.find(in: [e.url?.absoluteString, e.location, e.notes]))
-            }
-    }
-}
-
 @MainActor
 final class AgendaModel: ObservableObject {
     static let shared = AgendaModel()
@@ -82,7 +65,7 @@ struct CalendarTab: View {
         let today = model.events.filter { cal.isDateInToday($0.start) || ($0.start <= Date() && $0.end > Date()) }
         let ids = Set(today.map(\.id))
         let rest = model.events.filter { !ids.contains($0.id) }
-        return [(L("Today"), today), (L("Tomorrow"), rest)].filter { !$0.1.isEmpty }
+        return [(localized("Today"), today), (localized("Tomorrow"), rest)].filter { !$0.1.isEmpty }
     }
 
     var body: some View {
@@ -120,7 +103,7 @@ struct CalendarTab: View {
             RoundedRectangle(cornerRadius: 2).fill(e.color).frame(width: 4, height: 30)
             VStack(alignment: .leading, spacing: 1) {
                 Text(verbatim: e.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
-                Text(verbatim: e.allDay ? L("All day") : "\(e.start.formatted(date: .omitted, time: .shortened)) – \(e.end.formatted(date: .omitted, time: .shortened))")
+                Text(verbatim: e.allDay ? localized("All day") : "\(e.start.formatted(date: .omitted, time: .shortened)) – \(e.end.formatted(date: .omitted, time: .shortened))")
                     .font(.system(size: 10)).foregroundStyle(.secondary)
             }
             Spacer()

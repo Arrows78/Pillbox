@@ -29,7 +29,7 @@ final class ShelfService: ObservableObject {
     func airDrop(_ list: [ShelfItem]) {
         let urls = list.map(\.url)
         guard !urls.isEmpty else {
-            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Select items first"), tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Select items first"), tint: .orange))
             return
         }
         guard let svc = NSSharingService(named: .sendViaAirDrop), svc.canPerform(withItems: urls) else {
@@ -55,8 +55,8 @@ final class ShelfService: ObservableObject {
 
     /// "3 items · 2 selected", the shelf's header line.
     nonisolated static func summary(count: Int, selected: Int) -> String {
-        let n = count == 1 ? L("1 item") : L("%lld items", count)
-        return selected > 0 ? n + " · " + L("%lld selected", selected) : n
+        let n = count == 1 ? localized("1 item") : localized("%lld items", count)
+        return selected > 0 ? n + " · " + localized("%lld selected", selected) : n
     }
 
     /// A sibling URL that does not exist yet ("name", "name 2", "name 3"…), so nothing is ever overwritten.
@@ -108,6 +108,53 @@ final class ShelfService: ObservableObject {
             }
             planned.insert(out.path)
             do { try p.run() } catch { NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: "Archive failed", tint: .red)) }
+        }
+    }
+}
+
+/// Detects a left-right shake: several direction reversals, each after enough travel, within a short window.
+struct ShakeDetector {
+    var minTravel: CGFloat = 50
+    var window: TimeInterval = 0.9
+    var reversalsNeeded = 3
+    private var lastX: CGFloat?
+    private var direction = 0
+    private var travel: CGFloat = 0
+    private var reversals: [Date] = []
+
+    mutating func reset() { lastX = nil; direction = 0; travel = 0; reversals = [] }
+
+    mutating func add(_ p: CGPoint, at t: Date) -> Bool {
+        guard let lx = lastX else { lastX = p.x; return false }
+        let dx = p.x - lx
+        if abs(dx) < 2 { return false }
+        lastX = p.x
+        let d = dx > 0 ? 1 : -1
+        if d == direction { travel += abs(dx) }
+        else {
+            if direction != 0, travel >= minTravel { reversals.append(t) }
+            direction = d; travel = abs(dx)
+        }
+        reversals.removeAll { t.timeIntervalSince($0) > window }
+        if reversals.count >= reversalsNeeded { reversals = []; return true }
+        return false
+    }
+}
+
+// MARK: Break reminders
+
+extension ShelfService {
+    func convert(_ list: [ShelfItem], to target: ConvertTarget) {
+        for item in list {
+            Task { @MainActor in
+                do {
+                    let out = try await Converter.convert(item.url, to: target)
+                    add([out])
+                    NotchModel.shared.show(Activity(symbol: "arrow.triangle.2.circlepath", title: localized("Converted"), subtitle: out.lastPathComponent, tint: .green))
+                } catch {
+                    NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: localized("Conversion failed"), subtitle: error.localizedDescription, tint: .red))
+                }
+            }
         }
     }
 }

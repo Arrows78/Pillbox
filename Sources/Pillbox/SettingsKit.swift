@@ -200,7 +200,7 @@ struct SettingsSidebarFooter: View {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 30, height: 30)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(verbatim: "Pillbox").font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.primary.opacity(0.9))
-                    Text(verbatim: L("Version %@", version)).font(.system(size: 11)).foregroundStyle(SettingsStyle.dim)
+                    Text(verbatim: localized("Version %@", version)).font(.system(size: 11)).foregroundStyle(SettingsStyle.dim)
                 }
                 Spacer(minLength: 0)
             }

@@ -88,12 +88,12 @@ final class MenuBarCalendar {
 
     nonisolated static func label(title: String, start: Date, end: Date, now: Date = Date()) -> String {
         let t = title.count > 22 ? String(title.prefix(21)) + "…" : title
-        if now >= start && now < end { return L("%@ · now", t) }
+        if now >= start && now < end { return localized("%@ · now", t) }
         let mins = Int((start.timeIntervalSince(now) / 60).rounded(.up))
-        if mins <= 0 { return L("%@ · now", t) }
-        if mins < 60 { return L("%@ · in %d min", t, mins) }
+        if mins <= 0 { return localized("%@ · now", t) }
+        if mins < 60 { return localized("%@ · in %d min", t, mins) }
         let f = DateFormatter(); f.timeStyle = .short; f.dateStyle = .none
-        return L("%@ · %@", t, f.string(from: start))
+        return localized("%@ · %@", t, f.string(from: start))
     }
 
     func apply() {

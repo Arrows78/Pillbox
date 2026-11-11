@@ -357,3 +357,31 @@ extension AIUsageService {
         return u
     }
 }
+
+/// Warns once per limit window when the reported usage crosses a threshold.
+struct UsageAlertState {
+    private var alerted = Set<String>()
+
+    /// `windowKey` identifies the limit window (provider and reset time), so a new window can alert again.
+    mutating func shouldAlert(percent: Double, threshold: Double, windowKey: String) -> Bool {
+        guard percent >= threshold, !alerted.contains(windowKey) else { return false }
+        alerted.insert(windowKey)
+        return true
+    }
+}
+
+extension AIUsageService {
+    func checkAlerts(_ list: [ProviderUsage]) {
+        let threshold = UserDefaults.standard.integer(forKey: "usageAlert")
+        guard threshold > 0 else { return }
+        for p in list {
+            guard let pct = p.limitPercent, let reset = p.limitResetsAt else { continue }
+            if alertState.shouldAlert(percent: pct, threshold: Double(threshold), windowKey: "\(p.name)|\(Int(reset.timeIntervalSince1970))") {
+                NotchModel.shared.show(Activity(symbol: "gauge.with.dots.needle.67percent", title: localized("%@ limit at %d%%", p.name, Int(pct)),
+                                                subtitle: localized("Resets %@", reset.formatted(date: .omitted, time: .shortened)), tint: .orange, duration: 8))
+            }
+        }
+    }
+}
+
+// MARK: GitHub pull requests (through the `gh` command, which holds your login)

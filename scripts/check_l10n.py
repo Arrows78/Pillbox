@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Fails when a user-facing English text has no French translation, or when fr.lproj has duplicate keys.
 
-Checks the literals handed to L("..."), Text, Button, Label, Toggle, Section, TextField, Stepper and Picker.
+Checks the literals handed to localized("..."), Text, Button, Label, Toggle, Section, TextField, Stepper and Picker.
 Interpolated literals are checked by their SwiftUI key (\\(x) becomes %lld or %@ and must be listed by hand).
 """
 import re, sys, pathlib
@@ -23,7 +23,7 @@ for lang in ("es", "de"):
 
 # Literals that are not words to translate: symbols, units, code, brand names.
 ignore = {"", "CPU", "RAM", "Claude Code", "Codex", "AAPL", "x", "·", "…"}
-pat = re.compile(r'\b(?:L|Text|Button|Label|Toggle|Section|TextField|Stepper|Picker|Slider|accessibilityLabel)\(\s*"((?:[^"\\]|\\.)*)"')
+pat = re.compile(r'\b(?:localized|Text|Button|Label|Toggle|Section|TextField|Stepper|Picker|Slider|accessibilityLabel)\(\s*"((?:[^"\\]|\\.)*)"')
 used = set()
 for f in sorted((root / "Sources/Pillbox").glob("*.swift")):
     if f.name in ("SelfTest.swift",):

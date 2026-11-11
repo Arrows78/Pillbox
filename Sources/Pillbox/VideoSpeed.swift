@@ -43,10 +43,10 @@ enum VideoSpeed {
 
         var text: String {
             switch self {
-            case .automationDenied: L("Allow Pillbox to control the browser in Privacy & Security > Automation")
-            case .notRunning: L("The browser is not running")
-            case .javaScriptOff: L("Allow JavaScript from Apple Events in the browser")
-            case .other: L("Could not change the video speed")
+            case .automationDenied: localized("Allow Pillbox to control the browser in Privacy & Security > Automation")
+            case .notRunning: localized("The browser is not running")
+            case .javaScriptOff: localized("Allow JavaScript from Apple Events in the browser")
+            case .other: localized("Could not change the video speed")
             }
         }
     }
@@ -54,7 +54,7 @@ enum VideoSpeed {
     static func set(_ rate: Double) {
         let app = NSWorkspace.shared.frontmostApplication
         guard let source = script(rate: rate, bundleID: app?.bundleIdentifier) else {
-            NotchModel.shared.show(Activity(symbol: "speedometer", title: L("Open a browser with a video"), duration: 2))
+            NotchModel.shared.show(Activity(symbol: "speedometer", title: localized("Open a browser with a video"), duration: 2))
             return
         }
         let label = rate == 1 ? "1×" : String(format: "%g×", rate)
@@ -68,7 +68,7 @@ enum VideoSpeed {
                     if let failure {
                         NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: failure.text, tint: .orange, duration: 4))
                     } else {
-                        NotchModel.shared.show(Activity(symbol: "speedometer", title: L("Video speed %@", label), tint: .white, duration: 1.6))
+                        NotchModel.shared.show(Activity(symbol: "speedometer", title: localized("Video speed %@", label), tint: .white, duration: 1.6))
                     }
                 }
             }

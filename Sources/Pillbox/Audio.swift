@@ -17,17 +17,17 @@ func defaultDevice(input: Bool) -> AudioDeviceID? {
     return r == noErr && id != 0 ? id : nil
 }
 
-private func readUInt32(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress) -> UInt32? {
+func readUInt32(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress) -> UInt32? {
     var a = a; var v: UInt32 = 0; var size = UInt32(MemoryLayout<UInt32>.size)
     return AudioObjectGetPropertyData(obj, &a, 0, nil, &size, &v) == noErr ? v : nil
 }
 
-private func readFloat(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress) -> Float32? {
+func readFloat(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress) -> Float32? {
     var a = a; var v: Float32 = 0; var size = UInt32(MemoryLayout<Float32>.size)
     return AudioObjectGetPropertyData(obj, &a, 0, nil, &size, &v) == noErr ? v : nil
 }
 
-private func writeValue<T: BitwiseCopyable>(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress, _ value: T) -> Bool {
+func writeValue<T: BitwiseCopyable>(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress, _ value: T) -> Bool {
     var a = a; var v = value
     var settable: DarwinBoolean = false
     guard AudioObjectIsPropertySettable(obj, &a, &settable) == noErr, settable.boolValue else { return false }
@@ -35,63 +35,6 @@ private func writeValue<T: BitwiseCopyable>(_ obj: AudioObjectID, _ a: AudioObje
 }
 
 // MARK: Privacy indicator (microphone and camera in use)
-
-@MainActor
-final class PrivacyService: ObservableObject {
-    static let shared = PrivacyService()
-    @Published private(set) var micLive = false
-    @Published private(set) var cameraLive = false
-    var live: Bool { micLive || cameraLive }
-    private var timer: Timer?
-
-    func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.poll() }
-        }
-    }
-
-    private var cameraWasLive: Bool?   // nil until the first poll, so a camera already on at launch is not announced
-
-    private func poll() {
-        let indicator = UserDefaults.standard.object(forKey: "privacyIndicator") as? Bool ?? true, camGuard = UserDefaults.standard.bool(forKey: "cameraGuard")
-        let cam = indicator || camGuard ? Self.cameraRunning() : false
-        if cam && cameraWasLive == false && camGuard { CameraGuard.cameraStarted() }
-        cameraWasLive = cam
-        guard indicator else {
-            micLive = false; cameraLive = false; return
-        }
-        let mic = defaultDevice(input: true).flatMap { readUInt32($0, audioAddress(kAudioDevicePropertyDeviceIsRunningSomewhere)) } == 1
-        if mic != micLive { micLive = mic; if mic { announce("mic.fill", L("Microphone in use"), .orange) } }
-        if cam != cameraLive { cameraLive = cam; if cam && !camGuard { announce("video.fill", L("Camera in use"), .green) } }
-        NotificationCenter.default.post(name: .notchStateChanged, object: nil)
-    }
-
-    private func announce(_ symbol: String, _ title: String, _ tint: Color) {
-        NotchModel.shared.show(Activity(symbol: symbol, title: title, tint: tint, duration: 2.5))
-    }
-
-    private static func cameraRunning() -> Bool {
-        var a = CMIOObjectPropertyAddress(mSelector: CMIOObjectPropertySelector(kCMIOHardwarePropertyDevices),
-                                          mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
-                                          mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
-        var size: UInt32 = 0
-        let sys = CMIOObjectID(kCMIOObjectSystemObject)
-        guard CMIOObjectGetPropertyDataSize(sys, &a, 0, nil, &size) == 0, size > 0 else { return false }
-        var ids = [CMIODeviceID](repeating: 0, count: Int(size) / MemoryLayout<CMIODeviceID>.size)
-        var used: UInt32 = 0
-        guard CMIOObjectGetPropertyData(sys, &a, 0, nil, size, &used, &ids) == 0 else { return false }
-        for id in ids {
-            var r = CMIOObjectPropertyAddress(mSelector: CMIOObjectPropertySelector(kCMIODevicePropertyDeviceIsRunningSomewhere),
-                                              mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
-                                              mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
-            var v: UInt32 = 0; var vs: UInt32 = 0
-            if CMIOObjectGetPropertyData(id, &r, 0, nil, UInt32(MemoryLayout<UInt32>.size), &vs, &v) == 0, v != 0 { return true }
-        }
-        return false
-    }
-}
-
-// MARK: Mic mute + volume HUD
 
 @MainActor
 final class AudioControl: ObservableObject {
@@ -116,10 +59,10 @@ final class AudioControl: ObservableObject {
             ok = writeValue(dev, vol, Float32(target ? 0 : max(savedMicVolume, 0.1)))
         }
         guard ok else {
-            NotchModel.shared.show(Activity(symbol: "mic.slash", title: L("This microphone can't be muted"), tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "mic.slash", title: localized("This microphone can't be muted"), tint: .orange)); return
         }
         micMuted = target
-        NotchModel.shared.show(Activity(symbol: target ? "mic.slash.fill" : "mic.fill", title: target ? L("Microphone muted") : L("Microphone on"),
+        NotchModel.shared.show(Activity(symbol: target ? "mic.slash.fill" : "mic.fill", title: target ? localized("Microphone muted") : localized("Microphone on"),
                                         tint: target ? .red : .green, duration: 1.8))
     }
 
@@ -184,7 +127,7 @@ final class AudioControl: ObservableObject {
         guard v != lastVolume || muted else { return }
         lastVolume = v
         let symbol = muted || v == 0 ? "speaker.slash.fill" : v < 0.34 ? "speaker.wave.1.fill" : v < 0.67 ? "speaker.wave.2.fill" : "speaker.wave.3.fill"
-        NotchModel.shared.show(Activity(symbol: symbol, title: L("Volume"), tint: .white, progress: muted ? 0 : Double(v), duration: 1.4, priority: .low))
+        NotchModel.shared.show(Activity(symbol: symbol, title: localized("Volume"), tint: .white, progress: muted ? 0 : Double(v), duration: 1.4, priority: .low))
     }
 }
 
@@ -219,7 +162,7 @@ extension AudioControl {
 
     func selectOutput(_ d: OutputDevice) {
         let ok = writeValue(AudioObjectID(kAudioObjectSystemObject), audioAddress(kAudioHardwarePropertyDefaultOutputDevice), d.id)
-        NotchModel.shared.show(Activity(symbol: ok ? "hifispeaker.fill" : "exclamationmark.triangle", title: ok ? d.name : L("Could not switch the output"),
+        NotchModel.shared.show(Activity(symbol: ok ? "hifispeaker.fill" : "exclamationmark.triangle", title: ok ? d.name : localized("Could not switch the output"),
                                         tint: ok ? .white : .orange, duration: 2))
     }
 }

@@ -53,7 +53,7 @@ final class StocksService: ObservableObject {
         guard let i = watchlist.firstIndex(where: { $0.symbol == s }) else { return }
         // Bands are measured from the current price, so without one there is nothing to set and the old bands stay.
         if let p = percent {
-            guard let q = quotes[s] else { NotchModel.shared.show(Activity(symbol: "clock", title: L("Wait for the price, then set the alert"), tint: .orange)); return }
+            guard let q = quotes[s] else { NotchModel.shared.show(Activity(symbol: "clock", title: localized("Wait for the price, then set the alert"), tint: .orange)); return }
             watchlist[i].above = q.price * (1 + p / 100); watchlist[i].below = q.price * (1 - p / 100)
         } else { watchlist[i].above = nil; watchlist[i].below = nil }
         alerted.remove(s + "↑"); alerted.remove(s + "↓"); save()
@@ -107,7 +107,7 @@ final class StocksService: ObservableObject {
         if let a = w.above {
             if q.price >= a {
                 if alerted.insert(q.symbol + "↑").inserted {
-                    NotchModel.shared.show(Activity(symbol: "arrow.up.right.circle.fill", title: L("%@ above %@", q.symbol, String(format: "%.2f", a)),
+                    NotchModel.shared.show(Activity(symbol: "arrow.up.right.circle.fill", title: localized("%@ above %@", q.symbol, String(format: "%.2f", a)),
                                                     subtitle: String(format: "%.2f", q.price), tint: .green, duration: 6))
                 }
             } else {
@@ -117,7 +117,7 @@ final class StocksService: ObservableObject {
         if let b = w.below {
             if q.price <= b {
                 if alerted.insert(q.symbol + "↓").inserted {
-                    NotchModel.shared.show(Activity(symbol: "arrow.down.right.circle.fill", title: L("%@ below %@", q.symbol, String(format: "%.2f", b)),
+                    NotchModel.shared.show(Activity(symbol: "arrow.down.right.circle.fill", title: localized("%@ below %@", q.symbol, String(format: "%.2f", b)),
                                                     subtitle: String(format: "%.2f", q.price), tint: .red, duration: 6))
                 }
             } else {

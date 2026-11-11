@@ -45,7 +45,7 @@ final class TerminalSession: NSObject, LocalProcessTerminalViewDelegate {
     private func shellExited() {
         quickExits = Date().timeIntervalSince(lastStart) < 3 ? quickExits + 1 : 0
         guard quickExits < 3 else {
-            NotchModel.shared.show(Activity(symbol: "terminal", title: L("The shell keeps exiting"), subtitle: L("Check your shell's startup files"), tint: .orange, duration: 5))
+            NotchModel.shared.show(Activity(symbol: "terminal", title: localized("The shell keeps exiting"), subtitle: localized("Check your shell's startup files"), tint: .orange, duration: 5))
             return
         }
         startShell()

@@ -159,14 +159,14 @@ enum Annotator {
     @MainActor private static var windows: [NSWindow] = []
 
     @MainActor static func open(_ url: URL) {
-        guard let img = load(url) else { NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not open the image"), tint: .orange)); return }
+        guard let img = load(url) else { NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not open the image"), tint: .orange)); return }
         NotchModel.shared.collapse()
         let model = AnnotatorModel(source: url, image: img)
         let vis = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
         let k = min(1, (vis.width * 0.8) / CGFloat(img.width), (vis.height * 0.8 - 50) / CGFloat(img.height))
         let size = NSSize(width: max(560, CGFloat(img.width) * k), height: max(320, CGFloat(img.height) * k + 50))
         let w = NSWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
-        w.title = L("Annotate %@", url.lastPathComponent); w.isReleasedWhenClosed = false
+        w.title = localized("Annotate %@", url.lastPathComponent); w.isReleasedWhenClosed = false
         w.contentView = NSHostingView(rootView: AnnotatorView(m: model))
         w.center(); w.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         windows.append(w)
@@ -225,16 +225,16 @@ final class AnnotatorModel: ObservableObject {
     func copy() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.writeObjects([NSImage(cgImage: rendered, size: size)])
-        NotchModel.shared.show(Activity(symbol: "doc.on.clipboard", title: L("Image copied"), tint: .green))
+        NotchModel.shared.show(Activity(symbol: "doc.on.clipboard", title: localized("Image copied"), tint: .green))
     }
 
     func save() {
         let url = ShelfService.uniqueURL(Annotator.outputURL(for: source))
         guard let d = Annotator.pngData(rendered), (try? d.write(to: url)) != nil else {
-            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not save the image"), tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not save the image"), tint: .orange)); return
         }
         ShelfService.shared.add([url])
-        NotchModel.shared.show(Activity(symbol: "pencil.tip.crop.circle", title: L("Annotated image saved"), subtitle: url.lastPathComponent, tint: .green))
+        NotchModel.shared.show(Activity(symbol: "pencil.tip.crop.circle", title: localized("Annotated image saved"), subtitle: url.lastPathComponent, tint: .green))
     }
 }
 
@@ -258,7 +258,7 @@ struct AnnotatorView: View {
                     TextField("Text, then click the image", text: $m.text).textFieldStyle(.roundedBorder).frame(minWidth: 120, maxWidth: 220)
                 }
                 Spacer(minLength: 0)
-                Button { m.undo() } label: { Image(systemName: "arrow.uturn.backward") }.keyboardShortcut("z").disabled(m.marks.isEmpty).hoverTip(L("Undo")).accessibilityLabel("Undo")
+                Button { m.undo() } label: { Image(systemName: "arrow.uturn.backward") }.keyboardShortcut("z").disabled(m.marks.isEmpty).hoverTip(localized("Undo")).accessibilityLabel("Undo")
                 Button("Copy") { m.copy() }.keyboardShortcut("c", modifiers: [.command, .shift])
                 Button("Save") { m.save() }.keyboardShortcut("s").buttonStyle(.borderedProminent)
             }

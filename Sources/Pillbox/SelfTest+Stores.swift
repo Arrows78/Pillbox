@@ -54,8 +54,8 @@ extension SelfTest {
               "\(ClipFilter.allCases.map(kinds))")
         clip.filter = .links
         check("clipboard: the filter applies to the list", clip.filtered.map(\.text) == ["https://apple.com"])
-        check("shelf: summary counts items and selection", ShelfService.summary(count: 1, selected: 0) == L("1 item")
-              && ShelfService.summary(count: 3, selected: 2) == L("%lld items", 3) + " · " + L("%lld selected", 2))
+        check("shelf: summary counts items and selection", ShelfService.summary(count: 1, selected: 0) == localized("1 item")
+              && ShelfService.summary(count: 3, selected: 2) == localized("%lld items", 3) + " · " + localized("%lld selected", 2))
         check("timer: presets are sorted, none for the stopwatch", TimerService.Mode.allCases.allSatisfy { $0.presets == $0.presets.sorted() }
               && TimerService.Mode.stopwatch.presets.isEmpty && TimerService.Mode.focus.presets.contains(25))
 
@@ -77,7 +77,7 @@ extension SelfTest {
         check("snippets: add keeps valid, rejects blank name or text", st.snippets.count == 1 && st.snippets[0].text.contains("\n"), "\(st.snippets.count)")
         check("snippets: saved to disk", Store.load("snippets.json", as: [Snippet].self)?.count == 1)
         let m = PaletteModel(); m.query = "sign"
-        check("snippets: found from the palette", m.commands.contains { $0.title == L("Snippet: %@", "Sign-off") })
+        check("snippets: found from the palette", m.commands.contains { $0.title == localized("Snippet: %@", "Sign-off") })
         st.remove(st.snippets[0])
         check("snippets: remove", st.snippets.isEmpty)
     }

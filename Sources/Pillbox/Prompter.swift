@@ -7,7 +7,7 @@ struct PrompterScript: Codable, Identifiable, Equatable {
     var text = ""
     var title: String {
         let first = text.split(whereSeparator: \.isNewline).first.map(String.init)?.trimmingCharacters(in: .whitespaces) ?? ""
-        return first.isEmpty ? L("Untitled script") : first
+        return first.isEmpty ? localized("Untitled script") : first
     }
 }
 
@@ -15,10 +15,10 @@ enum PrompterSpeed: CaseIterable {
     case slow, normal, fast, sprint
     var title: String {
         switch self {
-        case .slow: L("Slow")
-        case .normal: L("Normal")
-        case .fast: L("Fast")
-        case .sprint: L("Sprint")
+        case .slow: localized("Slow")
+        case .normal: localized("Normal")
+        case .fast: localized("Fast")
+        case .sprint: localized("Sprint")
         }
     }
     /// Points per second.

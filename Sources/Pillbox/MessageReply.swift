@@ -42,12 +42,12 @@ enum MessageReply {
 
     /// Nil when the reply went out, otherwise what went wrong, in words for the notification row.
     static func reply(to sender: String, _ text: String) async -> String? {
-        guard let handle = await handle(for: sender) else { return L("No number or address for this sender") }
+        guard let handle = await handle(for: sender) else { return localized("No number or address for this sender") }
         var error: NSDictionary?
         NSAppleScript(source: script(text: text, handle: handle))?.executeAndReturnError(&error)
         guard let error else { return nil }
-        if error[NSAppleScript.errorNumber] as? Int == -1743 { return L("Pillbox is not allowed to control Messages. Allow it in System Settings › Automation.") }
-        return L("Messages could not send it (%@)", error[NSAppleScript.errorMessage] as? String ?? "?")
+        if error[NSAppleScript.errorNumber] as? Int == -1743 { return localized("Pillbox is not allowed to control Messages. Allow it in System Settings › Automation.") }
+        return localized("Messages could not send it (%@)", error[NSAppleScript.errorMessage] as? String ?? "?")
     }
 }
 
@@ -59,7 +59,7 @@ struct SMSReplyField: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            TextField(L("Reply"), text: $text)
+            TextField(localized("Reply"), text: $text)
                 .textFieldStyle(.plain).font(.system(size: 11)).onSubmit(send)
             if let status { Text(verbatim: status).font(.system(size: 9)).foregroundStyle(.orange).lineLimit(1) }
             Button(action: send) { Image(systemName: "paperplane.fill").font(.system(size: 10)) }

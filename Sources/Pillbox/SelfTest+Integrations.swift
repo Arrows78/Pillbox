@@ -22,7 +22,7 @@ extension SelfTest {
     static func weather() {
         check("weather code mapping", WeatherService.describe(0, day: true).0 == "sun.max.fill" && WeatherService.describe(95, day: true).1 == "Thunderstorm" && WeatherService.describe(61, day: false).1 == "Rain")
         let body = Data(#"{"current":{"temperature_2m":12.6,"weather_code":3,"is_day":1}}"#.utf8)
-        check("weather: a 200 body with current conditions parses, rounded to a whole degree", WeatherService.parse(body, status: 200) == WeatherReading(temperature: 13, symbol: "cloud.fill", summary: L("Overcast")))
+        check("weather: a 200 body with current conditions parses, rounded to a whole degree", WeatherService.parse(body, status: 200) == WeatherReading(temperature: 13, symbol: "cloud.fill", summary: localized("Overcast")))
         check("weather: any other status is rejected, even with a body", WeatherService.parse(body, status: 500) == nil && WeatherService.parse(body, status: nil) == nil && WeatherService.parse(Data("junk".utf8), status: 200) == nil)
     }
 

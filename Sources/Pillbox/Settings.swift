@@ -55,7 +55,7 @@ struct SettingsView: View {
     private func saveKey() {
         guard !apiKey.isEmpty else { return }
         guard Keychain.set(apiKey, AskModel.keyService) else {
-            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not save the key in the Keychain"), tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not save the key in the Keychain"), tint: .orange))
             return
         }
         keySaved = true; apiKey = ""
@@ -213,25 +213,25 @@ struct SettingsView: View {
         let data: Data
         do { data = try Data(contentsOf: url) } catch {
             let alert = NSAlert()
-            alert.messageText = L("Could not read the backup file")
+            alert.messageText = localized("Could not read the backup file")
             alert.informativeText = error.localizedDescription
             alert.runModal(); return
         }
         guard let n = SettingsBackup.restore(data) else {
             let alert = NSAlert()
-            alert.messageText = L("This file is not a Pillbox backup")
+            alert.messageText = localized("This file is not a Pillbox backup")
             alert.runModal(); return
         }
-        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings imported", subtitle: L("%d setting(s) applied", n), tint: .green))
+        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings imported", subtitle: localized("%d setting(s) applied", n), tint: .green))
     }
 
     private func restoreDefaults() {
         let alert = NSAlert()
-        alert.messageText = L("Restore default settings?")
-        alert.informativeText = L("Every preference goes back to its default. Your notes, clipboard history, shelf and quick actions are kept.")
+        alert.messageText = localized("Restore default settings?")
+        alert.informativeText = localized("Every preference goes back to its default. Your notes, clipboard history, shelf and quick actions are kept.")
         alert.alertStyle = .warning
-        alert.addButton(withTitle: L("Restore"))
-        alert.addButton(withTitle: L("Cancel"))
+        alert.addButton(withTitle: localized("Restore"))
+        alert.addButton(withTitle: localized("Cancel"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         SettingsBackup.resetAll()
         NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings restored", tint: .green))
@@ -270,7 +270,7 @@ struct SettingsView: View {
             }
             SettingsCard(title: "Clipboard") {
                 ForEach(ClipboardImport.Source.allCases) { s in
-                    SettingsRow(title: LocalizedStringKey(L("Import history from %@", s.name)), subtitle: s.installed ? "Text items only. Their files are not changed." : "Not found on this Mac.") {
+                    SettingsRow(title: LocalizedStringKey(localized("Import history from %@", s.name)), subtitle: s.installed ? "Text items only. Their files are not changed." : "Not found on this Mac.") {
                         Button("Import") { ClipboardImport.run(s) }.controlSize(.small).disabled(!s.installed)
                     }
                 }
@@ -489,7 +489,7 @@ struct SettingsView: View {
                             }
                         }
                     } else {
-                        let note: String? = HotKey.unavailable.contains(s.rawValue) ? L("Another app already uses this shortcut.")
+                        let note: String? = HotKey.unavailable.contains(s.rawValue) ? localized("Another app already uses this shortcut.")
                             : (s == .pasteNext && !copyStack ? "Turn on Copy stack in Island first." : nil)
                         SettingsRow(title: LocalizedStringKey(s.title), subtitle: note.map { LocalizedStringKey($0) }) { Keycaps(s.keycaps) }
                     }
@@ -516,7 +516,7 @@ struct SettingsView: View {
                 Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(verbatim: "Pillbox").font(.system(size: 22, weight: .bold))
-                    Text(verbatim: L("Version %@", Diagnostics.version)).font(.system(size: 12)).foregroundStyle(SettingsStyle.dim)
+                    Text(verbatim: localized("Version %@", Diagnostics.version)).font(.system(size: 12)).foregroundStyle(SettingsStyle.dim)
                     Text("A notch island for macOS: music, timers, clipboard, files and system alerts.").font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.6))
                 }
             }
@@ -542,35 +542,6 @@ struct SettingsView: View {
             SettingsCard(title: "Privacy") {
                 Text("Pillbox has no account and no analytics. It only uses the network when you use a feature: synced lyrics (LRCLIB), weather (Open-Meteo), stock quotes (Yahoo Finance), Spotify album art, Ask about screen (the recognised text only, to Anthropic, with your own key) and Check for updates (GitHub). Everything else stays on this Mac.")
                     .font(.system(size: 12)).foregroundStyle(Color.primary.opacity(0.7)).fixedSize(horizontal: false, vertical: true).padding(12)
-            }
-        }
-    }
-}
-
-/// "Copy" that turns into "Copied" for a moment.
-struct CopyButton: View {
-    let text: () -> String
-    var title = "Copy"
-    @State private var copied = false
-
-    var body: some View {
-        Button(LocalizedStringKey(copied ? "Copied" : title)) {
-            Pasteboard.copy(text())
-            copied = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
-        }.controlSize(.small)
-    }
-}
-
-/// A shortcut drawn as keycaps.
-struct Keycaps: View {
-    let keys: String
-    init(_ keys: String) { self.keys = keys }
-    var body: some View {
-        HStack(spacing: 3) {
-            ForEach(Array(keys.enumerated()), id: \.offset) { _, k in
-                Text(String(k)).font(.system(size: 12, weight: .medium, design: .rounded)).frame(minWidth: 22, minHeight: 22)
-                    .background(Color.primary.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
             }
         }
     }
@@ -618,89 +589,5 @@ struct AIUsageOrderRows: View {
         var set = hiddenSet
         if shown { set.remove(name) } else { set.insert(name) }
         hidden = set.sorted().joined(separator: ",")
-    }
-}
-
-@MainActor
-enum SettingsWindow {
-    private static var window: NSWindow?
-    /// Tells an open settings window to show another pane; its object is the SettingsPane.
-    static let paneRequest = Notification.Name("PillboxSettingsPaneRequest")
-
-    /// Opens the window on `pane`. An open window switches to a pane that is asked for; without one it stays where it is.
-    static func show(pane: SettingsPane? = nil) {
-        if window == nil {
-            let w = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(pane: pane ?? .general)))
-            w.title = "Pillbox Settings"
-            w.styleMask = [.titled, .closable, .fullSizeContentView]
-            w.titlebarAppearsTransparent = true
-            w.titleVisibility = .hidden
-            w.backgroundColor = SettingsStyle.window
-            w.isMovableByWindowBackground = true
-            w.isReleasedWhenClosed = false
-            window = w
-        } else if let pane {
-            NotificationCenter.default.post(name: paneRequest, object: pane)
-        }
-        applyTheme()
-        NSApp.activate(ignoringOtherApps: true)
-        if let window { placeInMiddle(window); window.makeKeyAndOrderFront(nil) }
-    }
-
-    /// Centres the window on the main screen's visible area, below the menu bar and the island, and shrinks it to fit.
-    /// `center()` alone keeps the window's own height, which can put its top under the island.
-    static func placeInMiddle(_ w: NSWindow) {
-        guard let vis = (NSScreen.main ?? NSScreen.screens.first)?.visibleFrame else { w.center(); return }
-        var f = w.frame
-        f.size.width = min(f.width, vis.width - 40)
-        f.size.height = min(f.height, vis.height - 80)
-        f.origin = CGPoint(x: vis.midX - f.width / 2, y: vis.midY - f.height / 2)
-        w.setFrame(f, display: true)
-    }
-
-    /// The theme chosen in General applies to this window only: the island stays dark, other windows follow macOS.
-    static func applyTheme() {
-        window?.appearance = SettingsStyle.appearance(for: UserDefaults.standard.string(forKey: "appearance"))
-    }
-}
-
-struct DetachToggle: View {
-    let tab: Tab
-    @State private var on: Bool
-    init(tab: Tab) { self.tab = tab; _on = State(initialValue: MenuBarDetach.wanted.contains(tab)) }
-    var body: some View {
-        SettingsToggle("Show \(tab.title) in the menu bar", isOn: $on)
-            .onChange(of: on) { _, v in
-                var set = MenuBarDetach.wanted
-                if v { set.insert(tab) } else { set.remove(tab) }
-                MenuBarDetach.setWanted(set)
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
-                let now = MenuBarDetach.wanted.contains(tab)   // an import or a reset changes it behind this switch
-                if now != on { on = now }
-            }
-    }
-}
-
-/// Settings › Island › Tabs: one switch per tab. Fewer tabs make a shorter bar, and ⌘1–9 follow the ones left.
-struct TabsPicker: View {
-    @AppStorage(Tab.hiddenKey) private var hidden = ""
-
-    var body: some View {
-        let set = Tab.hidden(from: hidden)
-        SettingsRow(title: "Shown in the island", subtitle: "Turn off the tabs you never open. Home always stays.") {
-            Button("Show all") { hidden = "" }.controlSize(.small).disabled(set.isEmpty)
-        }
-        ForEach(Tab.allCases.filter { $0 != .home }) { tab in
-            SettingsRow(title: LocalizedStringKey(tab.title)) {
-                Toggle("", isOn: Binding(get: { !set.contains(tab) }, set: { on in
-                    var s = set
-                    if on { s.remove(tab) } else { s.insert(tab) }
-                    hidden = Tab.allCases.filter(s.contains).map(\.rawValue).joined(separator: ",")
-                    if !on, NotchModel.shared.tab == tab { NotchModel.shared.tab = .home }
-                })).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(SettingsStyle.accent)
-                    .accessibilityLabel(Text(verbatim: tab.title))
-            }
-        }
     }
 }

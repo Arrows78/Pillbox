@@ -87,7 +87,7 @@ enum ClipboardImport {
 
     @MainActor static func run(_ source: Source) {
         guard source.installed else {
-            NotchModel.shared.show(Activity(symbol: "doc.on.clipboard", title: L("No %@ history on this Mac", source.name), tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "doc.on.clipboard", title: localized("No %@ history on this Mac", source.name), tint: .orange)); return
         }
         DispatchQueue.global(qos: .userInitiated).async {
             let items: [(text: String, date: Date, pinned: Bool)]
@@ -96,9 +96,9 @@ enum ClipboardImport {
                 DispatchQueue.main.async {
                     MainActor.assumeIsolated {
                         if changed {
-                            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not read %@'s history", source.name), subtitle: L("%@ changed its database format", source.name), tint: .orange, duration: 8))
+                            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not read %@'s history", source.name), subtitle: localized("%@ changed its database format", source.name), tint: .orange, duration: 8))
                         } else {
-                            NotchModel.shared.show(Activity(symbol: "lock.fill", title: L("Could not read %@'s history", source.name), subtitle: L("macOS keeps other apps' data private: allow Full Disk Access"), tint: .orange,
+                            NotchModel.shared.show(Activity(symbol: "lock.fill", title: localized("Could not read %@'s history", source.name), subtitle: localized("macOS keeps other apps' data private: allow Full Disk Access"), tint: .orange,
                                                             actionTitle: "Settings", action: { PermissionsCenter.shared.openSettings(.fullDisk) }, duration: 8))
                         }
                     }
@@ -109,7 +109,7 @@ enum ClipboardImport {
                 MainActor.assumeIsolated {
                     let n = merge(items, into: ClipboardService.shared)
                     ClipboardService.shared.save()
-                    NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: L("Imported %d item(s) from %@", n, source.name), tint: .green))
+                    NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: localized("Imported %d item(s) from %@", n, source.name), tint: .green))
                 }
             }
         }

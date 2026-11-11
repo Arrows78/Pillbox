@@ -70,7 +70,7 @@ final class AudioSpectrum: ObservableObject {
     private func checkHeard() {
         guard running, !warnedSilence, MusicService.shared.isPlaying, bands.allSatisfy({ $0 < 0.01 }) else { return }
         warnedSilence = true
-        NotchModel.shared.show(Activity(symbol: "waveform.slash", title: L("Allow audio capture for Pillbox"), subtitle: L("Privacy & Security › Screen & System Audio Recording"), tint: .orange, duration: 3.5))
+        NotchModel.shared.show(Activity(symbol: "waveform.slash", title: localized("Allow audio capture for Pillbox"), subtitle: localized("Privacy & Security › Screen & System Audio Recording"), tint: .orange, duration: 3.5))
     }
 
     private func smooth(_ new: [Float]) {

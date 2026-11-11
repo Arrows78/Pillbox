@@ -86,7 +86,7 @@ extension SelfTest {
         case .success(let out): check("convert: cut-out returns a PNG, or a clean error without a subject", type(of: out) == "public.png")
         case .failure(let e):
             // A gradient has no subject, so the only acceptable failure is that specific message.
-            check("convert: cut-out returns a PNG, or a clean error without a subject", { () -> Bool in guard case .failed(let m)? = e as? ConvertError else { return false }; return m == L("No subject found") }(), "\(e)")
+            check("convert: cut-out returns a PNG, or a clean error without a subject", { () -> Bool in guard case .failed(let m)? = e as? ConvertError else { return false }; return m == localized("No subject found") }(), "\(e)")
         }
         check("convert: targets by file type", ConvertTarget.targets(for: png).contains(.heic) && ConvertTarget.targets(for: URL(fileURLWithPath: "a.mov")).contains(.mp4)
               && ConvertTarget.targets(for: URL(fileURLWithPath: "a.wav")).contains(.aiff) && ConvertTarget.targets(for: URL(fileURLWithPath: "a.txt")).isEmpty)

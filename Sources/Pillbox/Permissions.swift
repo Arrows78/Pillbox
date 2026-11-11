@@ -11,31 +11,31 @@ enum PermissionKind: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .accessibility: L("Accessibility")
-        case .inputMonitoring: L("Input Monitoring")
-        case .screenRecording: L("Screen Recording")
-        case .fullDisk: L("Full Disk Access")
-        case .calendar: L("Calendars")
-        case .reminders: L("Reminders")
-        case .location: L("Location")
-        case .camera: L("Camera")
-        case .spotify: L("Automation: Spotify")
-        case .music: L("Automation: Music")
+        case .accessibility: localized("Accessibility")
+        case .inputMonitoring: localized("Input Monitoring")
+        case .screenRecording: localized("Screen Recording")
+        case .fullDisk: localized("Full Disk Access")
+        case .calendar: localized("Calendars")
+        case .reminders: localized("Reminders")
+        case .location: localized("Location")
+        case .camera: localized("Camera")
+        case .spotify: localized("Automation: Spotify")
+        case .music: localized("Automation: Music")
         }
     }
 
     var reason: String {
         switch self {
-        case .accessibility: L("Keyboard lock, window snapping and paste from the clipboard.")
-        case .inputMonitoring: L("Keystroke display and activity counter.")
-        case .screenRecording: L("Window watch, Ask about screen, screen recording and QR codes.")
-        case .fullDisk: L("Notification mirror and Focus island.")
-        case .calendar: L("Next event on Home.")
-        case .reminders: L("Reminders tab.")
-        case .location: L("Local weather.")
-        case .camera: L("Camera mirror.")
-        case .spotify: L("Now playing and controls (open Spotify first).")
-        case .music: L("Now playing and controls (open Music first).")
+        case .accessibility: localized("Keyboard lock, window snapping and paste from the clipboard.")
+        case .inputMonitoring: localized("Keystroke display and activity counter.")
+        case .screenRecording: localized("Window watch, Ask about screen, screen recording and QR codes.")
+        case .fullDisk: localized("Notification mirror and Focus island.")
+        case .calendar: localized("Next event on Home.")
+        case .reminders: localized("Reminders tab.")
+        case .location: localized("Local weather.")
+        case .camera: localized("Camera mirror.")
+        case .spotify: localized("Now playing and controls (open Spotify first).")
+        case .music: localized("Now playing and controls (open Music first).")
         }
     }
 
@@ -68,7 +68,7 @@ final class PermissionsCenter: ObservableObject {
     /// Global key monitors receive nothing without Input Monitoring, so the feature would look dead. Says so once per feature.
     func checkInputMonitoring(for feature: String) {
         guard !CGPreflightListenEventAccess(), warnedFeatures.insert(feature).inserted else { return }
-        NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: L("%@ needs Input Monitoring", L(feature)), tint: .orange))
+        NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: localized("%@ needs Input Monitoring", localized(feature)), tint: .orange))
     }
 
     func state(of k: PermissionKind) -> PermissionState {
@@ -135,7 +135,7 @@ final class PermissionsCenter: ObservableObject {
     }
 
     /// Asks for Automation consent without blocking the main thread: with `ask`, the system dialog holds the call until it is answered.
-    private func askAutomation(_ player: Player) {
+    private func askAutomation(_ player: MusicApp) {
         Task.detached {
             _ = Self.automation(player, ask: true)
             await MainActor.run { PermissionsCenter.shared.refresh() }
@@ -143,7 +143,7 @@ final class PermissionsCenter: ObservableObject {
     }
 
     /// Automation consent for another app. Only answerable while that app is running.
-    private nonisolated static func automation(_ player: Player, ask: Bool) -> PermissionState {
+    private nonisolated static func automation(_ player: MusicApp, ask: Bool) -> PermissionState {
         guard !NSRunningApplication.runningApplications(withBundleIdentifier: player.bundleID).isEmpty else { return .unavailable }
         var desc = AEAddressDesc()
         let id = Array(player.bundleID.utf8)

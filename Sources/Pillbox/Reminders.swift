@@ -72,8 +72,8 @@ final class RemindersService: ObservableObject {
     func add() {
         let (title, due) = Self.parse(draft)
         guard !title.isEmpty else { return }
-        guard authorized else { fail(L("Reminders access is off")); return }
-        guard let cal = store.defaultCalendarForNewReminders() else { fail(L("There is no default list for new reminders")); return }
+        guard authorized else { fail(localized("Reminders access is off")); return }
+        guard let cal = store.defaultCalendarForNewReminders() else { fail(localized("There is no default list for new reminders")); return }
         let r = EKReminder(eventStore: store)
         r.title = title; r.calendar = cal
         if let due {
@@ -81,7 +81,7 @@ final class RemindersService: ObservableObject {
             r.addAlarm(EKAlarm(absoluteDate: due))
         }
         do { try store.save(r, commit: true); draft = ""; refresh() }
-        catch { fail(L("Could not save the reminder")) }
+        catch { fail(localized("Could not save the reminder")) }
     }
 
     /// The row leaves the list only once EventKit has saved the completion; otherwise the next refresh would bring it back.
@@ -89,7 +89,7 @@ final class RemindersService: ObservableObject {
         guard let r = store.calendarItem(withIdentifier: item.id) as? EKReminder else { return }
         r.isCompleted = true
         do { try store.save(r, commit: true); items.removeAll { $0.id == item.id } }
-        catch { fail(L("Could not complete the reminder")) }
+        catch { fail(localized("Could not complete the reminder")) }
     }
 
     private func fail(_ title: String) {

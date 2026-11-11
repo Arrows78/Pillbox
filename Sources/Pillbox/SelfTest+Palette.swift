@@ -37,8 +37,8 @@ extension SelfTest {
 
     static func palette() {
         let m = PaletteModel()
-        check("palette lists every tab", Tab.allCases.allSatisfy { t in m.commands.contains { $0.title.contains(L("Go to %@", t.title)) } })
-        m.query = String(L("Snap window: %@", "").prefix(4))
+        check("palette lists every tab", Tab.allCases.allSatisfy { t in m.commands.contains { $0.title.contains(localized("Go to %@", t.title)) } })
+        m.query = String(localized("Snap window: %@", "").prefix(4))
         check("palette filters by query", !m.commands.isEmpty && m.commands.allSatisfy { $0.title.localizedCaseInsensitiveContains(m.query) }, m.query)
         m.query = "2+2*5"
         check("palette answers maths first", m.commands.first?.title.hasPrefix("= 12") == true, m.commands.first?.title ?? "none")

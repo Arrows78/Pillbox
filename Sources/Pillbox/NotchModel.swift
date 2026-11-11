@@ -14,21 +14,21 @@ enum Tab: String, CaseIterable, Identifiable {
     static var visible: [Tab] { let h = hidden; return allCases.filter { !h.contains($0) } }
     var title: String {
         switch self {
-        case .home: L("Home")
-        case .music: L("Music")
-        case .timer: L("Timer")
-        case .stocks: L("Stocks")
-        case .ai: L("AI usage")
-        case .pulls: L("Pull requests")
-        case .reminders: L("Reminders")
-        case .notifications: L("Notifications")
-        case .notes: L("Notes")
-        case .clipboard: L("Clipboard")
-        case .shelf: L("Shelf")
-        case .launcher: L("Launcher")
-        case .terminal: L("Terminal")
-        case .prompter: L("Prompter")
-        case .calendar: L("Calendar")
+        case .home: localized("Home")
+        case .music: localized("Music")
+        case .timer: localized("Timer")
+        case .stocks: localized("Stocks")
+        case .ai: localized("AI usage")
+        case .pulls: localized("Pull requests")
+        case .reminders: localized("Reminders")
+        case .notifications: localized("Notifications")
+        case .notes: localized("Notes")
+        case .clipboard: localized("Clipboard")
+        case .shelf: localized("Shelf")
+        case .launcher: localized("Launcher")
+        case .terminal: localized("Terminal")
+        case .prompter: localized("Prompter")
+        case .calendar: localized("Calendar")
         }
     }
     var symbol: String {
@@ -208,26 +208,4 @@ final class NotchModel: ObservableObject {
 
 extension Notification.Name {
     static let notchStateChanged = Notification.Name("pillbox.notchStateChanged")
-}
-
-enum Store {
-    static let dir: URL = {
-        // PILLBOX_DATA_DIR lets the self-test run against a throwaway folder.
-        let u = ProcessInfo.processInfo.environment["PILLBOX_DATA_DIR"].map { URL(fileURLWithPath: $0, isDirectory: true) }
-            ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("Pillbox", isDirectory: true)
-        try? FileManager.default.createDirectory(at: u, withIntermediateDirectories: true)
-        return u
-    }()
-    static func load<T: Decodable>(_ name: String, as: T.Type) -> T? {
-        let url = dir.appendingPathComponent(name)
-        guard let d = try? Data(contentsOf: url) else { return nil }
-        if let value = try? JSONDecoder().decode(T.self, from: d) { return value }
-        // Unreadable file: keep a copy so the next save does not overwrite the user's data with an empty default.
-        try? FileManager.default.removeItem(at: url.appendingPathExtension("broken"))
-        try? FileManager.default.copyItem(at: url, to: url.appendingPathExtension("broken"))
-        return nil
-    }
-    static func save<T: Encodable>(_ value: T, _ name: String) {
-        if let d = try? JSONEncoder().encode(value) { try? d.write(to: dir.appendingPathComponent(name), options: .atomic) }
-    }
 }

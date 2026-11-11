@@ -135,8 +135,8 @@ extension SelfTest {
               SpaceInfo.kind(displays: displays, active: 7) == .desktop(2) && SpaceInfo.kind(displays: displays, active: 1) == .desktop(1) && SpaceInfo.kind(displays: displays, active: 91) == .desktop(2))
         check("spaces: a full-screen space is named after its app, unknown ids give nothing",
               SpaceInfo.kind(displays: displays, active: 40) == .fullScreen("Safari") && SpaceInfo.kind(displays: displays, active: 41) == .fullScreen(nil) && SpaceInfo.kind(displays: displays, active: 5) == nil && SpaceInfo.kind(displays: [], active: 1) == nil)
-        check("spaces: labels", SpaceInfo.label(.desktop(3), frontApp: "X") == L("Desktop %d", 3) && SpaceInfo.label(.fullScreen(nil), frontApp: "Keynote") == "Keynote"
-              && SpaceInfo.label(.fullScreen("Safari"), frontApp: "Keynote") == "Safari" && SpaceInfo.label(.fullScreen(nil), frontApp: nil) == L("Full screen"))
+        check("spaces: labels", SpaceInfo.label(.desktop(3), frontApp: "X") == localized("Desktop %d", 3) && SpaceInfo.label(.fullScreen(nil), frontApp: "Keynote") == "Keynote"
+              && SpaceInfo.label(.fullScreen("Safari"), frontApp: "Keynote") == "Safari" && SpaceInfo.label(.fullScreen(nil), frontApp: nil) == localized("Full screen"))
         check("camera guard: never for Pillbox's own mirror", CameraGuard.island(mirrorOpen: true, frontName: "Zoom", frontBundle: "us.zoom.xos", own: "dev.labs.pillbox") == .hidden)
         check("camera guard: names the front app, but not Pillbox itself",
               CameraGuard.island(mirrorOpen: false, frontName: "Zoom", frontBundle: "us.zoom.xos", own: "dev.labs.pillbox") == .shown(probableApp: "Zoom")

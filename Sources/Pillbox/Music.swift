@@ -1,12 +1,6 @@
 import AppKit
 
-/// One sung word and when it starts. Lines from LRCLIB with word stamps (the enhanced LRC format) carry real times;
-/// the rest share their line's time evenly between the words.
-struct LyricWord: Equatable { let time: Double; let text: String }
-
-struct LyricLine: Identifiable { let id = UUID(); let time: Double; let text: String; var words: [LyricWord] = [] }
-
-enum Player: String {
+enum MusicApp: String {
     case spotify = "Spotify", music = "Music"
     var bundleID: String { self == .spotify ? "com.spotify.client" : "com.apple.Music" }
 }
@@ -15,9 +9,9 @@ enum Player: String {
 final class MusicService: ObservableObject {
     static let shared = MusicService()
 
-    @Published var player: Player?
+    @Published var player: MusicApp?
     /// The player is open but Pillbox may not control it: Automation is off for it.
-    @Published private(set) var automationDenied: Player?
+    @Published private(set) var automationDenied: MusicApp?
     @Published var title = ""
     @Published var artist = ""
     @Published var album = ""
@@ -51,13 +45,13 @@ final class MusicService: ObservableObject {
         poll()
     }
 
-    private func running(_ p: Player) -> Bool {
+    private func running(_ p: MusicApp) -> Bool {
         !NSRunningApplication.runningApplications(withBundleIdentifier: p.bundleID).isEmpty
     }
 
     private func poll() {
         // Interpolate between polls so the progress bar stays smooth.
-        let candidates = [Player.spotify, .music].filter(running)
+        let candidates = [MusicApp.spotify, .music].filter(running)
         guard !candidates.isEmpty else { clear(); return }
         // Keep the current player while it is running, otherwise take the first running one.
         var wanted = candidates[0]
@@ -70,7 +64,7 @@ final class MusicService: ObservableObject {
     }
 
     /// `probing`: this read only checks whether the other player is playing; it changes nothing unless it is.
-    private func fetch(_ p: Player, fallback: Player?, probing: Bool = false) {
+    private func fetch(_ p: MusicApp, fallback: MusicApp?, probing: Bool = false) {
         let script: String
         if p == .spotify {
             script = """
@@ -95,7 +89,7 @@ final class MusicService: ObservableObject {
         }
     }
 
-    private func apply(_ d: NSAppleEventDescriptor?, player p: Player, fallback: Player?, probing: Bool = false) {
+    private func apply(_ d: NSAppleEventDescriptor?, player p: MusicApp, fallback: MusicApp?, probing: Bool = false) {
         // No answer at all from a running player means Automation refused it. A "stopped" answer is a normal state.
         guard let d, d.numberOfItems >= 6, d.atIndex(1)?.stringValue != "stopped" else {
             if probing { return }
@@ -130,7 +124,7 @@ final class MusicService: ObservableObject {
         }
     }
 
-    private func loadArtwork(_ p: Player, url: String) {
+    private func loadArtwork(_ p: MusicApp, url: String) {
         let key = trackKey
         if p == .spotify, let u = URL(string: url) {
             URLSession.shared.dataTask(with: u) { data, _, _ in
@@ -221,7 +215,7 @@ final class MusicService: ObservableObject {
     func favorite() {
         guard player == .music else { return }
         command("set favorited of current track to true")
-        NotchModel.shared.show(Activity(symbol: "heart.fill", title: L("Added to favorites"), tint: .pink, duration: 1.5))
+        NotchModel.shared.show(Activity(symbol: "heart.fill", title: localized("Added to favorites"), tint: .pink, duration: 1.5))
     }
 
     func seek(to t: Double) { position = t; command("set player position to \(t)") }
