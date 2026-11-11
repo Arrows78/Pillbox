@@ -11,6 +11,8 @@ final class ActionBox {
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchWindowController!
     private var statusItem: NSStatusItem!
+    /// The menu opened by a right click (or a control-click) on the status item; a left click toggles the island.
+    private var statusMenu: NSMenu!
     private var statusIcon: StatusIcon?
     private var hotKeys: [GlobalShortcut: HotKey] = [:]
     private var monitors: [Any] = []
@@ -19,8 +21,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastOtherApp: NSRunningApplication?
     /// Features that re-apply their settings on a change, and only when one of their keys changed.
     private lazy var features = FeatureRouter(AppFeatures.all + [
-        AppFeature(name: "menu bar icon", keys: [Preferences.showMenuBarIcon.key]) { [weak self] in self?.applyStatusItemVisibility() },
-        AppFeature(name: "shortcuts", keys: GlobalShortcut.allCases.compactMap(\.setting)) { [weak self] in self?.applyHotKeys() },
+        AppFeature(name: "menu bar icon", keys: [Preferences.showMenuBarIcon.key], apply: { [weak self] in self?.applyStatusItemVisibility() }),
+        AppFeature(name: "shortcuts", keys: GlobalShortcut.allCases.compactMap(\.setting), apply: { [weak self] in self?.applyHotKeys() }),
     ])
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -44,26 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             MainActor.assumeIsolated { self?.lastOtherApp = app }
         } as Any)
         setupMainMenu()
-        if CommandLine.arguments.contains("--open-teleprompter") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { Teleprompter.shared.show() } }
-        if CommandLine.arguments.contains("--open-player") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { FloatingPlayer.shared.show() } }
-        if CommandLine.arguments.contains("--open-lyrics") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { LyricsScreen.shared.show() } }
-        // Debug aid: `Pillbox --open-menu` pops the menu-bar menu up in the middle of the screen (the icon may be hidden).
-        if CommandLine.arguments.contains("--open-menu") {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-                self?.statusItem.menu?.popUp(positioning: nil, at: NSPoint(x: 400, y: 900), in: nil)
-            }
-        }
-        // Debug aid: `Pillbox --open-settings integrations` opens the settings window on a pane.
-        if let i = CommandLine.arguments.firstIndex(of: "--open-settings") {
-            let pane = CommandLine.arguments.indices.contains(i + 1) ? SettingsPane(rawValue: CommandLine.arguments[i + 1]) : nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SettingsWindow.show(pane: pane ?? .general) }
-        }
-        if CommandLine.arguments.contains("--open-palette") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { PaletteController.shared.show() } }
-        // Debug aid: `Pillbox --open-tab ai` opens the notch on a tab and keeps it open (used to screenshot each tab).
-        if let i = CommandLine.arguments.firstIndex(of: "--open-tab"), CommandLine.arguments.indices.contains(i + 1),
-           let tab = Tab(rawValue: CommandLine.arguments[i + 1]) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { NotchModel.shared.pinnedOpen = true; NotchModel.shared.expand(tab) }
-        }
+        LaunchOptions.apply(menu: statusMenu)
         // First launch: show the settings (permissions first) instead of letting prompts appear out of nowhere.
         if !UserDefaults.standard.bool(forKey: "onboarded") {
             UserDefaults.standard.set(true, forKey: "onboarded")
@@ -152,9 +135,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusIcon = StatusIcon(button: statusItem.button)
         let menu = NSMenu()
         menu.delegate = self
-        statusItem.menu = menu
+        statusMenu = menu
         rebuildMenu(menu)
+        statusItem.button?.target = self
+        statusItem.button?.action = #selector(statusItemClicked(_:))
+        statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         applyStatusItemVisibility()
+    }
+
+    /// A left click shows or hides the island; a right click, or a control-click, opens the menu under the icon.
+    @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp || event?.modifierFlags.contains(.control) == true {
+            statusMenu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height + 4), in: sender)
+        } else {
+            toggleNotch()
+        }
     }
 
     /// Rebuilt every time the menu opens, so the checkmarks and the running timer are current.

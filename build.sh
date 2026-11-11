@@ -10,6 +10,8 @@ cd "$(dirname "$0")"
 build_arch() {  # $1 = arm64 | x86_64 (empty = host); prints only the bin path on stdout
   local flags=(-c release --build-system native)
   [ -n "${1:-}" ] && flags+=(--triple "$1-apple-macosx")
+  # CI sets PILLBOX_WERROR=1: any Swift warning then fails the build.
+  [ "${PILLBOX_WERROR:-0}" = 1 ] && flags+=(-Xswiftc -warnings-as-errors)
   local log; log="$(mktemp)"
   if ! swift build "${flags[@]}" > "$log" 2>&1; then
     cat "$log" >&2; rm -f "$log"

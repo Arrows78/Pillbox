@@ -203,6 +203,13 @@ extension SelfTest {
         check("tab order: the other tabs follow in their usual order", Array(order.dropFirst(3)) == Tab.allCases.filter { ![.home, .terminal, .music].contains($0) })
     }
 
+    /// The debug switches read their argument, and a switch at the end of the line has none.
+    static func launchOptions() {
+        check("launch options: the argument after a switch", LaunchOptions.value(after: "--open-tab", in: ["app", "--open-tab", "ai"]) == "ai")
+        check("launch options: no argument when the switch ends the line", LaunchOptions.value(after: "--open-tab", in: ["app", "--open-tab"]) == nil)
+        check("launch options: a switch is found", LaunchOptions.has("--open-menu", in: ["app", "--open-menu"]))
+    }
+
     /// The idle animation plays at normal speed until the user changes it; a stored 0 is clamped, never frozen.
     static func lottieSpeedDefault() {
         check("lottie: 1x when the speed was never set", Preferences.lottieSpeed.defaultValue == 1.0)

@@ -268,7 +268,7 @@ struct ExpandedView: View {
             .transition(.opacity)
         }
         .foregroundStyle(.white)
-        .onChange(of: model.tab) { model.pinnedOpen = $0 == .terminal }
+        .onChange(of: model.tab) { _, new in model.pinnedOpen = new == .terminal }
         .onDrop(of: [.fileURL], isTargeted: $model.dropTargeted) { providers in
             model.tab = .shelf
             for p in providers {

@@ -73,7 +73,7 @@ struct NotificationsTab: View {
         }
         .onAppear { mirror.refresh() }
         // A filter for an app that no longer has rows would hide every row with no chip left to clear it.
-        .onChange(of: Self.apps(in: mirror.items ?? [])) { remaining in
+        .onChange(of: Self.apps(in: mirror.items ?? [])) { _, remaining in
             if let selected = app, !remaining.contains(selected) { app = nil }
         }
     }

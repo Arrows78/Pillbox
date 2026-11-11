@@ -8,7 +8,7 @@ python3 -B scripts/release.py check
 python3 -B scripts/check_l10n.py
 python3 -B scripts/gen_settings_index.py --check
 # Never install into /Applications from a check.
-PILLBOX_NO_INSTALL=1 ./build.sh
+PILLBOX_NO_INSTALL=1 PILLBOX_WERROR=1 ./build.sh
 build/Pillbox.app/Contents/MacOS/Pillbox --selftest
 for lang in fr es de; do build/Pillbox.app/Contents/MacOS/Pillbox --selftest -AppleLanguages "($lang)"; done
 echo "CI OK"

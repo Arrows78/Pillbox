@@ -52,7 +52,7 @@ struct SettingsAudioPane: View {
                     Picker("", selection: $ambientKind) { ForEach(AmbientNoise.Kind.allCases) { Text(verbatim: $0.title).tag($0.rawValue) } }.labelsHidden().frame(width: 150)
                 }
                 if ambientKind != "off" {
-                    SettingsRow(title: "Ambient volume") { Slider(value: $ambientVolume, in: 0.05...1).frame(width: 180).onChange(of: ambientVolume) { AmbientNoise.shared.setVolume(Float($0)) } }
+                    SettingsRow(title: "Ambient volume") { Slider(value: $ambientVolume, in: 0.05...1).frame(width: 180).onChange(of: ambientVolume) { _, new in AmbientNoise.shared.setVolume(Float(new)) } }
                 }
             }
         }
