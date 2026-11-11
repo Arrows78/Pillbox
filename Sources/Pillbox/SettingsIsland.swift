@@ -13,6 +13,7 @@ struct SettingsIslandPane: View {
     @AppStorage(Preferences.peekOnHover.key) private var peekOnHover = Preferences.peekOnHover.defaultValue
     @AppStorage(Preferences.hudStyle.key) private var hudStyle = Preferences.hudStyle.defaultValue
     @AppStorage(Preferences.panelScale.key) private var panelScale = Preferences.panelScale.defaultValue
+    @AppStorage(Preferences.tabPanelSizes.key) private var tabPanelSizes = Preferences.tabPanelSizes.defaultValue
     @AppStorage(Preferences.islandTheme.key) private var islandTheme = Preferences.islandTheme.defaultValue
     @AppStorage(Preferences.doubleClickAction.key) private var doubleClickAction = Preferences.doubleClickAction.defaultValue
     @AppStorage(Preferences.tripleClickAction.key) private var tripleClickAction = Preferences.tripleClickAction.defaultValue
@@ -35,6 +36,17 @@ struct SettingsIslandPane: View {
             NSScreen.screens.firstIndex { $0.localizedName == targetDisplay }.map { String($0) } ?? ""
         }, set: { tag in
             if let i = Int(tag), NSScreen.screens.indices.contains(i) { targetDisplay = NSScreen.screens[i].localizedName } else { targetDisplay = "" }
+        })
+    }
+
+    /// The size one tab opens at, read from and written to the stored "tab=size" list.
+    private func panelSize(of tab: Tab) -> Binding<PanelSize> {
+        Binding(get: {
+            PanelSize.sizes(from: tabPanelSizes)[tab] ?? .standard
+        }, set: { size in
+            var sizes = PanelSize.sizes(from: tabPanelSizes)
+            sizes[tab] = size
+            tabPanelSizes = PanelSize.setting(from: sizes)
         })
     }
 
@@ -75,6 +87,14 @@ struct SettingsIslandPane: View {
                 SettingsToggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
                 SettingsToggle("Shake a dragged file to open the shelf", isOn: $shakeToOpen)
             }
+            SettingsCard(title: "Panel size per tab") {
+                ForEach(Tab.allCases) { tab in
+                    SettingsRow(title: LocalizedStringKey(tab.title)) {
+                        Picker("", selection: panelSize(of: tab)) { ForEach(PanelSize.allCases) { Text(verbatim: $0.title).tag($0) } }.labelsHidden().frame(width: 170)
+                    }
+                }
+            }
+            SettingsNote("The size applies when the panel opens on that tab. Switching tabs keeps it. Panel size above scales every tab.")
             SettingsCard(title: "Island appearance") {
                 SettingsRow(title: "Island theme", subtitle: "The collapsed pill always stays black to blend into the notch.") {
                     Picker("", selection: $islandTheme) { ForEach(IslandTheme.allCases) { Text(LocalizedStringKey($0.title)).tag($0.rawValue) } }.labelsHidden().frame(width: 170)

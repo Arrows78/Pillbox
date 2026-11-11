@@ -23,7 +23,7 @@ enum SelfTest {
         shakeAndBreaks(); downloadsAndBuild(); bluetoothBatteries(); quickCapture(); displayOptions()
         activityQueue(); activityTitleDisplay(); shellActions(); notificationFeed(); pillAndTheme()
         usageAlert(); githubPRs(); edgeBar()
-        mcpProtocol(); agentActions(); turnTokens(); panelSize(); playerAndLyrics(); terminalEnvironment(); terminalLook(); equalizer(); copyStackAndHistory()
+        mcpProtocol(); agentActions(); turnTokens(); panelSize(); tabPanelSizes(); playerAndLyrics(); terminalEnvironment(); terminalLook(); equalizer(); copyStackAndHistory()
         paletteMath(); settingsBackup(); updateVersions(); shortcutsAndDiagnostics()
         awareness(); recordingQRAnnotate(); dictationAndActivity()
         appVolume()
@@ -80,7 +80,8 @@ enum ViewRenderer {
         model.geometry = NotchGeometry(width: 185, height: 32, notch: true)
         for tab in Tab.allCases where tab != .terminal {
             model.tab = tab; model.expanded = true
-            let size = NotchModel.baseExpanded()
+            model.panelSize = PanelSize.of(tab)
+            let size = model.panelSize.size
             save("tab-\(tab.rawValue)", island(ExpandedView(), size), size: size)
         }
         let mixer = AppVolumeService.shared

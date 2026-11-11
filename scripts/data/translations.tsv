@@ -365,6 +365,10 @@ Copy Claude Code turn-summary hook	Copiar el hook de resumen de turno de Claude 
 Copy MCP configuration	Copiar la configuración MCP	MCP-Konfiguration kopieren
 Copy stack: copy several things, paste them in order with ⌃⌥V	Pila de copias: copia varias cosas y pégalas en orden con ⌃⌥V	Kopierstapel: mehreres kopieren und der Reihe nach mit ⌃⌥V einfügen
 Panel size	Tamaño del panel	Größe des Panels
+Panel size per tab	Tamaño del panel por pestaña	Panelgröße je Tab
+Compact	Compacto	Kompakt
+Standard	Estándar	Standard
+The size applies when the panel opens on that tab. Switching tabs keeps it. Panel size above scales every tab.	El tamaño se aplica al abrir el panel en esa pestaña. Cambiar de pestaña lo conserva. «Tamaño del panel» de arriba escala todas las pestañas.	Die Größe gilt, wenn das Panel auf diesem Tab öffnet. Ein Tabwechsel behält sie. „Größe des Panels“ oben skaliert alle Tabs.
 Floating player	Reproductor flotante	Schwebender Player
 Paste next from the copy stack	Pegar el siguiente de la pila de copias	Nächsten aus dem Kopierstapel einfügen
 Clear the copy stack	Vaciar la pila de copias	Kopierstapel leeren

@@ -188,7 +188,7 @@ extension SelfTest {
         check("panel: the scale is clamped", NotchModel.scale == 1.3)
         UserDefaults.standard.set(0.1, forKey: "panelScale")
         check("panel: ... on both sides", NotchModel.scale == 0.8)
-        check("panel: the largest panel fits its window", NotchModel.baseExpanded().width * 1.3 <= NotchModel.windowSize.width && NotchModel.baseExpanded().height * 1.3 <= NotchModel.windowSize.height)
+        check("panel: the largest size of any tab fits its window at the largest scale", PanelSize.allCases.allSatisfy { $0.size.width * 1.3 <= NotchModel.windowSize.width && $0.size.height * 1.3 <= NotchModel.windowSize.height })
     }
 
     static func idleCollapse() {

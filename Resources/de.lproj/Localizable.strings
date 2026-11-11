@@ -370,6 +370,10 @@
 "Copy MCP configuration" = "MCP-Konfiguration kopieren";
 "Copy stack: copy several things, paste them in order with ⌃⌥V" = "Kopierstapel: mehreres kopieren und der Reihe nach mit ⌃⌥V einfügen";
 "Panel size" = "Größe des Panels";
+"Panel size per tab" = "Panelgröße je Tab";
+"Compact" = "Kompakt";
+"Standard" = "Standard";
+"The size applies when the panel opens on that tab. Switching tabs keeps it. Panel size above scales every tab." = "Die Größe gilt, wenn das Panel auf diesem Tab öffnet. Ein Tabwechsel behält sie. „Größe des Panels“ oben skaliert alle Tabs.";
 "Floating player" = "Schwebender Player";
 "Paste next from the copy stack" = "Nächsten aus dem Kopierstapel einfügen";
 "Clear the copy stack" = "Kopierstapel leeren";

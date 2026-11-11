@@ -370,6 +370,10 @@
 "Copy MCP configuration" = "Copiar la configuración MCP";
 "Copy stack: copy several things, paste them in order with ⌃⌥V" = "Pila de copias: copia varias cosas y pégalas en orden con ⌃⌥V";
 "Panel size" = "Tamaño del panel";
+"Panel size per tab" = "Tamaño del panel por pestaña";
+"Compact" = "Compacto";
+"Standard" = "Estándar";
+"The size applies when the panel opens on that tab. Switching tabs keeps it. Panel size above scales every tab." = "El tamaño se aplica al abrir el panel en esa pestaña. Cambiar de pestaña lo conserva. «Tamaño del panel» de arriba escala todas las pestañas.";
 "Floating player" = "Reproductor flotante";
 "Paste next from the copy stack" = "Pegar el siguiente de la pila de copias";
 "Clear the copy stack" = "Vaciar la pila de copias";

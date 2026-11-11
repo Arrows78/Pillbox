@@ -63,6 +63,51 @@ enum Tab: String, CaseIterable, Identifiable {
     }
 }
 
+/// The size of the open panel, chosen per tab in Settings › Island. Standard is the size every tab had before.
+enum PanelSize: String, CaseIterable, Identifiable {
+    case compact, standard, large
+    var id: String { rawValue }
+
+    var size: CGSize {
+        switch self {
+        case .compact: CGSize(width: 620, height: 300)
+        case .standard: CGSize(width: 760, height: 340)
+        case .large: CGSize(width: 900, height: 400)
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .compact: localized("Compact")
+        case .standard: localized("Standard")
+        case .large: localized("Large")
+        }
+    }
+
+    /// The sizes stored as "tab=size" pairs, comma-separated. A tab the list does not mention, a name that is not a tab
+    /// and a size that is not one of the three are all left out, so they read as Standard.
+    nonisolated static func sizes(from setting: String?) -> [Tab: PanelSize] {
+        var out: [Tab: PanelSize] = [:]
+        for pair in (setting ?? "").split(separator: ",") {
+            let parts = pair.split(separator: "=", maxSplits: 1).map(String.init)
+            guard parts.count == 2, let tab = Tab(rawValue: parts[0]), let size = PanelSize(rawValue: parts[1]) else { continue }
+            out[tab] = size
+        }
+        return out
+    }
+
+    /// The stored setting for `sizes`: only the tabs that are not Standard, in tab order, so the default stays empty.
+    nonisolated static func setting(from sizes: [Tab: PanelSize]) -> String {
+        Tab.allCases.compactMap { tab in
+            guard let size = sizes[tab], size != .standard else { return nil }
+            return "\(tab.rawValue)=\(size.rawValue)"
+        }.joined(separator: ",")
+    }
+
+    /// The size the panel opens at when it is expanded on `tab`.
+    static func of(_ tab: Tab) -> PanelSize { sizes(from: Preferences.tabPanelSizes.value)[tab] ?? .standard }
+}
+
 /// A transient island shown in place of the collapsed pill (battery, download, caps lock...).
 struct Activity: Identifiable {
     let id = UUID()
@@ -131,17 +176,19 @@ extension Double { var nonZero: Double? { self == 0 ? nil : self } }
 final class NotchModel: ObservableObject {
     static let shared = NotchModel()
 
-    static let windowSize = CGSize(width: 1000, height: 480)
-    static let expandedSize = CGSize(width: 760, height: 340)
+    /// Big enough for the largest panel at the largest scale (see SelfTest: the panel fits its window).
+    static let windowSize = CGSize(width: 1200, height: 540)
+    /// The Standard size, which every tab had before sizes were chosen per tab.
+    static let expandedSize = PanelSize.standard.size
     static let wing: CGFloat = 62
 
     /// User-chosen scale of the open panel (0.8 to 1.3).
     static var scale: CGFloat { CGFloat(min(max(UserDefaults.standard.object(forKey: "panelScale") as? Double ?? 1, 0.8), 1.3)) }
-    /// Every tab opens at the same size, so the panel does not jump when switching tabs.
-    static func baseExpanded() -> CGSize { expandedSize }
 
     @Published var expanded = false
     @Published var tab: Tab = .home
+    /// The size of the open panel, set when it expands on a tab (see `expand`). Switching tabs inside the panel keeps it, so the panel does not jump.
+    @Published var panelSize: PanelSize = .standard
     @Published var activity: Activity?
     @Published var approval: Approval?
     @Published var geometry = NotchGeometry.detect()
@@ -154,7 +201,7 @@ final class NotchModel: ObservableObject {
     /// Size of the visible black shape for the current state.
     func size(hasWings: Bool) -> CGSize {
         if approval != nil { return CGSize(width: 520, height: geometry.height + 92) }
-        if expanded { let b = Self.baseExpanded(); return CGSize(width: b.width * Self.scale, height: b.height * Self.scale) }
+        if expanded { let b = panelSize.size; return CGSize(width: b.width * Self.scale, height: b.height * Self.scale) }
         if activity != nil || DictationService.shared.active { return CGSize(width: max(geometry.width + 150, 330), height: geometry.height + 34) }
         let extra = hasWings ? Self.wing * 2 : 0
         return CGSize(width: geometry.width + extra, height: geometry.height)
@@ -162,7 +209,7 @@ final class NotchModel: ObservableObject {
 
     func expand(_ tab: Tab? = nil) {
         if let tab { self.tab = tab }
-        if !expanded { Haptics.tap() }
+        if !expanded { Haptics.tap(); panelSize = PanelSize.of(self.tab) }
         withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { expanded = true }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
     }

@@ -46,6 +46,8 @@ enum Preferences {
     static let hudStyle = Preference<String>("hudStyle", "notch")
     static let usageAlert = Preference<Int>("usageAlert", 0)
     static let panelScale = Preference<Double>("panelScale", 1.0)
+    /// The open panel's size per tab, as "tab=size" pairs ("compact", "standard" or "large"); a tab left out is Standard. Read by PanelSize.
+    static let tabPanelSizes = Preference<String>("tabPanelSizes", "")
     static let copyStack = Preference<Bool>("copyStack", false)
     static let islandTheme = Preference<String>("islandTheme", "black")
     static let doubleClickAction = Preference<String>("doubleClickAction", "none")

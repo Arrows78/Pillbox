@@ -29,6 +29,7 @@ enum SettingsBackup {
         k[Tab.hiddenKey] = .text(nil); k[Tab.orderKey] = .text(nil)
         k["hoverDelay"] = .number(0.05...0.6)
         k["panelScale"] = .number(0.8...1.3)
+        k[Preferences.tabPanelSizes.key] = .text(nil)   // "tab=size" pairs; the reader skips what it does not know
         k["pillWidth"] = .number(120...260)
         k["fullChargeLevel"] = .number(80...100)
         k["usageAlert"] = .number(0...100)

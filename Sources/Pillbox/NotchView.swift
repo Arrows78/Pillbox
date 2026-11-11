@@ -45,7 +45,7 @@ struct NotchRootView: View {
                 if let a = model.approval { ApprovalView(approval: a) }
                 else if model.expanded {
                     // Laid out at its base size, then scaled: the panel keeps its proportions at any size.
-                    let base = NotchModel.baseExpanded()
+                    let base = model.panelSize.size
                     ExpandedView().frame(width: base.width, height: base.height).scaleEffect(NotchModel.scale, anchor: .top)
                         .frame(width: size.width, height: size.height, alignment: .top)
                 }
