@@ -13,14 +13,16 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     private var timer: Timer?
     private var location: CLLocation?
 
+    /// Asks for the permission, the one place that can show the prompt.
     func requestAuthorization() {
-        if timer == nil { start() } else { manager.requestWhenInUseAuthorization() }
+        manager.requestWhenInUseAuthorization()
+        if timer == nil { start() }
     }
 
+    /// Safe to call at launch: it never prompts. A stale authorization status cannot stop it, since a denied request just fails quietly.
     func start() {
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyKilometer
-        manager.requestWhenInUseAuthorization()
         manager.requestLocation()
         timer = Timer.scheduledTimer(withTimeInterval: 900, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.manager.requestLocation() }

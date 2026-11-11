@@ -72,7 +72,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         DevAPI.shared.apply()
         PrivacyService.shared.start()
-        if PermissionsCenter.shared.state(of: .location) == .granted { WeatherService.shared.start() }
+        WeatherService.shared.start()
         StocksService.shared.start()
         AIUsageService.shared.start()
         RemindersService.shared.start()
