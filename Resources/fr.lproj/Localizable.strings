@@ -680,7 +680,6 @@
 "Counts up until you stop it" = "Compte jusqu'à ce que vous l'arrêtiez";
 "Tabs" = "Onglets";
 "Shown in the island" = "Affichés dans l'île";
-"Turn off the tabs you never open. Home always stays." = "Désactivez les onglets que vous n'ouvrez jamais. Accueil reste toujours.";
 "Or swipe left and right with two fingers. The numbers follow the tabs shown in the bar." = "Ou balayez à gauche et à droite avec deux doigts. Les numéros suivent les onglets affichés dans la barre.";
 "Hide the island while the screen is mirrored" = "Masquer l'île quand l'écran est recopié";
 "A projector or a TV copies the whole screen, so the island goes away outright." = "Un projecteur ou une TV recopie tout l'écran : l'île disparaît complètement.";
@@ -910,3 +909,5 @@
 "Palette" = "Palette";
 "Eyes" = "Yeux";
 "Lyrics" = "Paroles";
+"Move the tabs with the arrows and turn off the ones you never open. Home always stays first." = "Déplacez les onglets avec les flèches et désactivez ceux que vous n'ouvrez jamais. Accueil reste toujours en premier.";
+"Default order" = "Ordre par défaut";

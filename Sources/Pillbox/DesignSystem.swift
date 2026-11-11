@@ -147,6 +147,9 @@ enum TabBarMetrics {
 /// The row of tabs: as many as fit, the rest behind a "…" menu, so it never runs past the panel.
 struct TabStrip: View {
     @ObservedObject var model = NotchModel.shared
+    // Read through Tab.visible; observed here so the bar follows a change in Settings at once.
+    @AppStorage(Tab.hiddenKey) private var hidden = ""
+    @AppStorage(Tab.orderKey) private var order = ""
 
     var body: some View {
         GeometryReader { g in

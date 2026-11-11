@@ -10,8 +10,19 @@ enum Tab: String, CaseIterable, Identifiable {
         Set((setting ?? "").split(separator: ",").compactMap { Tab(rawValue: String($0)) }).subtracting([.home])
     }
     static var hidden: Set<Tab> { hidden(from: UserDefaults.standard.string(forKey: hiddenKey)) }
-    /// The tabs shown in the bar, in their usual order: ⌘1–9, swipes and the palette follow this list.
-    static var visible: [Tab] { let h = hidden; return allCases.filter { !h.contains($0) } }
+
+    /// The order chosen in Settings › Tabs and menu bar, stored as a comma-separated list.
+    static let orderKey = "tabOrder"
+    /// Every tab in the stored order. Home always comes first; unknown names are dropped, and a tab the stored list
+    /// does not mention yet (a new one) goes after the others in its usual place.
+    nonisolated static func ordered(from setting: String?) -> [Tab] {
+        var seen: Set<Tab> = [.home]
+        let stored = (setting ?? "").split(separator: ",").compactMap { Tab(rawValue: String($0)) }.filter { seen.insert($0).inserted }
+        return [.home] + stored + allCases.filter { !seen.contains($0) }
+    }
+    static var ordered: [Tab] { ordered(from: UserDefaults.standard.string(forKey: orderKey)) }
+    /// The tabs shown in the bar, in the chosen order: ⌘1–9, swipes, the palette and the menu follow this list.
+    static var visible: [Tab] { let h = hidden; return ordered.filter { !h.contains($0) } }
     var title: String {
         switch self {
         case .home: localized("Home")

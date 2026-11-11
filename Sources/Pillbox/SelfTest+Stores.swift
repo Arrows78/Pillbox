@@ -185,6 +185,15 @@ extension SelfTest {
         check("island history: keeps the last \(IslandHistory.limit), newest first", history.entries.count == IslandHistory.limit && history.entries.first?.title == "29")
     }
 
+    /// The tab order keeps Home first, keeps every tab once, and places tabs it does not know yet at the end.
+    static func tabOrder() {
+        check("tab order: nothing stored is the usual order", Tab.ordered(from: nil) == Tab.allCases)
+        let order = Tab.ordered(from: "terminal,music,bogus,music,home")
+        check("tab order: Home first, then the stored order", Array(order.prefix(3)) == [.home, .terminal, .music])
+        check("tab order: every tab exactly once", order.count == Tab.allCases.count && Set(order) == Set(Tab.allCases))
+        check("tab order: the other tabs follow in their usual order", Array(order.dropFirst(3)) == Tab.allCases.filter { ![.home, .terminal, .music].contains($0) })
+    }
+
     /// Home's layout always fills every slot, whatever the stored value holds.
     static func homeLayout() {
         check("home layout: nothing stored gives the defaults", HomeLayout.parse(nil, slots: 6, defaults: HomeLayout.defaultTiles) == HomeLayout.defaultTiles)
