@@ -169,6 +169,8 @@ final class NotchModel: ObservableObject {
     func show(_ activity: Activity) {
         // Volume and brightness can go to a slim bar on the screen edge instead of the island.
         if let p = activity.progress, Preferences.hudStyle.value == "edge" { EdgeHUD.shared.show(symbol: activity.symbol, level: p); return }
+        // In the quiet period an island that is not urgent is not shown; it is not queued to show later either.
+        if QuietHours.holds(activity) { return }
         guard queue.push(activity) else { return }
         present()
     }

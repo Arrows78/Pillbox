@@ -905,3 +905,8 @@ Needs Calendars access. A click on it lists today's events.	Necesita acceso a Ca
 No events today	No hay eventos hoy	Heute keine Termine
 Open Calendar	Abrir Calendario	Kalender öffnen
 Always	Siempre	Immer
+Quiet hours	Horas de silencio	Ruhezeiten
+From	Desde	Von
+Until	Hasta	Bis
+Islands wait between these hours. Urgent ones still show.	Las islas esperan entre estas horas. Las urgentes se muestran igualmente.	Inseln warten in diesem Zeitraum. Dringende werden trotzdem angezeigt.
+The islands come back at this hour.	Las islas vuelven a esta hora.	Die Inseln kommen zu dieser Stunde zurück.

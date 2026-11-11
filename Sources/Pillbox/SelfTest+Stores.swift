@@ -155,6 +155,15 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// The quiet period holds between its hours, also when it crosses midnight, and is off when it has no start.
+    static func quietHours() {
+        check("quiet hours: inside a daytime period", QuietHours.isQuiet(hour: 14, from: 13, to: 15))
+        check("quiet hours: outside a daytime period", !QuietHours.isQuiet(hour: 15, from: 13, to: 15))
+        check("quiet hours: a period over midnight holds late and early", QuietHours.isQuiet(hour: 23, from: 22, to: 7) && QuietHours.isQuiet(hour: 3, from: 22, to: 7))
+        check("quiet hours: a period over midnight lets the day through", !QuietHours.isQuiet(hour: 12, from: 22, to: 7))
+        check("quiet hours: off without a start", !QuietHours.isQuiet(hour: 3, from: -1, to: 7))
+    }
+
     /// The menu bar shows the next event within the hours chosen, and always when the choice is Always.
     static func menuBarCalendarWindow() {
         let now = Date()

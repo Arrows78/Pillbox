@@ -4,6 +4,8 @@ import ServiceManagement
 
 /// The Alerts pane: the system and activity islands, AI usage limits and the break reminders.
 struct SettingsAlertsPane: View {
+    @AppStorage(Preferences.quietFrom.key) private var quietFrom = Preferences.quietFrom.defaultValue
+    @AppStorage(Preferences.quietTo.key) private var quietTo = Preferences.quietTo.defaultValue
     @AppStorage(Preferences.capsHUD.key) private var capsHUD = Preferences.capsHUD.defaultValue
     @AppStorage(Preferences.downloadAlerts.key) private var downloadAlerts = Preferences.downloadAlerts.defaultValue
     @AppStorage(Preferences.privacyIndicator.key) private var privacyIndicator = Preferences.privacyIndicator.defaultValue
@@ -31,6 +33,16 @@ struct SettingsAlertsPane: View {
 
     var body: some View {
         SettingsPage(pane: .alerts) {
+            SettingsCard(title: "Quiet hours") {
+                SettingsRow(title: "From", subtitle: "Islands wait between these hours. Urgent ones still show.") {
+                    Picker("", selection: $quietFrom) { Text("Off").tag(-1); ForEach(0..<24, id: \.self) { Text(verbatim: "\($0):00").tag($0) } }
+                        .labelsHidden().frame(width: 110)
+                }
+                SettingsRow(title: "Until", subtitle: "The islands come back at this hour.") {
+                    Picker("", selection: $quietTo) { ForEach(0..<24, id: \.self) { Text(verbatim: "\($0):00").tag($0) } }
+                        .labelsHidden().frame(width: 110)
+                }
+            }
             SettingsCard(title: "System") {
                 SettingsToggle("Caps Lock island", isOn: $capsHUD)
                 SettingsToggle("Volume island", isOn: $volumeHUD)

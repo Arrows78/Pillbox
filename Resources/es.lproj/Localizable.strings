@@ -907,3 +907,8 @@
 "No events today" = "No hay eventos hoy";
 "Open Calendar" = "Abrir Calendario";
 "Always" = "Siempre";
+"Quiet hours" = "Horas de silencio";
+"From" = "Desde";
+"Until" = "Hasta";
+"Islands wait between these hours. Urgent ones still show." = "Las islas esperan entre estas horas. Las urgentes se muestran igualmente.";
+"The islands come back at this hour." = "Las islas vuelven a esta hora.";
