@@ -39,9 +39,9 @@ final class IslandInteraction {
             leaveTask?.cancel()
             // The strip includes the screen edge so a flick to the top still counts.
             let hot = rect.insetBy(dx: -4, dy: 0).union(NSRect(x: rect.minX, y: rect.maxY - 1, width: rect.width, height: 3))
-            if UserDefaults.standard.object(forKey: "hoverOpen") as? Bool ?? true, hot.contains(p) {
+            if Preferences.hoverOpen.value, hot.contains(p) {
                 guard hoverTask == nil else { return }
-                let delay = UserDefaults.standard.double(forKey: "hoverDelay").nonZero ?? 0.12
+                let delay = Preferences.hoverDelay.value.nonZero ?? Preferences.hoverDelay.defaultValue
                 hoverTask = Task { [weak self] in
                     try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     defer { self?.hoverTask = nil }
@@ -86,7 +86,7 @@ final class IslandInteraction {
                         guard pb.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) else { return }
                         let shaken = UserDefaults.standard.object(forKey: "shakeToOpen") as? Bool ?? true && self.shake.add(p, at: Date())
                         if shaken || self.controller.shapeRectOnScreen.insetBy(dx: -30, dy: -30).contains(p) { model.pinnedOpen = true; self.shelfPinned = true; model.expand(.shelf) }
-                    } else if UserDefaults.standard.bool(forKey: "snapZones"), !model.expanded {
+                    } else if Preferences.snapZones.value, !model.expanded {
                         let r = self.controller.shapeRectOnScreen
                         if SnapZones.shared.visible { SnapZones.shared.update(mouse: p) }
                         else if p.y >= r.maxY - 36, abs(p.x - r.midX) < 260 { SnapZones.shared.show() }

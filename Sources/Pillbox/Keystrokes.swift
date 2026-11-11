@@ -24,7 +24,7 @@ final class KeystrokeHUD {
         guard enabled, !IsSecureEventInputEnabled() else { return }
         let mods = e.modifierFlags.intersection([.control, .option, .shift, .command])
         let isShortcut = !mods.intersection([.control, .option, .command]).isEmpty
-        let shortcutsOnly = UserDefaults.standard.object(forKey: "shortcutsOnly") as? Bool ?? true
+        let shortcutsOnly = Preferences.shortcutsOnly.value
         if shortcutsOnly && !isShortcut { return }
 
         var label = ""

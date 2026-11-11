@@ -95,7 +95,7 @@ struct NotchGeometry {
         }
         let s = chosen ?? NSScreen.main ?? screens.first
         let menuBar = s.map { $0.frame.maxY - $0.visibleFrame.maxY } ?? 24
-        return NotchGeometry(width: CGFloat(UserDefaults.standard.double(forKey: "pillWidth").nonZero ?? 170),
+        return NotchGeometry(width: CGFloat(Preferences.pillWidth.value.nonZero ?? Preferences.pillWidth.defaultValue),
                              height: max(menuBar, 24), screen: s)
     }
 }
@@ -155,7 +155,7 @@ final class NotchModel: ObservableObject {
 
     func show(_ activity: Activity) {
         // Volume and brightness can go to a slim bar on the screen edge instead of the island.
-        if let p = activity.progress, UserDefaults.standard.string(forKey: "hudStyle") == "edge" { EdgeHUD.shared.show(symbol: activity.symbol, level: p); return }
+        if let p = activity.progress, Preferences.hudStyle.value == "edge" { EdgeHUD.shared.show(symbol: activity.symbol, level: p); return }
         guard queue.push(activity) else { return }
         present()
     }

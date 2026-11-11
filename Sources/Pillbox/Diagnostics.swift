@@ -22,7 +22,7 @@ enum Diagnostics {
         let notch = NSScreen.screens.contains { $0.safeAreaInsets.top > 0 }
         var lines = ["Pillbox \(version)", "macOS \(ProcessInfo.processInfo.operatingSystemVersionString), \(arch)",
                      "Displays: \(NSScreen.screens.count), notch: \(notch ? "yes" : "no")",
-                     "Local API: \(UserDefaults.standard.bool(forKey: "devAPIEnabled") ? "on" : "off")"]
+                     "Local API: \(Preferences.devAPI.value ? "on" : "off")"]
         for k in PermissionKind.allCases { lines.append("\(k.rawValue): \(name(PermissionsCenter.shared.state(of: k)))") }
         return lines.joined(separator: "\n")
     }

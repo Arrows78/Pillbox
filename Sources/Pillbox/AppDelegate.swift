@@ -18,8 +18,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var lastOtherApp: NSRunningApplication?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Settings shows these as on by default, so the readers need the same default until the user touches them.
-        UserDefaults.standard.register(defaults: ["hyperEscape": true])
         controller = NotchWindowController()
         // pkill and install.sh send SIGTERM, which skips applicationWillTerminate: route it there so Caps Lock is restored.
         signal(SIGTERM, SIG_IGN)
@@ -154,7 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func applyStatusItemVisibility() {
-        statusItem?.isVisible = UserDefaults.standard.object(forKey: "showMenuBarIcon") as? Bool ?? true
+        statusItem?.isVisible = Preferences.showMenuBarIcon.value
     }
 
     /// A menu bar for when Pillbox is active (a Settings window is open), so ⌘, and ⌘Q work. The status item menu

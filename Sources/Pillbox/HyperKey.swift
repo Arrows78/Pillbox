@@ -14,7 +14,7 @@ private func hyperTap(_ proxy: CGEventTapProxy, _ type: CGEventType, _ event: CG
         if type == .keyDown, !hyperHeld { hyperHeld = true; hyperUsed = false }
         else if type == .keyUp {
             hyperHeld = false
-            if !hyperUsed, UserDefaults.standard.bool(forKey: "hyperEscape") {
+            if !hyperUsed, Preferences.hyperEscape.value {
                 for down in [true, false] { CGEvent(keyboardEventSource: nil, virtualKey: CGKeyCode(kVK_Escape), keyDown: down)?.post(tap: .cghidEventTap) }
             }
         }

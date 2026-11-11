@@ -8,7 +8,7 @@ enum IslandTheme: String, CaseIterable, Identifiable {
     case black, graphite, glass, accent
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
-    static var current: IslandTheme { IslandTheme(rawValue: UserDefaults.standard.string(forKey: "islandTheme") ?? "black") ?? .black }
+    static var current: IslandTheme { IslandTheme(rawValue: Preferences.islandTheme.value) ?? .black }
 }
 
 /// The collapsed pill is always black so it melts into the notch; the open panel follows the theme.

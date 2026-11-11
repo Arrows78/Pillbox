@@ -38,7 +38,7 @@ final class DevAPI {
 
     func apply() {
         _ = Self.token   // makes sure a token exists before a request can arrive
-        UserDefaults.standard.bool(forKey: "devAPIEnabled") ? start() : stop()
+        Preferences.devAPI.value ? start() : stop()
     }
 
     private func start() {

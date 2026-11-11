@@ -189,7 +189,7 @@ struct ActivityView: View {
                 if let s = activity.subtitle { Text(LocalizedStringKey(s)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1) }
             }
             Spacer(minLength: 0)
-            if let p = activity.progress, UserDefaults.standard.string(forKey: "hudStyle") == "circle" {
+            if let p = activity.progress, Preferences.hudStyle.value == "circle" {
                 ZStack {
                     Circle().stroke(.white.opacity(0.2), lineWidth: 4)
                     Circle().trim(from: 0, to: min(max(p, 0), 1)).stroke(activity.tint, style: StrokeStyle(lineWidth: 4, lineCap: .round)).rotationEffect(.degrees(-90))

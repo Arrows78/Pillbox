@@ -14,7 +14,7 @@ struct CopyStack {
 final class CopyStackStore: ObservableObject {
     static let shared = CopyStackStore()
     @Published private(set) var stack = CopyStack()
-    var enabled: Bool { UserDefaults.standard.bool(forKey: "copyStack") }
+    var enabled: Bool { Preferences.copyStack.value }
 
     func noteCopy(_ text: String) {
         guard enabled else { return }
