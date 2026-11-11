@@ -24,6 +24,7 @@ CARD = re.compile(r'SettingsCard\(title: "([^"]+)"')
 TOGGLE = re.compile(r'SettingsToggle\("([^"]+)"')
 ROW = re.compile(r'SettingsRow\(title: "([^"]+)"')
 PERMISSION = re.compile(r'case \.\w+: localized\("([^"]+)"\)')
+PREFERENCE = re.compile(r'Preferences\.(\w+)\.key')
 
 def titles(path, pattern):
     out = []
@@ -50,14 +51,29 @@ def build():
         "    static let indexed: [SettingsPane: [String]] = [",
     ]
     counts = {}
+    prefs_of = {}
     for pane, filenames in FILES.items():
         found = []
+        prefs = []
         for filename in filenames:
             path = sources / filename
             found += titles(path, PERMISSION) if pane == "permissions" else titles(path, CARD) + titles(path, TOGGLE) + titles(path, ROW)
+            for name in PREFERENCE.findall(path.read_text()):
+                if name not in prefs:
+                    prefs.append(name)
         names = [titles_of_pane[pane]] + [t for t in found if t != titles_of_pane[pane]]
         counts[pane] = len(names)
+        prefs_of[pane] = prefs
         items = ", ".join('"' + n.replace('"', '\\"') + '"' for n in names)
+        lines.append(f"        .{pane}: [{items}],")
+    lines += [
+        "    ]",
+        "",
+        "    /// The preferences each pane edits, read from its source: \"Reset this pane\" puts exactly these back to their defaults.",
+        "    static let preferenceKeys: [SettingsPane: [String]] = [",
+    ]
+    for pane in FILES:
+        items = ", ".join(f"Preferences.{name}.key" for name in prefs_of[pane])
         lines.append(f"        .{pane}: [{items}],")
     lines += ["    ]", "}", ""]
     return "\n".join(lines), counts

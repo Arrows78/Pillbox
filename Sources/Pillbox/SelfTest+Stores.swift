@@ -155,6 +155,13 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// Each pane knows the preferences it edits; the permissions pane edits none, so it has no reset.
+    static func paneReset() {
+        check("reset: the island pane lists its own preferences", (SettingsPane.preferenceKeys[.island] ?? []).contains(Preferences.hoverOpen.key))
+        check("reset: the permissions pane has nothing to reset", (SettingsPane.preferenceKeys[.permissions] ?? []).isEmpty)
+        check("reset: every pane's keys are real preference keys", SettingsPane.preferenceKeys.values.flatMap { $0 }.allSatisfy { !$0.isEmpty })
+    }
+
     /// The notification search matches the title, the text or the app's name, and an empty search matches all.
     static func notificationSearch() {
         let n = NotificationItem(id: 1, app: "com.apple.mail", title: "Invoice ready", body: "Your PDF is attached", date: Date())

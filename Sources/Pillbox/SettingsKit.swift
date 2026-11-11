@@ -172,6 +172,10 @@ struct SettingsPage<Content: View>: View {
                     Text(pane.title).font(.system(size: 20, weight: .bold)).foregroundStyle(.primary)
                 }
                 content
+                if !(SettingsPane.preferenceKeys[pane] ?? []).isEmpty {
+                    Button("Reset this pane", role: .destructive) { pane.resetPreferences() }.controlSize(.small)
+                        .padding(.top, 8)
+                }
             }
             .padding(.horizontal, 24).padding(.top, 34).padding(.bottom, 24)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -239,5 +243,19 @@ struct SettingsSidebarFooter: View {
             }
             .padding(.horizontal, 6).padding(.bottom, 12)
         }
+    }
+}
+
+extension SettingsPane {
+    /// Puts back to their defaults the preferences this pane edits, after a confirmation. Data elsewhere is kept.
+    @MainActor func resetPreferences() {
+        let alert = NSAlert()
+        alert.messageText = localized("Reset %@?", localized(Self.indexed[self]?.first ?? ""))
+        alert.informativeText = localized("Its settings go back to their defaults. Your data is kept.")
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: localized("Reset"))
+        alert.addButton(withTitle: localized("Cancel"))
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        for key in Self.preferenceKeys[self] ?? [] { UserDefaults.standard.removeObject(forKey: key) }
     }
 }

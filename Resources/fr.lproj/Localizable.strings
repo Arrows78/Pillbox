@@ -934,3 +934,6 @@
 "Both are off: the island and the menu bar icon. Launch Pillbox again to open Settings." = "Les deux sont désactivés : l'île et l'icône de la barre des menus. Relancez Pillbox pour ouvrir les réglages.";
 "Pillbox %@ beta is available" = "La bêta Pillbox %@ est disponible";
 "Search notifications" = "Rechercher dans les notifications";
+"Reset %@?" = "Réinitialiser « %@ » ?";
+"Its settings go back to their defaults. Your data is kept." = "Ses réglages reviennent à leurs valeurs par défaut. Vos données sont conservées.";
+"Reset this pane" = "Réinitialiser ce panneau";

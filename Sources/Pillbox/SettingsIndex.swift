@@ -14,4 +14,18 @@ extension SettingsPane {
         .about: ["About", "Privacy", "Check for updates automatically", "Include beta versions", "Source code and releases", "Updates", "Diagnostics", "Recent logs", "Report a problem"],
         .permissions: ["Permissions", "Accessibility", "Input Monitoring", "Screen Recording", "Full Disk Access", "Calendars", "Reminders", "Location", "Camera", "Automation: Spotify", "Automation: Music", "Automation: Messages", "Automation: browsers", "Bluetooth", "Microphone", "Speech Recognition", "Keyboard lock, window snapping and paste from the clipboard.", "Keystroke display and activity counter.", "Window watch, Ask about screen, screen recording and QR codes.", "Notification mirror and Focus island.", "Next event on Home.", "Reminders tab.", "Local weather.", "Camera mirror.", "Now playing and controls (open Spotify first).", "Now playing and controls (open Music first).", "Dictation and voice following.", "Turns speech into text for dictation and voice following.", "AirPods and headphones connecting, with their battery.", "Replies to messages from the island.", "Video speed in the front browser tab."],
     ]
+
+    /// The preferences each pane edits, read from its source: "Reset this pane" puts exactly these back to their defaults.
+    static let preferenceKeys: [SettingsPane: [String]] = [
+        .general: [Preferences.searchEngine.key, Preferences.appearance.key, Preferences.showMenuBarIcon.key],
+        .island: [Preferences.hoverOpen.key, Preferences.hoverDelay.key, Preferences.hideFromCapture.key, Preferences.hideEverywhere.key, Preferences.showMenuBarIcon.key, Preferences.hideNotch.key, Preferences.peekOnHover.key, Preferences.hudStyle.key, Preferences.panelScale.key, Preferences.islandTheme.key, Preferences.doubleClickAction.key, Preferences.tripleClickAction.key, Preferences.shakeToOpen.key, Preferences.hideInFullScreen.key, Preferences.targetDisplay.key, Preferences.mascot.key, Preferences.lottiePath.key, Preferences.pillWidth.key, Preferences.idleClock.key, Preferences.hapticIsland.key, Preferences.idleCollapse.key, Preferences.hidePointer.key, Preferences.hideWhileMirroring.key],
+        .tabs: [Preferences.hideMenuBarIcons.key, Preferences.menuBarCalendar.key],
+        .alerts: [Preferences.capsHUD.key, Preferences.downloadAlerts.key, Preferences.privacyIndicator.key, Preferences.volumeHUD.key, Preferences.keystrokeHUD.key, Preferences.brightnessHUD.key, Preferences.extraBrightness.key, Preferences.focusIsland.key, Preferences.callIsland.key, Preferences.usageAlert.key, Preferences.notificationIsland.key, Preferences.breakReminder.key, Preferences.buildIsland.key, Preferences.screenshotShelf.key, Preferences.driveEject.key, Preferences.shortcutsOnly.key, Preferences.fullCharge.key, Preferences.drainAlert.key, Preferences.bluetoothIsland.key, Preferences.activityCounter.key, Preferences.eyeBreaks.key, Preferences.codeIsland.key, Preferences.brewUpdates.key, Preferences.copilotUsage.key],
+        .audio: [Preferences.liveSpectrum.key, Preferences.systemEQ.key, Preferences.eqBass.key, Preferences.eqMid.key, Preferences.eqTreble.key, Preferences.typingProfile.key, Preferences.typingVolume.key, Preferences.ambientKind.key, Preferences.ambientVolume.key],
+        .windows: [Preferences.hyperKey.key, Preferences.hyperEscape.key, Preferences.doubleTapOpen.key, Preferences.snapZones.key, Preferences.desktopWidgets.key, Preferences.windowDrag.key, Preferences.copyStack.key, Preferences.swipeSpaces.key],
+        .integrations: [Preferences.devAPI.key],
+        .shortcuts: [Preferences.doubleTapOpen.key, Preferences.copyStack.key, Preferences.dictationShortcut.key],
+        .about: [Preferences.autoUpdate.key, Preferences.betaUpdates.key],
+        .permissions: [],
+    ]
 }

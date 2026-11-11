@@ -881,3 +881,6 @@ Video speed in the front browser tab.	Velocidad del vídeo en la pestaña activa
 Both are off: the island and the menu bar icon. Launch Pillbox again to open Settings.	Ambos están desactivados: la isla y el icono de la barra de menús. Vuelve a abrir Pillbox para ajustar los ajustes.	Beide sind deaktiviert: die Insel und das Menüleistensymbol. Starte Pillbox neu, um die Einstellungen zu öffnen.
 Pillbox %@ beta is available	La beta de Pillbox %@ está disponible	Pillbox %@ Beta ist verfügbar
 Search notifications	Buscar en las notificaciones	In Benachrichtigungen suchen
+Reset %@?	¿Restablecer %@?	%@ zurücksetzen?
+Its settings go back to their defaults. Your data is kept.	Sus ajustes vuelven a sus valores predeterminados. Tus datos se conservan.	Die Einstellungen werden auf ihre Standardwerte zurückgesetzt. Deine Daten bleiben erhalten.
+Reset this pane	Restablecer este panel	Diesen Bereich zurücksetzen
