@@ -36,7 +36,7 @@ final class KeystrokeHUD {
         // Typed text accumulates for a moment; shortcuts replace each other.
         if isShortcut || Date().timeIntervalSince(last) > 1.2 || buffer.count > 14 { buffer = label } else { buffer += label }
         last = Date()
-        NotchModel.shared.show(Activity(symbol: "keyboard", title: buffer, tint: .white, duration: 1.4))
+        NotchModel.shared.show(Activity(symbol: "keyboard", title: buffer, tint: .white, duration: 1.4, priority: .low))
     }
 
     private static func name(for e: NSEvent) -> String {

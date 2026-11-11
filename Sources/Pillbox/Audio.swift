@@ -144,7 +144,7 @@ final class AudioControl: ObservableObject {
         guard v != lastVolume || muted else { return }
         lastVolume = v
         let symbol = muted || v == 0 ? "speaker.slash.fill" : v < 0.34 ? "speaker.wave.1.fill" : v < 0.67 ? "speaker.wave.2.fill" : "speaker.wave.3.fill"
-        NotchModel.shared.show(Activity(symbol: symbol, title: "Volume", tint: .white, progress: muted ? 0 : Double(v), duration: 1.4))
+        NotchModel.shared.show(Activity(symbol: symbol, title: "Volume", tint: .white, progress: muted ? 0 : Double(v), duration: 1.4, priority: .low))
     }
 }
 

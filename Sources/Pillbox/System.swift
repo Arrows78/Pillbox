@@ -96,7 +96,7 @@ final class BatteryService: ObservableObject {
         if !newPlugged || newLevel < target - 2 { notifiedFull = false }
         // Once when the level drops to 10 %, then at each further point lost: never again on every power event.
         if !newPlugged && newLevel <= 10 && (oldLevel > 10 || newLevel < oldLevel) {
-            NotchModel.shared.show(Activity(symbol: "battery.0", title: "Low battery", subtitle: "\(newLevel)%", tint: .red, duration: 5))
+            NotchModel.shared.show(Activity(symbol: "battery.0", title: "Low battery", subtitle: "\(newLevel)%", tint: .red, duration: 5, priority: .high))
         }
     }
 }
@@ -302,7 +302,7 @@ enum Tools {
                     capsOn = on
                     guard UserDefaults.standard.object(forKey: "capsHUD") as? Bool ?? true else { return }
                     NotchModel.shared.show(Activity(symbol: on ? "capslock.fill" : "capslock", title: on ? "Caps Lock on" : "Caps Lock off",
-                                                    tint: on ? .yellow : .white, duration: 1.5))
+                                                    tint: on ? .yellow : .white, duration: 1.5, priority: .low))
                 }
             }
         }

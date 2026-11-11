@@ -65,6 +65,10 @@ struct Activity: Identifiable {
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
     var duration: TimeInterval = 3
+    /// Low: a passing HUD (volume, caps lock) that is dropped rather than queued behind something else.
+    /// High: goes to the front of the queue and replaces a HUD on screen (low battery, a call, a code).
+    var priority: Priority = .normal
+    enum Priority { case low, normal, high }
 }
 
 /// A permission request from a coding agent, answered with Allow or Deny.

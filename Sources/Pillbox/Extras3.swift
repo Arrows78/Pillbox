@@ -13,13 +13,22 @@ struct ActivityQueue {
 
     private static func same(_ a: Activity, _ b: Activity) -> Bool { a.title == b.title && a.symbol == b.symbol }
 
-    /// True when the visible island changed.
+    /// True when the visible island changed. Importance decides the order: a high one jumps the queue and replaces a HUD
+    /// on screen, a low one (volume, caps lock) is dropped when something else is showing rather than shown late.
     mutating func push(_ a: Activity) -> Bool {
         guard let c = current else { current = a; return true }
         if Self.same(c, a) { current = a; return true }
         if let i = pending.firstIndex(where: { Self.same($0, a) }) { pending[i] = a; return false }
-        pending.append(a)
-        if pending.count > Self.cap { pending.removeFirst() }
+        switch a.priority {
+        case .low: return false
+        case .high:
+            if c.priority == .low { current = a; return true }
+            pending.insert(a, at: 0)
+            if pending.count > Self.cap { pending.remove(at: 1) }   // the oldest of the others goes
+        case .normal:
+            pending.append(a)
+            if pending.count > Self.cap { pending.removeFirst() }   // the newest are kept
+        }
         return false
     }
 

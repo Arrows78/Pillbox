@@ -31,7 +31,7 @@ final class BrightnessHUD {
         guard UserDefaults.standard.object(forKey: "brightnessHUD") as? Bool ?? true, let v = DisplayBrightness.current() else { return }
         defer { last = v }
         guard let l = last, abs(l - v) > 0.01 else { return }
-        NotchModel.shared.show(Activity(symbol: v < 0.5 ? "sun.min.fill" : "sun.max.fill", title: "Brightness", tint: .yellow, progress: Double(v), duration: 1.4))
+        NotchModel.shared.show(Activity(symbol: v < 0.5 ? "sun.min.fill" : "sun.max.fill", title: "Brightness", tint: .yellow, progress: Double(v), duration: 1.4, priority: .low))
     }
 }
 
@@ -151,7 +151,7 @@ final class CallMonitor: ObservableObject {
         switch (call, name) {
         case (nil, let n?):
             call = (n, Date())
-            NotchModel.shared.show(Activity(symbol: "phone.fill", title: "In a call", subtitle: n, tint: .green, duration: 3))
+            NotchModel.shared.show(Activity(symbol: "phone.fill", title: "In a call", subtitle: n, tint: .green, duration: 3, priority: .high))
         case (let c?, nil) where c.name != "": call = nil
         default: break
         }
