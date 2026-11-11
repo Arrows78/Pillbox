@@ -24,11 +24,17 @@ final class MusicService: ObservableObject {
     @Published var lyrics: [LyricLine] = []
     @Published var shuffling = false
     @Published var repeating = false
+    /// Apple Music's favourite state of the current track. Spotify's scripting interface has none.
+    @Published private(set) var favorited = false
 
     private let queue = DispatchQueue(label: "pillbox.applescript")
-    private var timer: Timer?
+    /// Moves the playhead on while a track plays. It runs only then, and asks the player again every
+    /// `resyncTicks` seconds to catch a seek made in the player itself.
+    private var ticker: Timer?
+    private var ticks = 0
+    static let resyncTicks = 15
+    private var observers: [NSObjectProtocol] = []
     private var trackKey = ""
-    private var lastPoll = Date()
 
     var hasTrack: Bool { player != nil && !title.isEmpty }
 
@@ -38,11 +44,54 @@ final class MusicService: ObservableObject {
     /// Where playback is at `date`: the last reading, moved on by the time since while playing, so word highlights stay smooth.
     func playhead(at date: Date) -> Double { position + (isPlaying ? max(0, date.timeIntervalSince(polledAt)) : 0) }
 
+    /// The notifications Spotify and Music post on every change of track, state or position.
+    nonisolated static let playerNotifications = ["com.spotify.client.PlaybackStateChanged", "com.apple.Music.playerInfo"]
+
+    /// Reads the players when they say something changed, instead of asking them every second.
     func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.poll() }
+        let distributed = DistributedNotificationCenter.default()
+        for name in Self.playerNotifications {
+            observers.append(distributed.addObserver(forName: Notification.Name(name), object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.poll() }
+            })
+        }
+        // A player that opens or quits posts nothing: its launch and its end are read from the workspace.
+        let workspace = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
+            observers.append(workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+                let id = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.bundleIdentifier
+                guard Self.isPlayer(id) else { return }
+                MainActor.assumeIsolated { self?.poll() }
+            })
         }
         poll()
+    }
+
+    nonisolated static func isPlayer(_ bundleID: String?) -> Bool {
+        [MusicApp.spotify.bundleID, MusicApp.music.bundleID].contains(bundleID ?? "")
+    }
+
+    /// Starts or stops the playhead ticker so it runs exactly while a track plays.
+    private func updateTicker() {
+        if isPlaying, ticker == nil {
+            ticks = 0
+            ticker = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+                MainActor.assumeIsolated { self?.tick() }
+            }
+        } else if !isPlaying, let t = ticker {
+            t.invalidate(); ticker = nil
+        }
+    }
+
+    private func tick() {
+        ticks += 1
+        if ticks % Self.resyncTicks == 0 { poll(); return }
+        position = Self.advanced(position, by: 1, duration: duration)
+    }
+
+    /// The playhead one step later, held at the end of the track.
+    nonisolated static func advanced(_ position: Double, by step: Double, duration: Double) -> Double {
+        duration > 0 ? min(position + step, duration) : position + step
     }
 
     private func running(_ p: MusicApp) -> Bool {
@@ -60,7 +109,8 @@ final class MusicService: ObservableObject {
     }
 
     private func clear() {
-        if player != nil { player = nil; title = ""; artist = ""; isPlaying = false; artwork = nil; lyrics = []; trackKey = "" }
+        if player != nil { player = nil; title = ""; artist = ""; isPlaying = false; favorited = false; artwork = nil; lyrics = []; trackKey = "" }
+        updateTicker()
     }
 
     /// `probing`: this read only checks whether the other player is playing; it changes nothing unless it is.
@@ -70,14 +120,19 @@ final class MusicService: ObservableObject {
             script = """
             tell application "Spotify"
               if player state is stopped then return {"stopped"}
-              return {player state as text, name of current track, artist of current track, album of current track, (duration of current track) / 1000, player position, artwork url of current track, shuffling as text, repeating as text}
+              return {player state as text, name of current track, artist of current track, album of current track, (duration of current track) / 1000, player position, artwork url of current track, shuffling as text, repeating as text, "false"}
             end tell
             """
         } else {
             script = """
             tell application "Music"
               if player state is stopped then return {"stopped"}
-              return {player state as text, name of current track, artist of current track, album of current track, duration of current track, player position, "", shuffle enabled as text, ((song repeat as text) is not "off") as text}
+              -- "favorited" is recent; an older Music without it still answers, with no favourite.
+              set fav to "false"
+              try
+                set fav to (favorited of current track) as text
+              end try
+              return {player state as text, name of current track, artist of current track, album of current track, duration of current track, player position, "", shuffle enabled as text, ((song repeat as text) is not "off") as text, fav}
             end tell
             """
         }
@@ -105,7 +160,7 @@ final class MusicService: ObservableObject {
         let playing = str(1) == "playing"
         // A probe that finds the other player silent leaves the state alone, so the shown player does not flip every poll.
         if probing && !playing { return }
-        shuffling = str(8) == "true"; repeating = str(9) == "true"
+        shuffling = str(8) == "true"; repeating = str(9) == "true"; favorited = str(10) == "true"
         if !playing, let fallback, !isPlaying, player != fallback {
             // Prefer whichever app is actually playing: its answer decides, this one's state is still written below.
             fetch(fallback, fallback: nil, probing: true)
@@ -114,6 +169,8 @@ final class MusicService: ObservableObject {
         isPlaying = playing
         duration = num(5)
         position = num(6)
+        ticks = 0
+        updateTicker()
         let key = "\(p.rawValue)|\(str(2))|\(str(3))"
         if key != trackKey {
             trackKey = key
@@ -211,11 +268,13 @@ final class MusicService: ObservableObject {
         command(p == .spotify ? "set repeating to \(repeating)" : "set song repeat to \(repeating ? "all" : "off")")
     }
 
-    /// Apple Music only: Spotify's scripting interface has no favourite.
+    /// Apple Music only: Spotify's scripting interface has no favourite. Adds the track, or removes it when it is one.
     func favorite() {
         guard player == .music else { return }
-        command("set favorited of current track to true")
-        NotchModel.shared.show(Activity(symbol: "heart.fill", title: localized("Added to favorites"), tint: .pink, duration: 1.5))
+        favorited.toggle()
+        command("set favorited of current track to \(favorited)")
+        NotchModel.shared.show(Activity(symbol: favorited ? "heart.fill" : "heart.slash", title: localized(favorited ? "Added to favorites" : "Removed from favorites"),
+                                        tint: .pink, duration: 1.5))
     }
 
     func seek(to t: Double) { position = t; command("set player position to \(t)") }

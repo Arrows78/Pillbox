@@ -45,7 +45,7 @@ struct MusicTab: View {
                         Spacer()
                         Button { music.toggleShuffle() } label: { Image(systemName: "shuffle").foregroundStyle(music.shuffling ? Color.accentColor : .white.opacity(0.6)) }.accessibilityLabel("Shuffle").accessibilityAddTraits(music.shuffling ? .isSelected : [])
                         Button { music.toggleRepeat() } label: { Image(systemName: "repeat").foregroundStyle(music.repeating ? Color.accentColor : .white.opacity(0.6)) }.accessibilityLabel("Repeat").accessibilityAddTraits(music.repeating ? .isSelected : [])
-                        if music.player == .music { Button { music.favorite() } label: { Image(systemName: "heart").foregroundStyle(.white.opacity(0.6)) }.accessibilityLabel("Favorite") }
+                        if music.player == .music { Button { music.favorite() } label: { Image(systemName: music.favorited ? "heart.fill" : "heart").foregroundStyle(music.favorited ? Color.pink : .white.opacity(0.6)) }.accessibilityLabel("Favorite").accessibilityAddTraits(music.favorited ? .isSelected : []) }
                         if AppVolumeService.supported { Button { mixer.showing = true } label: { Image(systemName: "slider.horizontal.3").foregroundStyle(.white.opacity(0.6)) }.accessibilityLabel("App volume").hoverTip(localized("App volume")) }
                     }.buttonStyle(.plain).font(.system(size: 16))
                 }

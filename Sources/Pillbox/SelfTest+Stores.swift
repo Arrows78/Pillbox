@@ -185,6 +185,15 @@ extension SelfTest {
         check("island history: keeps the last \(IslandHistory.limit), newest first", history.entries.count == IslandHistory.limit && history.entries.first?.title == "29")
     }
 
+    /// Music follows the players' notifications, and moves the playhead itself between them.
+    static func musicEvents() {
+        check("music: the playhead moves on by the step", MusicService.advanced(10, by: 1, duration: 200) == 11)
+        check("music: the playhead stops at the end of the track", MusicService.advanced(199.5, by: 1, duration: 200) == 200)
+        check("music: no duration, no end", MusicService.advanced(5, by: 1, duration: 0) == 6)
+        check("music: only Spotify and Music wake the service", MusicService.isPlayer("com.spotify.client") && MusicService.isPlayer("com.apple.Music") && !MusicService.isPlayer("com.apple.Safari") && !MusicService.isPlayer(nil))
+        check("music: listens to both players", MusicService.playerNotifications.count == 2)
+    }
+
     /// The tab order keeps Home first, keeps every tab once, and places tabs it does not know yet at the end.
     static func tabOrder() {
         check("tab order: nothing stored is the usual order", Tab.ordered(from: nil) == Tab.allCases)
