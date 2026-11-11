@@ -24,6 +24,8 @@ final class MusicService: ObservableObject {
     @Published var lyrics: [LyricLine] = []
     @Published var shuffling = false
     @Published var repeating = false
+    /// The player's own volume, 0 to 100, set from the Music tab.
+    @Published private(set) var volume = 50
     /// Apple Music's favourite state of the current track. Spotify's scripting interface has none.
     @Published private(set) var favorited = false
 
@@ -150,7 +152,7 @@ final class MusicService: ObservableObject {
             script = """
             tell application "Spotify"
               if player state is stopped then return {"stopped"}
-              return {player state as text, name of current track, artist of current track, album of current track, (duration of current track) / 1000, player position, artwork url of current track, shuffling as text, repeating as text, "false"}
+              return {player state as text, name of current track, artist of current track, album of current track, (duration of current track) / 1000, player position, artwork url of current track, shuffling as text, repeating as text, "false", sound volume as text}
             end tell
             """
         } else {
@@ -162,7 +164,7 @@ final class MusicService: ObservableObject {
               try
                 set fav to (favorited of current track) as text
               end try
-              return {player state as text, name of current track, artist of current track, album of current track, duration of current track, player position, "", shuffle enabled as text, ((song repeat as text) is not "off") as text, fav}
+              return {player state as text, name of current track, artist of current track, album of current track, duration of current track, player position, "", shuffle enabled as text, ((song repeat as text) is not "off") as text, fav, sound volume as text}
             end tell
             """
         }
@@ -190,7 +192,7 @@ final class MusicService: ObservableObject {
         let playing = str(1) == "playing"
         // A probe that finds the other player silent leaves the state alone, so the shown player does not flip every poll.
         if probing && !playing { return }
-        shuffling = str(8) == "true"; repeating = str(9) == "true"; favorited = str(10) == "true"
+        shuffling = str(8) == "true"; repeating = str(9) == "true"; favorited = str(10) == "true"; volume = Int(str(11)) ?? volume
         if !playing, let fallback, !isPlaying, player != fallback {
             // Prefer whichever app is actually playing: its answer decides, this one's state is still written below.
             fetch(fallback, fallback: nil, probing: true)
@@ -316,6 +318,15 @@ final class MusicService: ObservableObject {
     }
 
     func seek(to t: Double) { position = t; command("set player position to \(t)") }
+
+    /// Sets the player's sound volume, 0 to 100.
+    nonisolated static func clampVolume(_ v: Int) -> Int { min(max(v, 0), 100) }
+
+    func setVolume(_ v: Int) {
+        let clamped = Self.clampVolume(v)
+        volume = clamped
+        command("set sound volume to \(clamped)")
+    }
 
     private func command(_ c: String) {
         guard let p = player else { return }

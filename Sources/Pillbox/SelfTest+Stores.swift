@@ -231,6 +231,11 @@ extension SelfTest {
         _ = cal
     }
 
+    /// The volume the Music tab sends is kept between 0 and 100.
+    static func musicVolume() {
+        check("music volume: kept between 0 and 100", MusicService.clampVolume(-5) == 0 && MusicService.clampVolume(130) == 100 && MusicService.clampVolume(40) == 40)
+    }
+
     /// Copying a shelf item puts its file on the pasteboard, not its path text.
     static func shelfCopyFile() {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("shelf-copy-\(UUID().uuidString).txt")

@@ -31,6 +31,11 @@ struct MusicTab: View {
                     }
                     Spacer(minLength: 0)
                     ProgressBar(value: music.position, total: music.duration) { music.seek(to: $0) }
+                    HStack(spacing: 6) {
+                        Image(systemName: music.volume == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill").font(.system(size: 9)).foregroundStyle(.secondary)
+                        Slider(value: Binding(get: { Double(music.volume) }, set: { music.setVolume(Int($0.rounded())) }), in: 0...100)
+                            .controlSize(.mini).accessibilityLabel(Text("Volume"))
+                    }
                     HStack {
                         Text(TimerService.format(music.position)); Spacer(); Text(TimerService.format(music.duration))
                     }.font(.system(size: 9, design: .monospaced)).foregroundStyle(.secondary)
