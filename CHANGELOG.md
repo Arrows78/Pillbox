@@ -4,6 +4,56 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.6.0] - 2026-11-11
+
+### Added
+
+- **tabs**: Choose which tabs show in the island
+- **island**: Idle clock, haptics, auto-close, pointer hiding, mirroring and desktop swipes
+- **wellbeing**: Eye breaks, ambient noise during focus and typing sounds
+- **updates**: In-place updates, Homebrew outdated island, clipboard import and verification codes
+- **island**: Queue HUDs by importance
+- **calendar**: Read .ics subscriptions and choose calendars
+- **ai-usage**: Add Gemini CLI, OpenCode, Cursor and Copilot
+- **notifications**: Filter mirrored notifications by app
+- **updates**: Offer beta versions on request
+- **palette**: Control the keyboard backlight
+- **display**: Extra brightness on XDR screens
+- **palette**: Set playback speed of videos in the front browser
+- **windows**: Move and resize windows with ⌃⌥ and the mouse
+- **notifications**: Reply to texts from the notification list
+- **palette**: Brightness for external displays over DDC/CI
+- **audio**: System equalizer with bass, mid and treble
+- **lyrics**: Highlight synced lyrics word by word
+- **mixer**: Three-band equalizer per app
+- **island**: Hide everywhere, not only from captures
+- **mixer**: Boost an app up to 150 %
+- **display**: Extra brightness steps back by itself
+- **menu**: Every palette action and paired Bluetooth devices in the menu bar
+- **ai-usage**: Choose and order the provider sections
+- **screenshots**: Numbered steps and a loupe in the markup
+- **updates**: Show the release notes in the update alert
+
+### Fixed
+
+- **battery**: Show the low battery island once per point lost, not on every power event
+- **settings**: Centre the settings window under the island
+- **menu**: Command-Q and Command-comma work while Pillbox is active
+- **island**: Clicks reach the windows below outside the island
+- **weather**: Start at launch without relying on the cached permission status
+- **calendar,reminders**: Pick up access granted after launch
+- **permissions**: Read the location status from the long-lived manager
+- **island**: Show a pinned stock on the resting pill
+- **calendar**: Say when a subscribed link could not be loaded
+- **music,stocks,weather**: Explain a missing permission or failed request
+- **hyper,cleaning**: Say when the keyboard tap cannot start
+- **keys**: Ask for Input Monitoring and keep retrying the activity counter
+- **spectrum**: Say when System Audio Recording is missing
+- **island**: Report unsupported pointer hiding and find spaces in SkyLight
+- **shortcuts**: Stop a hung shortcut after two minutes
+- **messages**: Send to the number format Messages matches
+- **menu**: Run palette actions on the app that was in front
+
 ## [0.5.0] - 2026-11-09
 
 ### Added
@@ -91,6 +141,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.6.0]: https://github.com/Arrows78/Pillbox/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Arrows78/Pillbox/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Arrows78/Pillbox/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Arrows78/Pillbox/compare/v0.3.0...v0.3.1
