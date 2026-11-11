@@ -8,6 +8,8 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     @Published private(set) var symbol = "cloud.fill"
     @Published private(set) var summary = ""
     @Published private(set) var city = ""
+    /// Location is refused, so the Home tab can say why there is no weather.
+    @Published private(set) var denied = false
 
     private let manager = CLLocationManager()
     private var timer: Timer?
@@ -44,10 +46,15 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
         }
     }
 
-    nonisolated func locationManager(_ m: CLLocationManager, didFailWithError error: Error) {}
+    nonisolated func locationManager(_ m: CLLocationManager, didFailWithError error: Error) {
+        let refused = (error as? CLError)?.code == .denied
+        Task { @MainActor in self.denied = refused }
+    }
 
     nonisolated func locationManagerDidChangeAuthorization(_ m: CLLocationManager) {
-        if m.authorizationStatus == .authorized || m.authorizationStatus == .authorizedAlways { m.requestLocation() }
+        let status = m.authorizationStatus
+        if status == .authorized || status == .authorizedAlways { m.requestLocation() }
+        Task { @MainActor in self.denied = status == .denied || status == .restricted }
     }
 
     private func fetch(_ loc: CLLocation) {

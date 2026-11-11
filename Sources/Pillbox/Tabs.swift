@@ -23,6 +23,8 @@ struct HomeTab: View {
                 if let t = weather.temperature {
                     Label("\(t)° \(weather.summary)\(weather.city.isEmpty ? "" : " · " + weather.city)", systemImage: weather.symbol)
                         .font(.system(size: 11)).symbolRenderingMode(.multicolor).foregroundStyle(.secondary).lineLimit(1)
+                } else if weather.denied {
+                    Label("Weather needs Location access", systemImage: "location.slash").font(.system(size: 11)).foregroundStyle(.orange).lineLimit(1)
                 }
                 Spacer(minLength: 4)
                 NetworkLine(down: stats.down, up: stats.up, samples: stats.netHistory)
@@ -123,8 +125,8 @@ struct HomeNowPlaying: View {
             }
             .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
-                Text(verbatim: music.hasTrack ? music.title : L("Nothing playing")).font(.system(size: 13, weight: .semibold)).lineLimit(1).minimumScaleFactor(music.hasTrack ? 1 : 0.8)
-                Text(verbatim: music.hasTrack ? music.artist : L("Start Spotify or Apple Music")).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(music.hasTrack ? 1 : 2)
+                Text(verbatim: music.hasTrack ? music.title : L(music.automationDenied == nil ? "Nothing playing" : "Music is open")).font(.system(size: 13, weight: .semibold)).lineLimit(1).minimumScaleFactor(music.hasTrack ? 1 : 0.8)
+                Text(verbatim: music.hasTrack ? music.artist : (music.automationDenied.map { L("Allow Automation for %@ in Settings", $0.rawValue) } ?? L("Start Spotify or Apple Music"))).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(music.hasTrack ? 1 : 2)
                 if music.hasTrack {
                     ProgressBar(value: music.position, total: music.duration) { music.seek(to: $0) }.frame(height: 4).padding(.top, 4)
                 }
@@ -819,7 +821,7 @@ struct StocksTab: View {
                     if stocks.pinned == w.symbol { Image(systemName: "pin.fill").font(.system(size: 8)).foregroundStyle(.orange) }
                     if w.above != nil { Image(systemName: "bell.fill").font(.system(size: 8)).foregroundStyle(.yellow) }
                 }
-                Text(LocalizedStringKey(q?.state ?? "…")).font(.system(size: 9)).foregroundStyle(.secondary)
+                Text(LocalizedStringKey(q?.state ?? (stocks.failed.contains(w.symbol) ? "Unavailable" : "…"))).font(.system(size: 9)).foregroundStyle(.secondary)
             }.frame(width: 90, alignment: .leading)
             Sparkline(values: q?.series ?? [], color: up ? .green : .red).frame(height: 22)
             if let q {

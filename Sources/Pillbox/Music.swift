@@ -16,6 +16,8 @@ final class MusicService: ObservableObject {
     static let shared = MusicService()
 
     @Published var player: Player?
+    /// The player is open but Pillbox may not control it: Automation is off for it.
+    @Published private(set) var automationDenied: Player?
     @Published var title = ""
     @Published var artist = ""
     @Published var album = ""
@@ -97,9 +99,13 @@ final class MusicService: ObservableObject {
 
     private func apply(_ d: NSAppleEventDescriptor?, player p: Player, fallback: Player?) {
         guard let d, d.numberOfItems >= 6, d.atIndex(1)?.stringValue != "stopped" else {
-            if let fallback { fetch(fallback, fallback: nil) } else { clear() }
+            if let fallback { fetch(fallback, fallback: nil) } else {
+                automationDenied = running(p) ? p : nil
+                clear()
+            }
             return
         }
+        automationDenied = nil
         func str(_ i: Int) -> String { d.atIndex(i)?.stringValue ?? "" }
         func num(_ i: Int) -> Double { Double(str(i).replacingOccurrences(of: ",", with: ".")) ?? 0 }
         let playing = str(1) == "playing"

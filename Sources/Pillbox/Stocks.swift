@@ -21,6 +21,8 @@ final class StocksService: ObservableObject {
     static let shared = StocksService()
     @Published var watchlist: [Watch] = Store.load("stocks.json", as: [Watch].self) ?? [Watch(symbol: "AAPL"), Watch(symbol: "MSFT")]
     @Published var quotes: [String: Quote] = [:]
+    /// Symbols whose last request failed, so the row can say so instead of waiting forever.
+    @Published private(set) var failed: Set<String> = []
     @Published var pinned: String? = UserDefaults.standard.string(forKey: "pinnedStock") {
         didSet { UserDefaults.standard.set(pinned, forKey: "pinnedStock") }
     }
@@ -66,8 +68,12 @@ final class StocksService: ObservableObject {
               let url = URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(enc)?range=1d&interval=5m&includePrePost=true") else { return }
         var req = URLRequest(url: url); req.setValue("Mozilla/5.0", forHTTPHeaderField: "User-Agent")
         URLSession.shared.dataTask(with: req) { data, _, _ in
-            guard let data, let q = Self.parse(data, symbol: symbol) else { return }
-            DispatchQueue.main.async { MainActor.assumeIsolated { self.apply(q) } }
+            let q = data.flatMap { Self.parse($0, symbol: symbol) }
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    if let q { self.failed.remove(symbol); self.apply(q) } else { self.failed.insert(symbol) }
+                }
+            }
         }.resume()
     }
 
