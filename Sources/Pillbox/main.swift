@@ -16,7 +16,7 @@ MainActor.assumeIsolated {
     if CommandLine.arguments.contains("--usage") {   // prints the AI usage scan and how long it took
         for scan in [{ AIUsageService.scanClaude() }, { AIUsageService.scanCodex() }] {
             let t = Date(); let u = scan()
-            print(String(format: "%@: 5h %d, today %d, 7d %d, cache %d, limit %@  (%.2fs)", u.name, u.fiveHour, u.today, u.week, u.cacheRead,
+            print(String(format: "%@: 5h %ld, today %ld, 7d %ld, cache %ld, limit %@  (%.2fs)", u.name, u.fiveHour, u.today, u.week, u.cacheRead,
                          u.limitPercent.map { String(format: "%.0f%%", $0) } ?? "-", Date().timeIntervalSince(t)))
         }
         exit(0)

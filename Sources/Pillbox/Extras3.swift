@@ -38,6 +38,7 @@ struct ActivityQueue {
 
 // MARK: Island theme
 
+/// The island theme. The raw values are the strings stored under "islandTheme".
 enum IslandTheme: String, CaseIterable, Identifiable {
     case black, graphite, glass, accent
     var id: String { rawValue }
@@ -48,19 +49,19 @@ enum IslandTheme: String, CaseIterable, Identifiable {
 /// The collapsed pill is always black so it melts into the notch; the open panel follows the theme.
 struct IslandBackground: View {
     let expanded: Bool
-    @AppStorage("islandTheme") private var theme = "black"
+    @AppStorage("islandTheme") private var theme = IslandTheme.black
 
     var body: some View {
         let r: CGFloat = expanded ? 28 : 12
         let shape = UnevenRoundedRectangle(bottomLeadingRadius: r, bottomTrailingRadius: r)
         ZStack {
-            if expanded && theme == "glass" {
+            if expanded && theme == .glass {
                 shape.fill(.ultraThinMaterial)
                 shape.fill(Color.black.opacity(0.4))
             } else {
                 shape.fill(.black)
-                if expanded && theme == "graphite" { shape.fill(Color.white.opacity(0.10)) }
-                if expanded && theme == "accent" { shape.fill(Color.accentColor.opacity(0.30)) }
+                if expanded && theme == .graphite { shape.fill(Color.white.opacity(0.10)) }
+                if expanded && theme == .accent { shape.fill(Color.accentColor.opacity(0.30)) }
             }
         }
         .overlay {
@@ -99,17 +100,30 @@ enum PillAction: String, CaseIterable, Identifiable {
 
 /// Invisible layer over the collapsed pill: double and triple clicks run the configured actions, right click opens a menu.
 struct PillGestures: View {
+    /// Taps in a row. One tap gesture counts them, so a triple click does not also fire the double-click action.
+    @State private var taps = 0
+
     var body: some View {
         Color.clear.contentShape(Rectangle())
-            .onTapGesture(count: 3) { PillAction.configured("tripleClickAction").run() }
-            .onTapGesture(count: 2) { PillAction.configured("doubleClickAction").run() }
+            .onTapGesture {
+                taps += 1
+                let count = taps
+                Task { @MainActor in
+                    // The run of taps ends once a double-click interval passes without another tap.
+                    try? await Task.sleep(nanoseconds: UInt64(NSEvent.doubleClickInterval * 1_000_000_000))
+                    guard taps == count else { return }
+                    taps = 0
+                    if count == 2 { PillAction.configured("doubleClickAction").run() }
+                    else if count >= 3 { PillAction.configured("tripleClickAction").run() }
+                }
+            }
             .contextMenu {
                 if ScreenRecorder.shared.recording { Button("Stop recording") { ScreenRecorder.shared.stop() } }
-                Button("Command palette") { PaletteController.shared.toggle() }
-                Button("Toggle keep awake") { CaffeineService.shared.toggle() }
-                Button("Play / pause music") { MusicService.shared.playPause() }
+                ForEach(PillAction.allCases.filter { $0 == .palette || $0 == .keepAwake || $0 == .playPause }) { a in
+                    Button(a.title) { a.run() }
+                }
                 Divider()
-                Button("Settings") { SettingsWindow.show() }
+                Button(PillAction.settings.title) { PillAction.settings.run() }
                 Button("Quit Pillbox") { NSApp.terminate(nil) }
             }
     }
@@ -126,21 +140,18 @@ struct QuickAction: Identifiable, Codable, Equatable {
 }
 
 enum ActionRunner {
-    /// Runs a command with the login shell; killed after `timeout` (status 124, like coreutils `timeout`).
+    /// URL schemes for web apps, and for plain links (which also allow mail and phone).
+    static let webSchemes: Set<String> = ["http", "https"]
+    static let linkSchemes = webSchemes.union(["mailto", "tel"])
+
+    /// Runs a command with the login shell; stopped after `timeout` (status 124, like coreutils `timeout`).
     nonisolated static func runShell(_ command: String, timeout: TimeInterval = 15) -> (status: Int32, output: String) {
-        let p = Process(); p.executableURL = URL(fileURLWithPath: "/bin/zsh"); p.arguments = ["-c", command]
-        let pipe = Pipe(); p.standardOutput = pipe; p.standardError = pipe
-        guard (try? p.run()) != nil else { return (127, "") }
-        var timedOut = false
-        let kill = DispatchWorkItem { timedOut = true; p.terminate() }
-        DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: kill)
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        p.waitUntilExit(); kill.cancel()
-        return (timedOut ? 124 : p.terminationStatus, String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
+        let r = ProcessRunner.run("/bin/zsh", ["-c", command], timeout: timeout)
+        return (r.status, r.output.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     /// Only plain web and mail links: never `file:` or `javascript:`.
-    nonisolated static func url(_ s: String, allowed: Set<String> = ["http", "https", "mailto", "tel"]) -> URL? {
+    nonisolated static func url(_ s: String, allowed: Set<String> = ActionRunner.linkSchemes) -> URL? {
         let t = s.trimmingCharacters(in: .whitespaces)
         guard let u = URL(string: t.contains("://") || t.hasPrefix("mailto:") || t.hasPrefix("tel:") ? t : "https://" + t),
               let scheme = u.scheme?.lowercased(), allowed.contains(scheme) else { return nil }
@@ -156,7 +167,7 @@ final class QuickActionsStore: ObservableObject {
     func add(name: String, kind: QuickAction.Kind, value: String) -> Bool {
         let n = name.trimmingCharacters(in: .whitespaces), v = value.trimmingCharacters(in: .whitespaces)
         guard !n.isEmpty, !v.isEmpty else { return false }
-        if kind != .shell, ActionRunner.url(v, allowed: kind == .web ? ["http", "https"] : ["http", "https", "mailto", "tel"]) == nil { return false }
+        if kind != .shell, ActionRunner.url(v, allowed: kind == .web ? ActionRunner.webSchemes : ActionRunner.linkSchemes) == nil { return false }
         actions.append(QuickAction(name: n, kind: kind, value: v)); save(); return true
     }
 
@@ -178,7 +189,7 @@ final class QuickActionsStore: ObservableObject {
                 }
             }
         case .url: if let u = ActionRunner.url(a.value) { NotchModel.shared.collapse(); NSWorkspace.shared.open(u) }
-        case .web: if let u = ActionRunner.url(a.value, allowed: ["http", "https"]) { WebApps.open(name: a.name, url: u) }
+        case .web: if let u = ActionRunner.url(a.value, allowed: ActionRunner.webSchemes) { WebApps.open(name: a.name, url: u) }
         }
     }
 }
@@ -243,16 +254,26 @@ struct QuickActionsEditor: View {
     }
 }
 
-// MARK: Notification island (opt-in, needs Full Disk Access)
+// MARK: Copying text
 
-/// New Notification Center entries shown as islands, with the app's own wording.
+/// Puts plain text on the general pasteboard.
+enum TextCopy {
+    static func copy(_ text: String) {
+        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text, forType: .string)
+    }
+}
+
+// MARK: Notification island (needs Full Disk Access)
+
+/// New Notification Center entries shown as islands, with the app's own wording. The database is only read while
+/// one of its features is on: mirroring new notifications (opt-in), or verification codes (on by default).
 @MainActor
 final class NotificationFeed {
     static let shared = NotificationFeed()
     private var lastID: Int64?
     private var timer: Timer?
 
-    nonisolated static let codeKey = "codeIsland"
+    nonisolated static let codeIslandKey = "codeIsland"
 
     /// Items newer than `after`, oldest first.
     nonisolated static func fresh(_ items: [NotificationItem], after: Int64) -> [NotificationItem] {
@@ -272,8 +293,8 @@ final class NotificationFeed {
 
     func start() {
         timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
-            let codes = UserDefaults.standard.object(forKey: Self.codeKey) as? Bool ?? true
-            guard UserDefaults.standard.bool(forKey: "notificationIsland") || codes else { self?.lastID = nil; return }
+            let codes = UserDefaults.standard.object(forKey: Self.codeIslandKey) as? Bool ?? true
+            guard UserDefaults.standard.bool(forKey: "notificationIsland") || codes else { MainActor.assumeIsolated { self?.lastID = nil }; return }
             DispatchQueue.global(qos: .utility).async {
                 let items = NotificationReader.read(limit: 10)
                 DispatchQueue.main.async { MainActor.assumeIsolated { self?.handle(items) } }
@@ -285,11 +306,11 @@ final class NotificationFeed {
         guard let items else { return }
         defer { lastID = max(lastID ?? 0, items.map(\.id).max() ?? 0) }
         guard let last = lastID else { return }   // first read is only a baseline
-        let mirror = UserDefaults.standard.bool(forKey: "notificationIsland"), codes = UserDefaults.standard.object(forKey: Self.codeKey) as? Bool ?? true
+        let mirror = UserDefaults.standard.bool(forKey: "notificationIsland"), codes = UserDefaults.standard.object(forKey: Self.codeIslandKey) as? Bool ?? true
         for n in Self.fresh(items, after: last).suffix(3) {
             if codes, let code = Self.verificationCode(in: n.body) ?? Self.verificationCode(in: n.title) {
                 NotchModel.shared.show(Activity(symbol: "key.fill", title: L("Code %@", code), subtitle: n.title.isEmpty ? n.app : n.title, tint: .green,
-                                                actionTitle: "Copy", action: { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(code, forType: .string) }, duration: 12))
+                                                actionTitle: "Copy", action: { TextCopy.copy(code) }, duration: 12))
             } else if mirror {
                 NotchModel.shared.show(Activity(symbol: "bell.fill", title: n.title.isEmpty ? n.app : n.title, subtitle: n.body.isEmpty ? nil : String(n.body.prefix(90)), tint: .yellow, duration: 5))
             }

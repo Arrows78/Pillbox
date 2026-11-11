@@ -16,6 +16,8 @@ final class SpeechListener {
     /// Words heard in the current request, its formatted text, and whether the request is over.
     private var onResult: (([String], String, Bool) -> Void)?
     private var onLevel: ((Float) -> Void)?
+    /// Called when listening ends on its own (a request that failed at once, or no restart possible).
+    private var onStopped: (() -> Void)?
 
     static func requestAccess(_ done: @escaping @MainActor (Bool) -> Void) {
         SFSpeechRecognizer.requestAuthorization { speech in
@@ -35,23 +37,28 @@ final class SpeechListener {
         return min(max((20 * log10(rms) + 50) / 50, 0), 1)   // -50 dB ... 0 dB
     }
 
-    func start(onLevel: ((Float) -> Void)? = nil, onResult: @escaping ([String], String, Bool) -> Void) -> Bool {
+    func start(onLevel: ((Float) -> Void)? = nil, onStopped: (() -> Void)? = nil, onResult: @escaping ([String], String, Bool) -> Void) -> Bool {
         stop()
-        self.onResult = onResult; self.onLevel = onLevel
+        self.onResult = onResult; self.onLevel = onLevel; self.onStopped = onStopped
         return begin()
     }
 
     private func begin() -> Bool {
         guard let rec = SFSpeechRecognizer(locale: Locale.current) ?? SFSpeechRecognizer(), rec.isAvailable else { return false }
+        // A restarted request must not leave its entry in `active` behind.
+        if let old = request { Self.active[ObjectIdentifier(old)] = nil }
         ending = false; began = Date()
         let req = SFSpeechAudioBufferRecognitionRequest()
         req.shouldReportPartialResults = true
         if rec.supportsOnDeviceRecognition { req.requiresOnDeviceRecognition = true }
         request = req
         let input = engine.inputNode
+        // With no input device the format has a 0 Hz rate, and a tap on it raises an Objective-C exception.
+        let format = input.outputFormat(forBus: 0)
+        guard format.sampleRate > 0 else { request = nil; return false }
         input.removeTap(onBus: 0)
         let metered = onLevel != nil
-        input.installTap(onBus: 0, bufferSize: 2048, format: input.outputFormat(forBus: 0)) { buf, _ in
+        input.installTap(onBus: 0, bufferSize: 2048, format: format) { buf, _ in
             req.append(buf)
             guard metered, let ch = buf.floatChannelData else { return }
             let v = SpeechListener.level(UnsafeBufferPointer(start: ch[0], count: Int(buf.frameLength)))
@@ -70,7 +77,9 @@ final class SpeechListener {
                     self.onResult?(words, text, finished)
                     guard finished else { return }
                     // A request that fails at once (no recogniser, no input) is not restarted in a loop.
-                    if self.ending || Date().timeIntervalSince(self.began) < 1 { self.stop() } else { _ = self.begin() }
+                    if self.ending { self.stop() }
+                    else if Date().timeIntervalSince(self.began) < 1 { self.stop(); self.onStopped?() }
+                    else if !self.begin() { self.onStopped?() }
                 }
             }
         }
@@ -151,8 +160,8 @@ final class DictationService: ObservableObject {
         SpeechListener.requestAccess { [weak self] ok in
             guard let self else { return }
             guard ok else {
-                NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: "Microphone needed",
-                                                subtitle: "Also allow speech recognition", tint: .orange, actionTitle: "Settings", action: {
+                NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: L("Microphone needed"),
+                                                subtitle: L("Also allow speech recognition"), tint: .orange, actionTitle: "Settings", action: {
                     if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") { NSWorkspace.shared.open(u) }
                 }, duration: 6))
                 return
@@ -164,13 +173,14 @@ final class DictationService: ObservableObject {
     private func begin() {
         guard !active else { return }
         text = DictationText(); finishing = false
-        let ok = listener.start(onLevel: { [weak self] v in self?.meter.level = v }) { [weak self] _, t, finished in
+        // Listening that ends on its own delivers what was heard, so the island does not stay on "Listening…".
+        let ok = listener.start(onLevel: { [weak self] v in self?.meter.level = v }, onStopped: { [weak self] in self?.finish() }) { [weak self] _, t, finished in
             guard let self, self.active else { return }
             self.text.update(t, finished: finished)
             if finished, self.finishing { self.deliver() }
         }
         guard ok else {
-            NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: "Speech recognition is not available", tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "mic.slash.fill", title: L("Speech recognition is not available"), tint: .orange))
             return
         }
         NotchModel.shared.collapse()
@@ -205,11 +215,11 @@ final class DictationService: ObservableObject {
         let out = text.full
         end()
         guard !out.isEmpty else {
-            NotchModel.shared.show(Activity(symbol: "mic.fill", title: "Nothing was heard", tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "mic.fill", title: L("Nothing was heard"), tint: .orange)); return
         }
         ClipboardService.shared.paste(ClipItem(text: out))
         if !AXIsProcessTrusted() {
-            NotchModel.shared.show(Activity(symbol: "doc.on.clipboard.fill", title: "Dictation copied", subtitle: "Allow Accessibility to paste it for you", tint: .green))
+            NotchModel.shared.show(Activity(symbol: "doc.on.clipboard.fill", title: L("Dictation copied"), subtitle: L("Allow Accessibility to paste it for you"), tint: .green))
         }
     }
 

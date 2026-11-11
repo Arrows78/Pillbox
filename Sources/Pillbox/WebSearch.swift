@@ -27,8 +27,8 @@ enum WebSearch {
         let q = raw.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return nil }
         let parts = q.split(separator: " ", maxSplits: 1).map(String.init)
-        if parts.count == 2, parts[0].lowercased() == "tr", let u = URL(string: "https://translate.google.com/?sl=auto&tl=\(language)&op=translate&text=\(encode(parts[1]))") {
-            return ("Translate", u)
+        if parts.count == 2, parts[0].lowercased() == TranslateRoute.prefix, let u = URL(string: "https://translate.google.com/?sl=auto&tl=\(language)&op=translate&text=\(encode(parts[1]))") {
+            return (TranslateRoute.label, u)
         }
         var engine = engines.first { $0.key == defaultKey } ?? engines[0]
         var text = q

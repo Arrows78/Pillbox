@@ -43,7 +43,7 @@ final class StocksService: ObservableObject {
     }
 
     func remove(_ s: String) {
-        watchlist.removeAll { $0.symbol == s }; quotes[s] = nil
+        watchlist.removeAll { $0.symbol == s }; quotes[s] = nil; failed.remove(s)
         if pinned == s { pinned = nil }
         save()
     }
@@ -73,6 +73,8 @@ final class StocksService: ObservableObject {
             let q = data.flatMap { Self.parse($0, symbol: symbol) }
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
+                    // A response that arrives after the symbol was removed must not bring its quote or failure back.
+                    guard self.watchlist.contains(where: { $0.symbol == symbol }) else { return }
                     if let q { self.failed.remove(symbol); self.apply(q) } else { self.failed.insert(symbol) }
                 }
             }
@@ -99,15 +101,28 @@ final class StocksService: ObservableObject {
     }
 
     private func apply(_ q: Quote) {
-        quotes[q.symbol] = q
         guard let w = watchlist.first(where: { $0.symbol == q.symbol }) else { return }
-        if let a = w.above, q.price >= a, alerted.insert(q.symbol + "↑").inserted {
-            NotchModel.shared.show(Activity(symbol: "arrow.up.right.circle.fill", title: L("%@ above %@", q.symbol, String(format: "%.2f", a)),
-                                            subtitle: String(format: "%.2f", q.price), tint: .green, duration: 6))
+        quotes[q.symbol] = q
+        // Each crossing alerts once; the alert re-arms when the price comes back inside the band.
+        if let a = w.above {
+            if q.price >= a {
+                if alerted.insert(q.symbol + "↑").inserted {
+                    NotchModel.shared.show(Activity(symbol: "arrow.up.right.circle.fill", title: L("%@ above %@", q.symbol, String(format: "%.2f", a)),
+                                                    subtitle: String(format: "%.2f", q.price), tint: .green, duration: 6))
+                }
+            } else {
+                alerted.remove(q.symbol + "↑")
+            }
         }
-        if let b = w.below, q.price <= b, alerted.insert(q.symbol + "↓").inserted {
-            NotchModel.shared.show(Activity(symbol: "arrow.down.right.circle.fill", title: L("%@ below %@", q.symbol, String(format: "%.2f", b)),
-                                            subtitle: String(format: "%.2f", q.price), tint: .red, duration: 6))
+        if let b = w.below {
+            if q.price <= b {
+                if alerted.insert(q.symbol + "↓").inserted {
+                    NotchModel.shared.show(Activity(symbol: "arrow.down.right.circle.fill", title: L("%@ below %@", q.symbol, String(format: "%.2f", b)),
+                                                    subtitle: String(format: "%.2f", q.price), tint: .red, duration: 6))
+                }
+            } else {
+                alerted.remove(q.symbol + "↓")
+            }
         }
     }
 }

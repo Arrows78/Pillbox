@@ -53,19 +53,23 @@ final class MenuBarDetach {
         Set((UserDefaults.standard.stringArray(forKey: "detachedTabs") ?? []).compactMap(Tab.init(rawValue:)).filter(detachable.contains))
     }
 
+    static func setWanted(_ tabs: Set<Tab>) {
+        UserDefaults.standard.set(tabs.map(\.rawValue).sorted(), forKey: "detachedTabs")
+    }
+
     func apply() {
         let want = Self.wanted
         for (tab, item) in items where !want.contains(tab) { NSStatusBar.system.removeStatusItem(item); items[tab] = nil }
         for tab in want where items[tab] == nil {
             let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
             item.button?.image = NSImage(systemSymbolName: tab.symbol, accessibilityDescription: tab.title)
-            item.button?.target = self; item.button?.action = #selector(click(_:)); item.button?.identifier = NSUserInterfaceItemIdentifier(tab.rawValue)
+            item.button?.target = self; item.button?.action = #selector(click(_:)); item.button?.cell?.representedObject = tab
             items[tab] = item
         }
     }
 
     @objc private func click(_ sender: NSStatusBarButton) {
-        guard let raw = sender.identifier?.rawValue, let tab = Tab(rawValue: raw) else { return }
+        guard let tab = sender.cell?.representedObject as? Tab else { return }
         if popover.isShown, shown == tab { popover.performClose(nil); return }
         popover.contentViewController = NSHostingController(rootView: TabContent(tab: tab).padding(14).frame(width: 480, height: 260)
             .background(Color.black).environment(\.colorScheme, .dark).foregroundStyle(.white))
@@ -89,7 +93,7 @@ final class MenuBarCalendar {
         if mins <= 0 { return L("%@ · now", t) }
         if mins < 60 { return L("%@ · in %d min", t, mins) }
         let f = DateFormatter(); f.timeStyle = .short; f.dateStyle = .none
-        return "\(t) · \(f.string(from: start))"
+        return L("%@ · %@", t, f.string(from: start))
     }
 
     func apply() {
@@ -108,10 +112,8 @@ final class MenuBarCalendar {
 
     private func refresh() {
         guard let b = item?.button else { return }
-        if let e = CalendarService.shared.next {
-            b.image = NSImage(systemSymbolName: "calendar", accessibilityDescription: nil)
-            b.title = " " + Self.label(title: e.title, start: e.start, end: e.end)
-        } else { b.image = NSImage(systemSymbolName: "calendar", accessibilityDescription: nil); b.title = "" }
+        b.image = NSImage(systemSymbolName: "calendar", accessibilityDescription: nil)
+        if let e = CalendarService.shared.next { b.title = " " + Self.label(title: e.title, start: e.start, end: e.end) } else { b.title = "" }
     }
 
     @objc private func open() { NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Calendar.app")) }

@@ -12,7 +12,6 @@ enum Tab: String, CaseIterable, Identifiable {
     static var hidden: Set<Tab> { hidden(from: UserDefaults.standard.string(forKey: hiddenKey)) }
     /// The tabs shown in the bar, in their usual order: ⌘1–9, swipes and the palette follow this list.
     static var visible: [Tab] { let h = hidden; return allCases.filter { !h.contains($0) } }
-    var isHidden: Bool { Self.hidden.contains(self) }
     var title: String {
         switch self {
         case .home: L("Home")

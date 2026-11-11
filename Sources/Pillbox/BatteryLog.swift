@@ -1,6 +1,6 @@
 import AppKit
 import Charts
-import IOBluetooth
+@preconcurrency import IOBluetooth
 import IOKit
 import IOKit.ps
 import SwiftUI
@@ -36,13 +36,13 @@ enum BatteryMath {
     }
 
     /// Apple Silicon reports AppleRawMaxCapacity in mAh and MaxCapacity as a percentage; Intel reports MaxCapacity in mAh.
-    static func healthPercent(rawMax: Int?, max: Int?, design: Int?) -> Int? {
+    static func healthPercent(rawMax: Int?, max maximum: Int?, design: Int?) -> Int? {
         let pct: (Int, Int) -> Int = { min(Int((Double($0) / Double($1) * 100).rounded()), 100) }
         if let d = design, d > 0 {
             if let r = rawMax, r > 0 { return pct(r, d) }
-            if let m = max, m > 100 { return pct(m, d) }
+            if let m = maximum, m > 100 { return pct(m, d) }
         }
-        return max.flatMap { (1...100).contains($0) ? $0 : nil }
+        return maximum.flatMap { (1...100).contains($0) ? $0 : nil }
     }
 
     /// "3:20" for an estimate in seconds; nil while macOS is still computing it (negative values).
@@ -102,6 +102,8 @@ final class BatteryLog: ObservableObject {
     private var recent: [BatterySample] = []
     private var timer: Timer?
     private var lastWarning = Date.distantPast
+    /// When the health was last read; it is read again once an hour, whatever the number of samples.
+    private var lastHealth = Date.distantPast
 
     func start() {
         hasBattery = BatteryHealth.hasBattery()
@@ -119,10 +121,12 @@ final class BatteryLog: ObservableObject {
         if let last = history.last, Date().timeIntervalSince(last.t) < BatteryMath.interval - 30 { return }
         history = BatteryMath.trimmed(history + [BatterySample(t: Date(), level: b.level, charging: b.charging)])
         Store.save(history, Self.file)
-        if history.count % 12 == 0 { refreshHealth() }
+        // Time-based: the history is trimmed to 48 h, so its count stops growing and a count-based check would stall.
+        if Date().timeIntervalSince(lastHealth) >= 3600 { refreshHealth() }
     }
 
     private func refreshHealth() {
+        lastHealth = Date()
         DispatchQueue.global(qos: .utility).async {
             let h = BatteryHealth.read()
             DispatchQueue.main.async { MainActor.assumeIsolated { self.health = h } }
@@ -140,7 +144,7 @@ final class BatteryLog: ObservableObject {
         guard threshold > 0, !pluggedIn, now.timeIntervalSince(lastWarning) > 1800,
               let rate = BatteryMath.drainPer10Min(recent, now: now), rate >= Double(threshold) else { return }
         lastWarning = now
-        NotchModel.shared.show(Activity(symbol: "battery.25", title: "Battery draining fast",
+        NotchModel.shared.show(Activity(symbol: "battery.25", title: L("Battery draining fast"),
                                         subtitle: L("%d%% · −%d%%/10 min", level, Int(rate.rounded())), tint: .orange, duration: 5))
     }
 }
@@ -228,12 +232,14 @@ struct NetSparkline: View {
 
     var body: some View {
         Canvas { ctx, size in
-            guard samples.count > 1, let first = samples.first?.t else { return }
+            guard samples.count > 1 else { return }
+            // The window is the last 10 minutes ending now, so a short history sits at the right edge's past, not stretched.
+            let windowStart = Date().addingTimeInterval(-NetworkRate.historyWindow)
             let peak = max(samples.map { max($0.down, $0.up) }.max() ?? 0, 1_000)
             for (key, color) in [(\NetSample.down, Color.blue), (\NetSample.up, Color.orange)] {
                 var p = Path()
                 for (i, s) in samples.enumerated() {
-                    let x = CGFloat(s.t.timeIntervalSince(first) / NetworkRate.historyWindow) * size.width
+                    let x = CGFloat(s.t.timeIntervalSince(windowStart) / NetworkRate.historyWindow) * size.width
                     let y = size.height - CGFloat(s[keyPath: key] / peak) * (size.height - 1) - 0.5
                     i == 0 ? p.move(to: CGPoint(x: x, y: y)) : p.addLine(to: CGPoint(x: x, y: y))
                 }

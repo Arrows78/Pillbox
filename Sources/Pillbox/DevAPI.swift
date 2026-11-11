@@ -9,9 +9,8 @@ import Network
 @MainActor
 final class DevAPI {
     static let shared = DevAPI()
-    static let defaultPort: UInt16 = 9998
+    nonisolated static let defaultPort: UInt16 = 9998
     private var listener: NWListener?
-    private nonisolated(unsafe) static var tokenCache = ""
 
     static var token: String {
         if let t = UserDefaults.standard.string(forKey: "devAPIToken") { return t }
@@ -20,7 +19,7 @@ final class DevAPI {
     }
 
     func apply() {
-        Self.tokenCache = Self.token
+        _ = Self.token   // makes sure a token exists before a request can arrive
         UserDefaults.standard.bool(forKey: "devAPIEnabled") ? start() : stop()
     }
 
@@ -30,18 +29,42 @@ final class DevAPI {
         params.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: NWEndpoint.Port(rawValue: Self.defaultPort)!)
         guard let l = try? NWListener(using: params) else { return }
         l.newConnectionHandler = { c in DevAPI.handle(c) }
+        // A port that is already in use fails the listener after start, so the failure is handled here.
+        l.stateUpdateHandler = { state in
+            guard case .failed = state else { return }
+            DispatchQueue.main.async { MainActor.assumeIsolated { DevAPI.shared.listenerFailed(l) } }
+        }
         l.start(queue: .global(qos: .utility))
         listener = l
+    }
+
+    /// Forgets a listener that failed, so that the next `apply()` can start it again.
+    private func listenerFailed(_ l: NWListener) {
+        guard listener === l else { return }
+        listener = nil; l.cancel()
+        NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Local API could not start"), subtitle: L("Port %d is in use or blocked", Int(Self.defaultPort)), tint: .orange, duration: 6))
     }
 
     private func stop() { listener?.cancel(); listener = nil }
 
     // MARK: HTTP
 
-    static let maxRequest = 256 * 1024
+    nonisolated static let maxRequest = 256 * 1024
 
     /// Whether `buffer` holds a whole request, and where its body starts. Headers and body may arrive in
     /// separate TCP segments, so the caller keeps reading until `Content-Length` bytes of body are there.
+    /// Whether the request head carries `Authorization: Bearer <token>`. The header name and the scheme ignore case;
+    /// the token must match exactly. An empty token never matches.
+    nonisolated static func authorized(_ head: String, token: String) -> Bool {
+        guard !token.isEmpty else { return false }
+        return head.components(separatedBy: "\r\n").contains { line in
+            guard let colon = line.firstIndex(of: ":"),
+                  line[..<colon].trimmingCharacters(in: .whitespaces).lowercased() == "authorization" else { return false }
+            let parts = line[line.index(after: colon)...].trimmingCharacters(in: .whitespaces).split(separator: " ", maxSplits: 1)
+            return parts.count == 2 && parts[0].lowercased() == "bearer" && parts[1] == token
+        }
+    }
+
     nonisolated static func completeness(_ buffer: Data) -> (complete: Bool, bodyStart: Int?) {
         guard let r = buffer.range(of: Data("\r\n\r\n".utf8)) else { return (false, nil) }
         let head = String(decoding: buffer[..<r.lowerBound], as: UTF8.self).lowercased()
@@ -69,7 +92,7 @@ final class DevAPI {
 
     private nonisolated static func route(_ c: NWConnection, _ buf: Data, bodyStart: Int) {
         let head = String(decoding: buf[..<(bodyStart - 4)], as: UTF8.self), body = buf[bodyStart...]
-        guard head.contains("Authorization: Bearer \(tokenCache)"), !tokenCache.isEmpty else { return reply(c, 401, "unauthorized") }
+        guard authorized(head, token: UserDefaults.standard.string(forKey: "devAPIToken") ?? "") else { return reply(c, 401, "unauthorized") }
         let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
         if head.hasPrefix("POST /notify") { notify(c, json) }
         else if head.hasPrefix("POST /approve") { approve(c, json) }
@@ -106,7 +129,7 @@ final class DevAPI {
             guard let text = try? String(contentsOfFile: path, encoding: .utf8) else { return reply(c, 400, "unreadable") }
             let n = AgentTurn.tokens(in: text)
             DispatchQueue.main.async { MainActor.assumeIsolated {
-                NotchModel.shared.show(Activity(symbol: "sparkles", title: "Agent turn finished", subtitle: L("%@ tokens", AIUsageService.short(n)), tint: .orange, duration: 5))
+                NotchModel.shared.show(Activity(symbol: "sparkles", title: L("Agent turn finished"),subtitle: L("%@ tokens", AIUsageService.short(n)), tint: .orange, duration: 5))
                 reply(c, 200, "\(n)")
             } }
         }

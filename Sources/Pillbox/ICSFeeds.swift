@@ -96,7 +96,7 @@ final class ICSFeeds: ObservableObject {
         feeds.append(ICSFeed(name: n.isEmpty ? (Self.url(url)?.host ?? "Calendar") : n, url: url.trimmingCharacters(in: .whitespaces)))
         return true
     }
-    func remove(_ f: ICSFeed) { feeds.removeAll { $0.id == f.id }; fetched[f.id] = nil; rebuild() }
+    func remove(_ f: ICSFeed) { feeds.removeAll { $0.id == f.id }; fetched[f.id] = nil; failed.remove(f.id); rebuild() }
 
     func start() { schedule(); refresh() }
 

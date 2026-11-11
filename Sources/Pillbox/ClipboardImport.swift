@@ -1,6 +1,30 @@
 import AppKit
 import SQLite3
 
+/// Opens a private copy of another app's SQLite database, with its -wal file. Recent rows live in the WAL, which an
+/// immutable read skips, so the copy is what gets read. The caller closes `db` and deletes `folder`.
+enum SQLiteSnapshot {
+    nonisolated static func open(_ path: String) throws -> (db: OpaquePointer, folder: URL) {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("pillbox-db-\(UUID().uuidString)", isDirectory: true)
+        let copy = folder.appendingPathComponent("copy.sqlite")
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try FileManager.default.copyItem(atPath: path, toPath: copy.path)
+            if FileManager.default.fileExists(atPath: path + "-wal") { try FileManager.default.copyItem(atPath: path + "-wal", toPath: copy.path + "-wal") }
+        } catch {
+            try? FileManager.default.removeItem(at: folder)
+            throw ClipboardImport.ReadFailure.unreadable
+        }
+        var db: OpaquePointer?
+        // A writable open lets SQLite create its -shm index next to the copy; the copy is ours and is deleted afterwards.
+        guard sqlite3_open_v2(copy.path, &db, SQLITE_OPEN_READWRITE, nil) == SQLITE_OK, let handle = db else {
+            sqlite3_close(db); try? FileManager.default.removeItem(at: folder)
+            throw ClipboardImport.ReadFailure.unreadable
+        }
+        return (handle, folder)
+    }
+}
+
 /// Brings the text history of another clipboard manager into Pillbox (Maccy, Alfred). Read-only: their files are never changed.
 enum ClipboardImport {
     enum Source: String, CaseIterable, Identifiable {
@@ -23,17 +47,17 @@ enum ClipboardImport {
         }
     }
 
-    enum Outcome { case imported(Int), empty, unreadable, missing }
+    /// Why the history could not be read: the files are not accessible, or the database layout is not the one Pillbox knows.
+    enum ReadFailure: Error { case unreadable, changed }
 
     /// Items found in the database: text, date and whether the source had it pinned.
-    static func read(_ source: Source, path: String? = nil) -> [(text: String, date: Date, pinned: Bool)]? {
-        let file = path ?? source.path
-        guard FileManager.default.fileExists(atPath: file) else { return nil }
-        var db: OpaquePointer?
-        guard sqlite3_open_v2("file:\(file)?mode=ro&immutable=1", &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else { sqlite3_close(db); return nil }
-        defer { sqlite3_close(db) }
+    /// The database is read from a copy (see SQLiteSnapshot); the source files are never opened or changed.
+    static func read(_ source: Source, path: String? = nil) throws -> [(text: String, date: Date, pinned: Bool)] {
+        let snapshot = try SQLiteSnapshot.open(path ?? source.path)
+        let db = snapshot.db
+        defer { sqlite3_close(db); try? FileManager.default.removeItem(at: snapshot.folder) }
         var st: OpaquePointer?
-        guard sqlite3_prepare_v2(db, source.query, -1, &st, nil) == SQLITE_OK else { return nil }
+        guard sqlite3_prepare_v2(db, source.query, -1, &st, nil) == SQLITE_OK else { throw ReadFailure.changed }
         defer { sqlite3_finalize(st) }
         var out: [(String, Date, Bool)] = []
         while sqlite3_step(st) == SQLITE_ROW {
@@ -48,16 +72,17 @@ enum ClipboardImport {
     }
 
     /// Merges `items` into the history: texts already there keep their place, blank ones are skipped, the cap applies after.
+    /// Returns how many imported items the history kept after the cap.
     @MainActor static func merge(_ items: [(text: String, date: Date, pinned: Bool)], into clip: ClipboardService) -> Int {
-        var n = 0
+        var added: Set<UUID> = []
         for i in items.reversed() {
             let t = i.text
             guard !t.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, !clip.items.contains(where: { $0.text == t }) else { continue }
             var item = ClipItem(text: t); item.date = i.date; item.pinned = i.pinned
-            clip.items.append(item); n += 1
+            clip.items.append(item); added.insert(item.id)
         }
         clip.trim()
-        return n
+        return clip.items.filter { added.contains($0.id) }.count
     }
 
     @MainActor static func run(_ source: Source) {
@@ -65,16 +90,25 @@ enum ClipboardImport {
             NotchModel.shared.show(Activity(symbol: "doc.on.clipboard", title: L("No %@ history on this Mac", source.name), tint: .orange)); return
         }
         DispatchQueue.global(qos: .userInitiated).async {
-            let items = read(source)
+            let items: [(text: String, date: Date, pinned: Bool)]
+            do { items = try read(source) } catch {
+                let changed = (error as? ReadFailure) == .changed
+                DispatchQueue.main.async {
+                    MainActor.assumeIsolated {
+                        if changed {
+                            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not read %@'s history", source.name), subtitle: L("%@ changed its database format", source.name), tint: .orange, duration: 8))
+                        } else {
+                            NotchModel.shared.show(Activity(symbol: "lock.fill", title: L("Could not read %@'s history", source.name), subtitle: L("macOS keeps other apps' data private: allow Full Disk Access"), tint: .orange,
+                                                            actionTitle: "Settings", action: { PermissionsCenter.shared.openSettings(.fullDisk) }, duration: 8))
+                        }
+                    }
+                }
+                return
+            }
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    guard let items else {
-                        NotchModel.shared.show(Activity(symbol: "lock.fill", title: L("Could not read %@'s history", source.name), subtitle: "macOS keeps other apps' data private: allow Full Disk Access", tint: .orange,
-                                                        actionTitle: "Settings", action: { PermissionsCenter.shared.openSettings(.fullDisk) }, duration: 8))
-                        return
-                    }
                     let n = merge(items, into: ClipboardService.shared)
-                    ClipboardService.shared.persist()
+                    ClipboardService.shared.save()
                     NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: L("Imported %d item(s) from %@", n, source.name), tint: .green))
                 }
             }

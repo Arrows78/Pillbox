@@ -35,18 +35,14 @@ enum WindowSnap {
         guard AXUIElementCopyAttributeValue(ax, kAXFocusedWindowAttribute as CFString, &win) == .success, let window = win else { return }
         let w = window as! AXUIElement
 
-        var posRef: CFTypeRef?, sizeRef: CFTypeRef?
-        var pos = CGPoint.zero, size = CGSize.zero
-        if AXUIElementCopyAttributeValue(w, kAXPositionAttribute as CFString, &posRef) == .success { AXValueGetValue(posRef as! AXValue, .cgPoint, &pos) }
-        if AXUIElementCopyAttributeValue(w, kAXSizeAttribute as CFString, &sizeRef) == .success { AXValueGetValue(sizeRef as! AXValue, .cgSize, &size) }
-
-        // AX uses a top-left origin on the primary screen; AppKit is bottom-left.
-        let primaryH = NSScreen.screens.first?.frame.height ?? 0
-        let center = CGPoint(x: pos.x + size.width / 2, y: primaryH - (pos.y + size.height / 2))
+        // Without a readable frame there is no screen to measure from, so the window is left where it is.
+        guard let frame = AXWindow.frame(of: w) else { return }
+        // The centre decides which screen the window is on; AX and AppKit differ only in where y starts.
+        let center = AXWindow.flipped(CGPoint(x: frame.origin.x + frame.size.width / 2, y: frame.origin.y + frame.size.height / 2))
         let screen = NSScreen.screens.first { $0.frame.contains(center) } ?? NSScreen.main
         guard let vis = screen?.visibleFrame else { return }
-        let top = CGRect(x: vis.minX, y: primaryH - vis.maxY, width: vis.width, height: vis.height)
-        let target = zone.frame(in: top)
+        let visibleFrameTopLeft = AXWindow.flipped(vis)
+        let target = zone.frame(in: visibleFrameTopLeft)
         // Setting size, position, then size again is what makes apps with minimum sizes land correctly.
         func apply(_ f: CGRect) {
             var p = f.origin, s = f.size

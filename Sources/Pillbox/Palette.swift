@@ -23,14 +23,14 @@ final class PaletteModel: ObservableObject {
     @Published var selection = 0
 
     var commands: [PaletteCommand] {
-        let m = NotchModel.shared, t = TimerService.shared
+        let notch = NotchModel.shared, timers = TimerService.shared
         var list = Tab.visible.enumerated().map { i, tab in
-            PaletteCommand(localized: L("Go to %@", tab.title) + (i < 9 ? "  ⌘\(i + 1)" : ""), symbol: tab.symbol) { m.expand(tab) }
+            PaletteCommand(localized: L("Go to %@", tab.title) + (i < 9 ? "  ⌘\(i + 1)" : ""), symbol: tab.symbol) { notch.expand(tab) }
         }
         list += [
             PaletteCommand(title: CaffeineService.shared.active ? "Turn keep awake off" : "Turn keep awake on", symbol: "cup.and.saucer.fill") { CaffeineService.shared.toggle() },
-            PaletteCommand(title: "Start focus session", symbol: "timer") { t.mode = .focus; t.start() },
-            PaletteCommand(title: "Start stopwatch", symbol: "stopwatch") { t.mode = .stopwatch; t.start() },
+            PaletteCommand(title: "Start focus session", symbol: "timer") { timers.mode = .focus; timers.start() },
+            PaletteCommand(title: "Start stopwatch", symbol: "stopwatch") { timers.mode = .stopwatch; timers.start() },
             PaletteCommand(title: AudioControl.shared.micMuted ? "Unmute microphone" : "Mute microphone", symbol: "mic.slash.fill") { AudioControl.shared.toggleMic() },
             PaletteCommand(title: "Video speed 1×", symbol: "speedometer") { VideoSpeed.set(1) },
             PaletteCommand(title: "Video speed 1.5×", symbol: "speedometer") { VideoSpeed.set(1.5) },
@@ -69,7 +69,7 @@ final class PaletteModel: ObservableObject {
         list += SnapZone.allCases.map { z in PaletteCommand(localized: L("Snap window: %@", L(z.rawValue)), symbol: "rectangle.split.2x1") { WindowSnap.snap(z) } }
         let q = query.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else {
-            return list + CalcStore.history.entries.prefix(5).map { e in PaletteCommand(localized: e, symbol: "clock.arrow.circlepath") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(CalcHistory.result(of: e), forType: .string) } }
+            return list + CalcStore.history.entries.prefix(5).map { e in PaletteCommand(localized: e, symbol: "clock.arrow.circlepath") { Pasteboard.copy(CalcHistory.result(of: e)) } }
         }
         var out = list.filter { $0.title.localizedCaseInsensitiveContains(q) }
         out += ClipboardService.shared.items.filter { $0.searchable.localizedCaseInsensitiveContains(q) }.prefix(5).map { item in
@@ -80,7 +80,7 @@ final class PaletteModel: ObservableObject {
         }
         if let v = Self.evaluate(q) {
             out.insert(PaletteCommand(localized: "= \(v)  (" + L("copy") + ")", symbol: "equal.circle") {
-                NSPasteboard.general.clearContents(); NSPasteboard.general.setString(v, forType: .string)
+                Pasteboard.copy(v)
                 CalcStore.record(q, v)
             }, at: 0)
         }
@@ -94,7 +94,7 @@ final class PaletteModel: ObservableObject {
             out.insert(PaletteCommand(localized: L("Save to Apple Notes: %@", String(t.prefix(40))), symbol: "note.text.badge.plus") { QuickCapture.addNote(t) }, at: 0)
         }
         if Self.evaluate(q) == nil, QuickCapture.argument(q, keywords: ["event", "ev", "note", "n"]) == nil, let r = WebSearch.resolve(q, defaultKey: UserDefaults.standard.string(forKey: "searchEngine") ?? "google") {
-            out.append(PaletteCommand(localized: L("Search %@: %@", L(r.label), q), symbol: r.label == "Translate" ? "character.bubble" : "magnifyingglass") {
+            out.append(PaletteCommand(localized: L("Search %@: %@", L(r.label), q), symbol: r.label == TranslateRoute.label ? "character.bubble" : "magnifyingglass") {
                 NotchModel.shared.collapse(); NSWorkspace.shared.open(r.url)
             })
         }
@@ -199,9 +199,17 @@ struct PaletteView: View {
     }
 }
 
+/// Search that goes to a translation page. WebSearch names its result with `label` and reads the `prefix` ("tr text").
+enum TranslateRoute {
+    static let label = "Translate"
+    static let prefix = "tr"
+}
+
 @MainActor
 final class PaletteController {
     static let shared = PaletteController()
+    /// The palette's window size; the view is drawn at the same size.
+    static let size = NSSize(width: 560, height: 360)
     private var panel: NSPanel?
     private let model = PaletteModel()
 
@@ -210,13 +218,13 @@ final class PaletteController {
     func show() {
         model.query = ""; model.selection = 0
         let p = panel ?? {
-            let p = NotchPanel(contentRect: NSRect(x: 0, y: 0, width: 560, height: 360), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-            p.isOpaque = false; p.backgroundColor = .clear; p.level = .floating; p.hasShadow = true
+            let p = NotchPanel(contentRect: NSRect(origin: .zero, size: Self.size), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+            p.styleAsOverlay(level: .floating)
             p.contentView = NSHostingView(rootView: PaletteView(model: model) { [weak self] in self?.hide() })
             panel = p; return p
         }()
         if let s = NSScreen.main {
-            p.setFrameOrigin(NSPoint(x: s.frame.midX - 280, y: s.frame.midY + 120))
+            p.setFrameOrigin(NSPoint(x: s.frame.midX - Self.size.width / 2, y: s.frame.midY + 120))
         }
         p.makeKeyAndOrderFront(nil)
     }
@@ -224,8 +232,8 @@ final class PaletteController {
     func hide() { panel?.orderOut(nil) }
 }
 
-/// The app's global shortcuts. They are registered at launch and listed in Settings from this one table,
-/// so the Shortcuts page can never show a key that does nothing.
+/// The app's global shortcuts. They are registered at launch and listed in Settings from this one table.
+/// A shortcut that another app already owns fails to register; `HotKey` says so and Settings marks it.
 enum GlobalShortcut: UInt32, CaseIterable {
     case palette = 1, toggleNotch, pasteNext, dictate
 
@@ -271,21 +279,34 @@ final class HotKey {
     private let id: UInt32
     private static var handlers: [UInt32: () -> Void] = [:]
     private static var installed = false
+    /// Ids of the shortcuts that could not be registered, so Settings does not promise them.
+    private(set) static var unavailable: Set<UInt32> = []
 
     init(keyCode: UInt32, modifiers: UInt32, id: UInt32, handler: @escaping () -> Void) {
+        self.id = id
+        var ok = true
         if !Self.installed {
-            Self.installed = true
             var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-            InstallEventHandler(GetApplicationEventTarget(), { _, event, _ in
+            let status = InstallEventHandler(GetApplicationEventTarget(), { _, event, _ in
                 var hk = EventHotKeyID()
                 GetEventParameter(event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &hk)
                 DispatchQueue.main.async { HotKey.handlers[hk.id]?() }
                 return noErr
             }, 1, &spec, nil, nil)
+            Self.installed = status == noErr
+            ok = Self.installed
         }
-        self.id = id
-        Self.handlers[id] = handler
-        RegisterEventHotKey(keyCode, modifiers, EventHotKeyID(signature: OSType(0x50424F58), id: id), GetApplicationEventTarget(), 0, &ref)
+        let status = RegisterEventHotKey(keyCode, modifiers, EventHotKeyID(signature: OSType(0x50424F58), id: id), GetApplicationEventTarget(), 0, &ref)
+        ok = ok && status == noErr && ref != nil
+        if ok {
+            Self.handlers[id] = handler
+        } else {
+            // Nothing is registered, so no handler: the key does nothing, and the user is told which one.
+            ref = nil
+            Self.unavailable.insert(id)
+            let title = GlobalShortcut(rawValue: id).map { L("%@ is already used by another app", $0.keycaps) } ?? L("A shortcut is already used by another app")
+            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: title, tint: .orange))
+        }
     }
 
     func unregister() {

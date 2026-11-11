@@ -1,0 +1,141 @@
+import AppKit
+import SwiftUI
+import SQLite3
+import AVFoundation
+import PDFKit
+import ImageIO
+
+extension SelfTest {
+    static func clipboard() {
+        if case .url = ClipboardService.kind(of: "https://example.com/a") {} else { check("clipboard detects URL", false) }
+        if case .color(_, let h) = ClipboardService.kind(of: "#ff8800") { check("clipboard detects hex colour", h == "#ff8800") } else { check("clipboard detects hex colour", false) }
+        if case .email = ClipboardService.kind(of: "a@b.co") {} else { check("clipboard detects email", false) }
+        if case .plain = ClipboardService.kind(of: "hello world") { check("clipboard keeps plain text", true) } else { check("clipboard keeps plain text", false) }
+        check("hex round trip", NSColor(hex: "#336699")?.hexString == "#336699", NSColor(hex: "#336699")?.hexString ?? "nil")
+        check("short hex expands", NSColor(hex: "f80")?.hexString == "#FF8800", NSColor(hex: "f80")?.hexString ?? "nil")
+    }
+
+    static func stores() {
+        let notes = NotesStore()
+        notes.draft = "  buy milk  "; notes.add()
+        notes.draft = "   "; notes.add()
+        check("notes: add trims and ignores blanks", notes.notes.count == 1 && notes.notes[0].text == "buy milk")
+        notes.toggle(notes.notes[0])
+        check("notes: toggle marks done", notes.notes[0].done)
+        let persisted = Store.load("notes.json", as: [Note].self)
+        check("notes: saved to disk", persisted?.count == 1 && persisted?[0].done == true)
+        notes.clearDone()
+        check("notes: clear done", notes.notes.isEmpty)
+
+        let launcher = LauncherStore()
+        launcher.paths = ["/A", "/B", "/C"]
+        launcher.move("/C", onto: "/A")
+        check("launcher: C takes A's slot", launcher.paths == ["/C", "/A", "/B"], "\(launcher.paths)")
+        launcher.move("/A", onto: "/B")
+        check("launcher: moving forward takes the target's slot", launcher.paths == ["/C", "/B", "/A"], "\(launcher.paths)")
+        launcher.move("/A", onto: "/A")
+        check("launcher: dropping on itself changes nothing", launcher.paths == ["/C", "/B", "/A"])
+
+        let clip = ClipboardService()
+        clip.items = (0..<(ClipboardService.cap + 10)).map { ClipItem(text: "item \($0)", date: Date(timeIntervalSinceNow: Double($0))) }
+        clip.items[0].pinned = true   // the oldest item, pinned: it must survive the cap
+        clip.trim()
+        check("clipboard: cap keeps pinned items", clip.items.count == ClipboardService.cap + 1 && clip.items.contains { $0.pinned }, "\(clip.items.count)")
+        check("clipboard: pinned sort first", clip.filtered.first?.pinned == true)
+        clip.query = "item 69"
+        check("clipboard: search", clip.filtered.map(\.text) == ["item 69"], "\(clip.filtered.map(\.text))")
+        var withOCR = ClipItem(imageFile: "x.png"); withOCR.ocr = "invoice total 42"
+        clip.items.append(withOCR); clip.query = "invoice"
+        check("clipboard: search finds text inside images", clip.filtered.count == 1)
+        clip.query = ""
+        clip.items = [ClipItem(text: "hello"), ClipItem(text: "https://apple.com"), ClipItem(text: "#FF8800"), ClipItem(text: "a@b.co"), ClipItem(imageFile: "x.png")]
+        let kinds = { (f: ClipFilter) in clip.items.filter(f.matches).count }
+        check("clipboard: type filters", kinds(.all) == 5 && kinds(.text) == 2 && kinds(.links) == 1 && kinds(.colors) == 1 && kinds(.images) == 1,
+              "\(ClipFilter.allCases.map(kinds))")
+        clip.filter = .links
+        check("clipboard: the filter applies to the list", clip.filtered.map(\.text) == ["https://apple.com"])
+        check("shelf: summary counts items and selection", ShelfService.summary(count: 1, selected: 0) == L("1 item")
+              && ShelfService.summary(count: 3, selected: 2) == L("%lld items", 3) + " · " + L("%lld selected", 2))
+        check("timer: presets are sorted, none for the stopwatch", TimerService.Mode.allCases.allSatisfy { $0.presets == $0.presets.sorted() }
+              && TimerService.Mode.stopwatch.presets.isEmpty && TimerService.Mode.focus.presets.contains(25))
+
+        // An unreadable file loads as nil and is kept as a .broken copy, so the next save cannot wipe the user's data.
+        let broken = "selftest-broken.json"
+        try? Data("{not json".utf8).write(to: Store.dir.appendingPathComponent(broken))
+        check("store: an unreadable file loads as nil and is kept as a .broken copy", Store.load(broken, as: [String: Int].self) == nil
+              && FileManager.default.fileExists(atPath: Store.dir.appendingPathComponent(broken + ".broken").path))
+        try? FileManager.default.removeItem(at: Store.dir.appendingPathComponent(broken))
+        try? FileManager.default.removeItem(at: Store.dir.appendingPathComponent(broken + ".broken"))
+    }
+
+    static func snippets() {
+        let st = SnippetsStore.shared   // the palette reads the shared store
+        st.snippets = []
+        st.draftName = "Sign-off"; st.draftText = "Best regards,\nThomas"; st.add()
+        st.draftName = "  "; st.draftText = "x"; st.add()
+        st.draftName = "Empty"; st.draftText = "   "; st.add()
+        check("snippets: add keeps valid, rejects blank name or text", st.snippets.count == 1 && st.snippets[0].text.contains("\n"), "\(st.snippets.count)")
+        check("snippets: saved to disk", Store.load("snippets.json", as: [Snippet].self)?.count == 1)
+        let m = PaletteModel(); m.query = "sign"
+        check("snippets: found from the palette", m.commands.contains { $0.title == L("Snippet: %@", "Sign-off") })
+        st.remove(st.snippets[0])
+        check("snippets: remove", st.snippets.isEmpty)
+    }
+
+    static func shellActions() {
+        let ok = ActionRunner.runShell("echo hello; echo oops 1>&2")
+        check("actions: runs a command and returns its output", ok.status == 0 && ok.output.contains("hello") && ok.output.contains("oops"), "\(ok)")
+        check("actions: exit status is reported", ActionRunner.runShell("exit 3").status == 3)
+        let t0 = Date(); let slow = ActionRunner.runShell("sleep 20", timeout: 1)
+        check("actions: a hung command is killed after the timeout", slow.status == 124 && Date().timeIntervalSince(t0) < 5, "\(slow.status) \(Date().timeIntervalSince(t0))s")
+        check("actions: only web and mail links", ActionRunner.url("https://example.com/a")?.host == "example.com" && ActionRunner.url("example.com")?.scheme == "https" && ActionRunner.url("mailto:a@b.co") != nil
+              && ActionRunner.url("file:///etc/passwd") == nil && ActionRunner.url("javascript:alert(1)") == nil && ActionRunner.url("ftp://x.y") == nil)
+        let st = QuickActionsStore.shared; st.actions = []
+        check("actions: valid entries are saved", st.add(name: "Hi", kind: .shell, value: "echo hi") && st.add(name: "Site", kind: .web, value: "example.com") && st.actions.count == 2)
+        check("actions: blank or unsafe entries are refused", !st.add(name: " ", kind: .shell, value: "x") && !st.add(name: "Bad", kind: .web, value: "file:///etc/passwd") && !st.add(name: "Empty", kind: .url, value: "") && st.actions.count == 2)
+        check("actions: persisted to disk", Store.load("actions.json", as: [QuickAction].self)?.map(\.name) == ["Hi", "Site"])
+        st.actions = []
+    }
+
+    static func settingsBackup() {
+        let suite = UserDefaults(suiteName: "pillbox.selftest.backup")!; suite.removePersistentDomain(forName: "pillbox.selftest.backup")
+        suite.set(false, forKey: "hoverOpen"); suite.set(0.3, forKey: "hoverDelay"); suite.set("evil", forKey: "devAPIToken"); suite.set(true, forKey: "devAPIEnabled")
+        let data = SettingsBackup.data(from: suite)!
+        check("backup: leaves the local API switch and token out", { let f = try? PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]; let st = f?["settings"] as? [String: Any]; return st?["devAPIToken"] == nil && st?["devAPIEnabled"] == nil && st?["hoverOpen"] as? Bool == false }())
+        let other = UserDefaults(suiteName: "pillbox.selftest.backup2")!; other.removePersistentDomain(forName: "pillbox.selftest.backup2")
+        check("backup: restores what it holds", SettingsBackup.restore(data, into: other) == 2 && other.object(forKey: "hoverOpen") as? Bool == false && other.double(forKey: "hoverDelay") == 0.3)
+        let hostile: [String: Any] = ["format": "pillbox-settings", "version": 1, "settings": ["hoverDelay": 99.0, "hoverOpen": "yes", "hudStyle": "<script>", "devAPIEnabled": true, "panelScale": 1.1, "searchEngine": "bing"]]
+        let hdata = try! PropertyListSerialization.data(fromPropertyList: hostile, format: .xml, options: 0)
+        let third = UserDefaults(suiteName: "pillbox.selftest.backup3")!; third.removePersistentDomain(forName: "pillbox.selftest.backup3")
+        check("backup: clamps numbers, drops wrong types, unknown values and unlisted keys", SettingsBackup.restore(hdata, into: third) == 3 && third.double(forKey: "hoverDelay") == 0.6 && third.object(forKey: "hoverOpen") == nil && third.object(forKey: "hudStyle") == nil && third.object(forKey: "devAPIEnabled") == nil && third.string(forKey: "searchEngine") == "bing")
+        check("backup: a foreign plist is not a backup", SettingsBackup.restore(try! PropertyListSerialization.data(fromPropertyList: ["hoverOpen": true], format: .xml, options: 0), into: third) == nil)
+        SettingsBackup.resetAll(in: other)
+        check("backup: reset removes every stored setting", other.object(forKey: "hoverOpen") == nil && other.object(forKey: "hoverDelay") == nil)
+        for (suite, name) in [(suite, "pillbox.selftest.backup"), (other, "pillbox.selftest.backup2"), (third, "pillbox.selftest.backup3")] { suite.removePersistentDomain(forName: name) }
+    }
+
+    static func copyStackAndHistory() {
+        var st = CopyStack(); st.push("one"); st.push("two"); st.push("three")
+        check("stack: pastes in the order of copying", st.pop() == "one" && st.pop() == "two" && st.items == ["three"])
+        var big = CopyStack(); for n in 0..<(CopyStack.cap + 5) { big.push("\(n)") }
+        check("stack: capped, dropping the oldest", big.items.count == CopyStack.cap && big.items.first == "5")
+        check("stack: empty gives nil", { var e = CopyStack(); return e.pop() == nil }())
+        var h = CalcHistory(); h.add(expression: "2+2", result: "4"); h.add(expression: "3*3", result: "9"); h.add(expression: "2+2", result: "4")
+        check("calc history: newest first, no duplicates", h.entries == ["2+2 = 4", "3*3 = 9"], "\(h.entries)")
+        for n in 0..<15 { h.add(expression: "\(n)+1", result: "\(n + 1)") }
+        check("calc history: capped", h.entries.count == CalcHistory.cap)
+        check("calc history: gets the result back", CalcHistory.result(of: "2+2 = 4") == "4")
+    }
+
+    static func clipboardImport() {
+        let clip = ClipboardService.shared; clip.items = [ClipItem(text: "kept")]
+        let merged = ClipboardImport.merge([("kept", Date(), false), ("new one", Date(timeIntervalSince1970: 1), true), ("  ", Date(), false)], into: clip)
+        check("clipboard import: new texts added with their date and pin, duplicates and blanks skipped", merged == 1 && clip.items.count == 2 && clip.items.last?.pinned == true && clip.items.last?.date == Date(timeIntervalSince1970: 1))
+        clip.items = []
+    }
+
+    static func shortcutsAndDiagnostics() {
+        check("shortcuts: every global shortcut has its own id and key", Set(GlobalShortcut.allCases.map(\.rawValue)).count == GlobalShortcut.allCases.count && GlobalShortcut.palette.keycaps == "⌃⌥K")
+        check("diagnostics: no home folder or user name", !Diagnostics.text.contains(NSHomeDirectory()) && !Diagnostics.text.contains(NSUserName()))
+    }
+}

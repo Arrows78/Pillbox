@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// One set of surfaces, hairlines and controls shared by every tab, so the island reads as a single piece.
+/// Design tokens ("DS" is short for design system): the surfaces, hairlines, radii, gaps and text colours that every
+/// tab uses, so the island reads as a single piece.
 enum DS {
     static let card = Color.white.opacity(0.07)
     static let hairline = Color.white.opacity(0.08)

@@ -71,21 +71,33 @@ final class AIUsageService: ObservableObject {
 
     // MARK: Shared helpers
 
-    private nonisolated static func jsonlFiles(in root: URL, since: Date) -> [(url: URL, mtime: Date, size: Int)] {
-        var out: [(URL, Date, Int)] = []
+    /// Files with the extension `ext` under `root` that changed after `since`, with their modification date and size.
+    private nonisolated static func listFiles(in root: URL, ext: String, since: Date) -> [(url: URL, mtime: Date, size: Int)] {
+        var out: [(url: URL, mtime: Date, size: Int)] = []
         let keys: Set<URLResourceKey> = [.contentModificationDateKey, .fileSizeKey]
         let en = FileManager.default.enumerator(at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles])
         while let url = en?.nextObject() as? URL {
-            guard url.pathExtension == "jsonl", let v = try? url.resourceValues(forKeys: keys),
+            guard url.pathExtension == ext, let v = try? url.resourceValues(forKeys: keys),
                   let m = v.contentModificationDate, m > since else { continue }
             out.append((url, m, v.fileSize ?? 0))
         }
         return out
     }
 
+    private nonisolated static func jsonlFiles(in root: URL, since: Date) -> [(url: URL, mtime: Date, size: Int)] {
+        listFiles(in: root, ext: "jsonl", since: since)
+    }
+
+    // Formatters are costly to create and parsing runs for every log line; they are shared behind one lock.
+    private nonisolated(unsafe) static let isoFractional: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f
+    }()
+    private nonisolated(unsafe) static let isoPlain = ISO8601DateFormatter()
+    private nonisolated static let dateLock = NSLock()
+
     private nonisolated static func parseDate(_ s: String) -> Date? {
-        let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: s) ?? ISO8601DateFormatter().date(from: s)
+        dateLock.lock(); defer { dateLock.unlock() }
+        return isoFractional.date(from: s) ?? isoPlain.date(from: s)
     }
 
     /// Calls `body` with the bytes of every line containing `needle`, without decoding the other lines.
@@ -108,17 +120,19 @@ final class AIUsageService: ObservableObject {
     }
 
     /// Value following `"key":` as a string (quoted) or an integer, scanned straight from the bytes.
+    /// Blanks after the colon are skipped, so both compact and spaced-out JSON read the same.
     private nonisolated static func field(_ line: UnsafeRawBufferPointer, _ prefix: String) -> Substring? {
         let p = Array(prefix.utf8)
         guard let base = line.baseAddress, let hit = memmem(base, line.count, p, p.count) else { return nil }
-        let start = base.distance(to: UnsafeRawPointer(hit)) + p.count
+        var start = base.distance(to: UnsafeRawPointer(hit)) + p.count
+        if prefix.hasSuffix(":") { while start < line.count, line[start] == 0x20 || line[start] == 0x09 { start += 1 } }
         var end = start
         while end < line.count, line[end] != 0x22, line[end] != 0x2C, line[end] != 0x7D { end += 1 }
         return String(decoding: UnsafeRawBufferPointer(rebasing: line[start..<end]), as: UTF8.self)[...]
     }
 
     private nonisolated static func int(_ line: UnsafeRawBufferPointer, _ key: String) -> Int {
-        field(line, "\"\(key)\":").flatMap { Int($0) } ?? 0
+        field(line, "\"\(key)\":").flatMap { Int($0.trimmingCharacters(in: .whitespaces)) } ?? 0
     }
 
     private final class Cache<Entry>: @unchecked Sendable {
@@ -244,7 +258,8 @@ final class AIUsageService: ObservableObject {
     }
 
     static func short(_ n: Int) -> String {
-        n >= 1_000_000 ? String(format: "%.1fM", Double(n) / 1e6) : n >= 1000 ? String(format: "%.0fk", Double(n) / 1e3) : "\(n)"
+        // From 999,500 on, the thousands would round to "1000k": those already read as millions.
+        n >= 999_500 ? String(format: "%.1fM", Double(n) / 1e6) : n >= 1000 ? String(format: "%.0fk", Double(n) / 1e3) : "\(n)"
     }
 }
 
@@ -252,14 +267,7 @@ final class AIUsageService: ObservableObject {
 
 extension AIUsageService {
     private nonisolated static func jsonFiles(in root: URL, since: Date) -> [URL] {
-        var out: [URL] = []
-        let keys: Set<URLResourceKey> = [.contentModificationDateKey]
-        let en = FileManager.default.enumerator(at: root, includingPropertiesForKeys: Array(keys), options: [.skipsHiddenFiles])
-        while let url = en?.nextObject() as? URL {
-            guard url.pathExtension == "json", let m = try? url.resourceValues(forKeys: keys).contentModificationDate, m > since else { continue }
-            out.append(url)
-        }
-        return out
+        listFiles(in: root, ext: "json", since: since).map(\.url)
     }
 
     /// Gemini CLI keeps each chat in ~/.gemini/tmp/<project>/chats/session-*.json; every model reply carries its token counts.
@@ -268,8 +276,8 @@ extension AIUsageService {
         var u = ProviderUsage(name: "Gemini CLI", symbol: "diamond.fill")
         var perDay: [String: Int] = [:]
         for f in jsonFiles(in: root, since: weekAgo) where f.deletingLastPathComponent().lastPathComponent == "chats" {
-            guard let data = try? Data(contentsOf: f), let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let messages = root["messages"] as? [[String: Any]] else { continue }
+            guard let data = try? Data(contentsOf: f), let chat = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let messages = chat["messages"] as? [[String: Any]] else { continue }
             for m in messages where m["type"] as? String == "gemini" {
                 guard let ts = m["timestamp"] as? String, let date = parseDate(ts), date > weekAgo, let t = m["tokens"] as? [String: Any] else { continue }
                 let cached = t["cached"] as? Int ?? 0
@@ -305,9 +313,9 @@ extension AIUsageService {
         var perDay: [String: Int] = [:]
         guard FileManager.default.fileExists(atPath: path) else { return u }
         let weekAgo = now.addingTimeInterval(-7 * 86400)
-        var db: OpaquePointer?
-        guard sqlite3_open_v2("file:\(path)?mode=ro&immutable=1", &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else { sqlite3_close(db); return u }
-        defer { sqlite3_close(db) }
+        guard let snapshot = try? SQLiteSnapshot.open(path) else { return u }
+        let db = snapshot.db, folder = snapshot.folder
+        defer { sqlite3_close(db); try? FileManager.default.removeItem(at: folder) }
         var st: OpaquePointer?
         guard sqlite3_prepare_v2(db, "SELECT createdAt FROM ai_code_hashes WHERE createdAt > ?", -1, &st, nil) == SQLITE_OK else { return u }
         defer { sqlite3_finalize(st) }
@@ -336,7 +344,8 @@ extension AIUsageService {
         let entitlement = premium["entitlement"] as? Int ?? 0, remaining = premium["remaining"] as? Int ?? 0
         if premium["unlimited"] as? Bool != true, entitlement > 0 {
             u.limitPercent = 100 - (premium["percent_remaining"] as? Double ?? Double(remaining) * 100 / Double(entitlement))
-            u.today = entitlement - remaining; u.week = u.today
+            // The monthly count is shown as "used this month" (today); it is not a week's usage.
+            u.today = entitlement - remaining
             u.limitWindowMinutes = 30 * 24 * 60
             if let s = json["quota_reset_date"] as? String {
                 let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.timeZone = TimeZone(identifier: "UTC")

@@ -2,6 +2,13 @@ import SwiftUI
 
 private let card = DS.card
 
+extension View {
+    /// Keeps the island open while one of its text fields has focus.
+    @MainActor func keepsIslandOpen(while focused: Bool, in model: NotchModel) -> some View {
+        onChange(of: focused) { model.pinnedOpen = $0 }
+    }
+}
+
 struct HomeTab: View {
     @ObservedObject var battery = BatteryService.shared
     @ObservedObject var stats = StatsService.shared
@@ -20,8 +27,8 @@ struct HomeTab: View {
                     Text(ctx.date, format: .dateTime.hour().minute()).font(.system(size: 34, weight: .semibold, design: .rounded))
                 }
                 Text(Date(), format: .dateTime.weekday(.wide).day().month(.wide)).font(.system(size: 12)).foregroundStyle(.secondary)
-                if let t = weather.temperature {
-                    Label("\(t)° \(weather.summary)\(weather.city.isEmpty ? "" : " · " + weather.city)", systemImage: weather.symbol)
+                if let temperature = weather.temperature {
+                    Label("\(temperature)° \(weather.summary)\(weather.city.isEmpty ? "" : " · " + weather.city)", systemImage: weather.symbol)
                         .font(.system(size: 11)).symbolRenderingMode(.multicolor).foregroundStyle(.secondary).lineLimit(1)
                 } else if weather.denied {
                     Label("Weather needs Location access", systemImage: "location.slash").font(.system(size: 11)).foregroundStyle(.orange).lineLimit(1)
@@ -60,24 +67,24 @@ struct HomeTab: View {
                     }
                 }
                 VStack(spacing: 8) {
-                HStack(spacing: 8) {
-                    quick("cup.and.saucer.fill", "Awake", active: caffeine.active) { caffeine.toggle() }
-                        .contextMenu {
-                            Button("30 minutes") { caffeine.start(minutes: 30) }
-                            Button("1 hour") { caffeine.start(minutes: 60) }
-                            Button("2 hours") { caffeine.start(minutes: 120) }
-                            Button("Until 6 pm") { caffeine.start(until: 18) }
-                            Button("Until turned off") { caffeine.start() }
-                            if caffeine.active { Divider(); Button("Turn off") { caffeine.stop() } }
-                        }
-                    quick("eyedropper", "Color") { Tools.pickColor() }
-                    quick("camera.viewfinder", "Capture") { Tools.captureArea() }
-                }
-                HStack(spacing: 8) {
-                    quick("mic.slash.fill", "Mute", active: audio.micMuted) { audio.toggleMic() }
-                    quick("video.fill", "Mirror") { CameraMirror.shared.toggle() }
-                    quick("timer", "Focus", active: timer.running) { timer.mode = .focus; timer.toggle() }
-                }
+                    HStack(spacing: 8) {
+                        quick("cup.and.saucer.fill", "Awake", active: caffeine.active) { caffeine.toggle() }
+                            .contextMenu {
+                                Button("30 minutes") { caffeine.start(minutes: 30) }
+                                Button("1 hour") { caffeine.start(minutes: 60) }
+                                Button("2 hours") { caffeine.start(minutes: 120) }
+                                Button("Until 6 pm") { caffeine.start(until: 18) }
+                                Button("Until turned off") { caffeine.start() }
+                                if caffeine.active { Divider(); Button("Turn off") { caffeine.stop() } }
+                            }
+                        quick("eyedropper", "Color") { Tools.pickColor() }
+                        quick("camera.viewfinder", "Capture") { Tools.captureArea() }
+                    }
+                    HStack(spacing: 8) {
+                        quick("mic.slash.fill", "Mute", active: audio.micMuted) { audio.toggleMic() }
+                        quick("video.fill", "Mirror") { CameraMirror.shared.toggle() }
+                        quick("timer", "Focus", active: timer.running) { timer.mode = .focus; timer.toggle() }
+                    }
                 }
             }.frame(width: 280)
         }
@@ -85,18 +92,18 @@ struct HomeTab: View {
         .onDisappear { stats.stop() }
     }
 
-    private func gauge(_ name: LocalizedStringKey, _ v: Double, _ c: Color, icon: String? = nil, detail: String? = nil) -> some View {
+    private func gauge(_ name: LocalizedStringKey, _ fraction: Double, _ tint: Color, icon: String? = nil, detail: String? = nil) -> some View {
         VStack(spacing: 4) {
             ZStack {
-                Circle().stroke(c.opacity(0.2), lineWidth: 5)
-                Circle().trim(from: 0, to: v).stroke(c, style: StrokeStyle(lineWidth: 5, lineCap: .round)).rotationEffect(.degrees(-90))
-                if let icon { Image(systemName: icon).font(.system(size: 10)).foregroundStyle(c) }
-                else { Text("\(Int(v * 100))").font(.system(size: 11, weight: .semibold, design: .rounded)) }
+                Circle().stroke(tint.opacity(0.2), lineWidth: 5)
+                Circle().trim(from: 0, to: fraction).stroke(tint, style: StrokeStyle(lineWidth: 5, lineCap: .round)).rotationEffect(.degrees(-90))
+                if let icon { Image(systemName: icon).font(.system(size: 10)).foregroundStyle(tint) }
+                else { Text("\(Int(fraction * 100))").font(.system(size: 11, weight: .semibold, design: .rounded)) }
             }.frame(width: 46, height: 46)
             (Text(name) + Text(verbatim: detail.map { " · " + $0 } ?? "")).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.8)
         }.frame(maxWidth: .infinity).padding(.vertical, 8)
         .background(card, in: RoundedRectangle(cornerRadius: DS.radius, style: .continuous))
-        .accessibilityElement(children: .ignore).accessibilityLabel(Text(name)).accessibilityValue("\(Int(v * 100))%")
+        .accessibilityElement(children: .ignore).accessibilityLabel(Text(name)).accessibilityValue("\(Int(fraction * 100))%")
     }
 
     private func quick(_ symbol: String, _ title: LocalizedStringKey, active: Bool = false, action: @escaping () -> Void) -> some View {
@@ -209,9 +216,9 @@ struct MusicTab: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(music.title).font(.system(size: 20, weight: .bold)).lineLimit(1)
                     Text(music.artist).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
-                    if let l = music.currentLine {
-                        LiveLyricLine(line: l).font(.system(size: 12, weight: .medium)).lineLimit(2)
-                            .id(l.id).transition(.opacity).animation(.easeInOut(duration: 0.25), value: l.id)
+                    if let lyric = music.currentLine {
+                        LiveLyricLine(line: lyric).font(.system(size: 12, weight: .medium)).lineLimit(2)
+                            .id(lyric.id).transition(.opacity).animation(.easeInOut(duration: 0.25), value: lyric.id)
                     }
                     Spacer(minLength: 0)
                     ProgressBar(value: music.position, total: music.duration) { music.seek(to: $0) }
@@ -334,44 +341,49 @@ struct VolumeBar: View {
     }
 }
 
+/// A bar that seeks on release. Without `onSeek` it only shows the value.
 struct ProgressBar: View {
     let value: Double, total: Double
-    let onSeek: (Double) -> Void
+    var onSeek: ((Double) -> Void)? = nil
     var body: some View {
         GeometryReader { g in
-            ZStack(alignment: .leading) {
+            let bar = ZStack(alignment: .leading) {
                 Capsule().fill(.white.opacity(0.18))
                 Capsule().fill(.white).frame(width: g.size.width * (total > 0 ? min(value / total, 1) : 0))
             }
             .contentShape(Rectangle())
-            .gesture(DragGesture(minimumDistance: 0).onEnded { onSeek(total * min(max($0.location.x / g.size.width, 0), 1)) })
+            if let onSeek {
+                bar.gesture(DragGesture(minimumDistance: 0).onEnded { onSeek(total * min(max($0.location.x / g.size.width, 0), 1)) })
+            } else {
+                bar
+            }
         }.frame(height: 5)
     }
 }
 
 struct TimerTab: View {
-    @ObservedObject var t = TimerService.shared
+    @ObservedObject var service = TimerService.shared
 
     var body: some View {
         HStack(spacing: 18) {
             ZStack {
                 Circle().stroke(.white.opacity(0.12), lineWidth: 7)
-                Circle().trim(from: 0, to: t.progress).stroke(Color.orange, style: StrokeStyle(lineWidth: 7, lineCap: .round))
-                    .rotationEffect(.degrees(-90)).shadow(color: .orange.opacity(t.running ? 0.55 : 0), radius: 5)
+                Circle().trim(from: 0, to: service.progress).stroke(Color.orange, style: StrokeStyle(lineWidth: 7, lineCap: .round))
+                    .rotationEffect(.degrees(-90)).shadow(color: .orange.opacity(service.running ? 0.55 : 0), radius: 5)
                 VStack(spacing: 0) {
-                    if let e = Mascot.emoji(for: Mascot.current, progress: t.progress) { Text(e).font(.system(size: 20)).scaleEffect(t.running ? 1.08 : 1).animation(t.running ? .easeInOut(duration: 0.8).repeatForever() : .default, value: t.running) }
-                    Text(t.display).font(.system(size: 30, weight: .semibold, design: .monospaced))
-                    Text(LocalizedStringKey(t.mode.rawValue)).font(.system(size: 10)).foregroundStyle(.secondary)
+                    if let emoji = Mascot.emoji(for: Mascot.current, progress: service.progress) { Text(emoji).font(.system(size: 20)).scaleEffect(service.running ? 1.08 : 1).animation(service.running ? .easeInOut(duration: 0.8).repeatForever() : .default, value: service.running) }
+                    Text(service.display).font(.system(size: 30, weight: .semibold, design: .monospaced))
+                    Text(LocalizedStringKey(service.mode.rawValue)).font(.system(size: 10)).foregroundStyle(.secondary)
                 }
             }.frame(width: 180, height: 180)
 
             VStack(alignment: .leading, spacing: 8) {
-                PillSegmented(options: TimerService.Mode.allCases, selection: $t.mode, tint: .orange) { LocalizedStringKey($0.rawValue) }
+                PillSegmented(options: TimerService.Mode.allCases, selection: $service.mode, tint: .orange) { LocalizedStringKey($0.rawValue) }
                 HStack(spacing: 8) {
-                    Button { t.toggle() } label: { Label(LocalizedStringKey(t.running ? "Pause" : "Start"), systemImage: t.running ? "pause.fill" : "play.fill") }
+                    Button { service.toggle() } label: { Label(LocalizedStringKey(service.running ? "Pause" : "Start"), systemImage: service.running ? "pause.fill" : "play.fill") }
                         .buttonStyle(PillButtonStyle(tint: .orange))
-                    Button("Reset") { t.reset() }.buttonStyle(PillButtonStyle())
-                    if t.mode == .countdown { Button("Repeat") { t.repeatTimer() }.buttonStyle(PillButtonStyle()) }
+                    Button("Reset") { service.reset() }.buttonStyle(PillButtonStyle())
+                    if service.mode == .countdown { Button("Repeat") { service.repeatTimer() }.buttonStyle(PillButtonStyle()) }
                     AmbientMenu()
                     Spacer(minLength: 0)
                     HStack(spacing: 6) {
@@ -381,31 +393,31 @@ struct TimerTab: View {
                     }
                     .buttonStyle(.plain).font(.system(size: 11, weight: .bold)).foregroundStyle(.white.opacity(0.8))
                     .padding(.horizontal, 10).padding(.vertical, 5).background(DS.card, in: Capsule())
-                    .disabled(t.mode == .stopwatch || t.running).opacity(t.mode == .stopwatch || t.running ? 0.4 : 1)
+                    .disabled(service.mode == .stopwatch || service.running).opacity(service.mode == .stopwatch || service.running ? 0.4 : 1)
                 }
                 HStack(spacing: 6) {
-                    ForEach(t.mode.presets, id: \.self) { m in
-                        let on = stepBinding.wrappedValue == m
-                        Button { stepBinding.wrappedValue = m } label: {
-                            Text("\(m) min").font(.system(size: 11, weight: .medium)).monospacedDigit()
+                    ForEach(service.mode.presets, id: \.self) { minutes in
+                        let on = stepBinding.wrappedValue == minutes
+                        Button { stepBinding.wrappedValue = minutes } label: {
+                            Text("\(minutes) min").font(.system(size: 11, weight: .medium)).monospacedDigit()
                                 .foregroundStyle(on ? .white : .white.opacity(0.7))
                                 .padding(.horizontal, 10).padding(.vertical, 5)
                                 .background(on ? Color.orange.opacity(0.35) : DS.card, in: Capsule())
                                 .overlay(Capsule().strokeBorder(on ? Color.orange.opacity(0.7) : DS.hairline, lineWidth: 0.5))
-                        }.buttonStyle(.plain).disabled(t.running)
+                        }.buttonStyle(.plain).disabled(service.running)
                     }
-                    if t.mode == .stopwatch { Text("Counts up until you stop it").font(.system(size: 11)).foregroundStyle(DS.secondary) }
+                    if service.mode == .stopwatch { Text("Counts up until you stop it").font(.system(size: 11)).foregroundStyle(DS.secondary) }
                     Spacer(minLength: 0)
-                }.opacity(t.running ? 0.6 : 1)
-                TextField("Name this timer", text: $t.label).pillField()
+                }.opacity(service.running ? 0.6 : 1)
+                TextField("Name this timer", text: $service.label).pillField()
                 HStack(spacing: 10) {
-                    Toggle("Chain", isOn: $t.chain).toggleStyle(.switch).controlSize(.mini).tint(.orange).font(.system(size: 11))
-                    Label("\(t.streak) day streak", systemImage: "flame.fill").font(.system(size: 11)).foregroundStyle(.orange)
+                    Toggle("Chain", isOn: $service.chain).toggleStyle(.switch).controlSize(.mini).tint(.orange).font(.system(size: 11))
+                    Label("\(service.streak) day streak", systemImage: "flame.fill").font(.system(size: 11)).foregroundStyle(.orange)
                     Spacer()
                     HStack(alignment: .bottom, spacing: 3) {
-                        ForEach(Array(t.week.enumerated()), id: \.offset) { _, d in
-                            Capsule().fill(d.count > 0 ? Color.orange : .white.opacity(0.15))
-                                .frame(width: 5, height: 4 + CGFloat(min(d.count, 6)) * 3)
+                        ForEach(Array(service.week.enumerated()), id: \.offset) { _, day in
+                            Capsule().fill(day.count > 0 ? Color.orange : .white.opacity(0.15))
+                                .frame(width: 5, height: 4 + CGFloat(min(day.count, 6)) * 3)
                         }
                     }.frame(height: 24, alignment: .bottom).hoverTip(L("Focus sessions, last 7 days"))
                 }
@@ -413,11 +425,13 @@ struct TimerTab: View {
         }
     }
 
+    /// The length the stepper and the presets edit: each mode has its own. The stopwatch has no length, so it shows 0 and the stepper is off.
     private var stepBinding: Binding<Int> {
-        switch t.mode {
-        case .focus: $t.focusMinutes
-        case .rest: $t.breakMinutes
-        default: $t.countdownMinutes
+        switch service.mode {
+        case .focus: $service.focusMinutes
+        case .rest: $service.breakMinutes
+        case .countdown: $service.countdownMinutes
+        case .stopwatch: .constant(0)
         }
     }
 }
@@ -434,7 +448,7 @@ struct NotesTab: View {
                     .onSubmit { store.add() }
                 if store.notes.contains(where: \.done) { Button("Clear done") { store.clearDone() }.buttonStyle(PillButtonStyle()).fixedSize() }
             }
-            .onChange(of: focused) { model.pinnedOpen = $0 }
+            .keepsIslandOpen(while: focused, in: model)
             if store.notes.isEmpty {
                 EmptyState(symbol: "note.text", title: "No notes yet", message: "Quick notes and to-dos stay here until you check them off")
             } else {
@@ -461,8 +475,11 @@ struct NotesTab: View {
     }
 }
 
+/// The clipboard tab's two pages: the history of copies, and the saved snippets.
+enum ClipboardPage: Hashable { case history, snippets }
+
 struct ClipboardHistory: View {
-    @Binding var mode: Int
+    @Binding var mode: ClipboardPage
     @ObservedObject var clip = ClipboardService.shared
     @ObservedObject var model = NotchModel.shared
     @FocusState private var focused: Bool
@@ -487,7 +504,7 @@ struct ClipboardHistory: View {
                 IconButton(symbol: "trash", label: L("Clear history (pinned items stay)")) { clip.clearUnpinned() }
                 ClipboardModePicker(mode: $mode)
             }
-            .onChange(of: focused) { model.pinnedOpen = $0 }
+            .keepsIslandOpen(while: focused, in: model)
             let items = clip.filtered
             if items.isEmpty {
                 if clip.items.isEmpty { EmptyState(symbol: "doc.on.clipboard", title: "Clipboard history is empty", message: "Copy text or an image and it shows up here") }
@@ -504,21 +521,21 @@ struct ClipboardHistory: View {
 }
 
 struct ClipboardTab: View {
-    @State private var mode = 0
+    @State private var mode = ClipboardPage.history
     var body: some View {
-        if mode == 0 { ClipboardHistory(mode: $mode) } else { SnippetsView(mode: $mode) }
+        if mode == .history { ClipboardHistory(mode: $mode) } else { SnippetsView(mode: $mode) }
     }
 }
 
 struct ClipboardModePicker: View {
-    @Binding var mode: Int
+    @Binding var mode: ClipboardPage
     var body: some View {
-        PillSegmented(options: [0, 1], selection: $mode, tint: .mint.opacity(0.45)) { $0 == 0 ? "History" : "Snippets" }.frame(width: 190)
+        PillSegmented(options: [ClipboardPage.history, .snippets], selection: $mode, tint: .mint.opacity(0.45)) { $0 == .history ? "History" : "Snippets" }.frame(width: 190)
     }
 }
 
 struct SnippetsView: View {
-    @Binding var mode: Int
+    @Binding var mode: ClipboardPage
     @ObservedObject var store = SnippetsStore.shared
     @ObservedObject var model = NotchModel.shared
     @FocusState private var focused: Bool
@@ -533,7 +550,7 @@ struct SnippetsView: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .frame(width: 220)
-            .onChange(of: focused) { model.pinnedOpen = $0 }
+            .keepsIslandOpen(while: focused, in: model)
             if store.snippets.isEmpty {
                 EmptyState(symbol: "text.quote", title: "No snippets yet", message: "Save text you paste often, then paste it from the palette")
             } else {
@@ -585,7 +602,7 @@ struct ClipCard: View {
         .padding(10).rowCard(radius: 10)
         .onHover { hovering = $0 }
         .onTapGesture(count: 2) { clip.paste(item) }
-        .onTapGesture { clip.copy(item); NotchModel.shared.show(Activity(symbol: "doc.on.doc.fill", title: "Copied", duration: 1.2)) }
+        .onTapGesture { clip.copy(item); NotchModel.shared.show(Activity(symbol: "doc.on.doc.fill", title: L("Copied"), duration: 1.2)) }
         .contextMenu {
             Button("Copy") { clip.copy(item) }
             Button("Paste") { clip.paste(item) }
@@ -624,12 +641,12 @@ struct ClipCard: View {
             Image(nsImage: img).resizable().scaledToFill().frame(width: 156).frame(maxHeight: .infinity).clipShape(RoundedRectangle(cornerRadius: 6))
         } else if let t = item.text {
             switch ClipboardService.kind(of: t) {
-            case .color(let c, let hex):
+            case .color(let swatch, let hex):
                 VStack(alignment: .leading, spacing: 4) {
-                    RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: c)).overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(DS.hairline, lineWidth: 0.5))
+                    RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: swatch)).overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(DS.hairline, lineWidth: 0.5))
                         .frame(maxHeight: 96)
                     Text(hex.uppercased()).font(.system(size: 11, weight: .medium, design: .monospaced))
-                    let rgb = c.usingColorSpace(.sRGB) ?? c
+                    let rgb = swatch.usingColorSpace(.sRGB) ?? swatch
                     Text(verbatim: "rgb(\(Int(rgb.redComponent * 255)), \(Int(rgb.greenComponent * 255)), \(Int(rgb.blueComponent * 255)))")
                         .font(.system(size: 10, design: .monospaced)).foregroundStyle(DS.secondary)
                 }
@@ -717,12 +734,29 @@ struct ShelfCell: View {
     }
 }
 
+/// The launcher's three pages: pinned apps, Apple Shortcuts, and built-in actions.
+enum LauncherPage: Hashable {
+    case apps, shortcuts, actions
+
+    var title: LocalizedStringKey {
+        switch self {
+        case .apps: return "Apps"
+        case .shortcuts: return "Shortcuts"
+        case .actions: return "Actions"
+        }
+    }
+}
+
 struct LauncherTab: View {
-    @State private var mode = 0
+    @State private var page = LauncherPage.apps
     var body: some View {
         VStack(spacing: DS.gap) {
-            PillSegmented(options: [0, 1, 2], selection: $mode, tint: .indigo) { ["Apps", "Shortcuts", "Actions"][$0] }.frame(width: 300)
-            if mode == 0 { AppsGrid() } else if mode == 1 { ShortcutsGrid() } else { ActionsGrid() }
+            PillSegmented(options: [LauncherPage.apps, .shortcuts, .actions], selection: $page, tint: .indigo) { $0.title }.frame(width: 300)
+            switch page {
+            case .apps: AppsGrid()
+            case .shortcuts: ShortcutsGrid()
+            case .actions: ActionsGrid()
+            }
         }
     }
 }
@@ -798,7 +832,7 @@ struct StocksTab: View {
                     .onSubmit { stocks.add(symbol); symbol = "" }
                 IconButton(symbol: "arrow.clockwise", label: L("Refresh")) { stocks.refresh() }
             }
-            .onChange(of: focused) { model.pinnedOpen = $0 }
+            .keepsIslandOpen(while: focused, in: model)
             if stocks.watchlist.isEmpty {
                 EmptyState(symbol: "chart.line.uptrend.xyaxis", title: "Your watchlist is empty", message: "Type a symbol above and press Return")
             } else {
@@ -811,36 +845,40 @@ struct StocksTab: View {
         }
     }
 
-    private func row(_ w: Watch) -> some View {
-        let q = stocks.quotes[w.symbol]
-        let up = (q?.change ?? 0) >= 0
+    private func row(_ watch: Watch) -> some View {
+        let quote = stocks.quotes[watch.symbol]
+        let up = (quote?.change ?? 0) >= 0
         return HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(spacing: 4) {
-                    Text(w.symbol).font(.system(size: 12, weight: .semibold))
-                    if stocks.pinned == w.symbol { Image(systemName: "pin.fill").font(.system(size: 8)).foregroundStyle(.orange) }
-                    if w.above != nil { Image(systemName: "bell.fill").font(.system(size: 8)).foregroundStyle(.yellow) }
+                    Text(watch.symbol).font(.system(size: 12, weight: .semibold))
+                    if stocks.pinned == watch.symbol { Image(systemName: "pin.fill").font(.system(size: 8)).foregroundStyle(.orange) }
+                    if watch.above != nil { Image(systemName: "bell.fill").font(.system(size: 8)).foregroundStyle(.yellow) }
                 }
-                Text(LocalizedStringKey(q?.state ?? (stocks.failed.contains(w.symbol) ? "Unavailable" : "…"))).font(.system(size: 9)).foregroundStyle(.secondary)
+                Text(LocalizedStringKey(quote?.state ?? (stocks.failed.contains(watch.symbol) ? "Unavailable" : "…"))).font(.system(size: 9)).foregroundStyle(.secondary)
             }.frame(width: 90, alignment: .leading)
-            Sparkline(values: q?.series ?? [], color: up ? .green : .red).frame(height: 22)
-            if let q {
+            Sparkline(values: quote?.series ?? [], color: up ? .green : .red).frame(height: 22)
+            if let quote {
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text(String(format: "%.2f", q.price)).font(.system(size: 12, design: .monospaced))
-                    Text(String(format: "%@%.2f%%", up ? "+" : "", q.change * 100)).font(.system(size: 10, design: .monospaced)).foregroundStyle(up ? .green : .red)
+                    Text(String(format: "%.2f", quote.price)).font(.system(size: 12, design: .monospaced))
+                    Text(String(format: "%@%.2f%%", up ? "+" : "", quote.change * 100)).font(.system(size: 10, design: .monospaced)).foregroundStyle(up ? .green : .red)
                 }.frame(width: 80, alignment: .trailing)
             }
         }
         .padding(.horizontal, 10).padding(.vertical, 4)
         .rowCard()
-        .onTapGesture { if let u = URL(string: "https://finance.yahoo.com/quote/\(w.symbol)") { NSWorkspace.shared.open(u) } }
+        .onTapGesture {
+            // Symbols such as ^GSPC or BTC-USD need escaping to make a valid address.
+            if let symbol = watch.symbol.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+               let url = URL(string: "https://finance.yahoo.com/quote/\(symbol)") { NSWorkspace.shared.open(url) }
+        }
         .contextMenu {
-            Button(LocalizedStringKey(stocks.pinned == w.symbol ? "Unpin from pill" : "Pin to pill")) { stocks.pinned = stocks.pinned == w.symbol ? nil : w.symbol }
-            Button("Alert at ±2%") { stocks.setAlert(w.symbol, percent: 2) }
-            Button("Alert at ±5%") { stocks.setAlert(w.symbol, percent: 5) }
-            Button("Clear alert") { stocks.setAlert(w.symbol, percent: nil) }
+            Button(LocalizedStringKey(stocks.pinned == watch.symbol ? "Unpin from pill" : "Pin to pill")) { stocks.pinned = stocks.pinned == watch.symbol ? nil : watch.symbol }
+            Button("Alert at ±2%") { stocks.setAlert(watch.symbol, percent: 2) }
+            Button("Alert at ±5%") { stocks.setAlert(watch.symbol, percent: 5) }
+            Button("Clear alert") { stocks.setAlert(watch.symbol, percent: nil) }
             Divider()
-            Button("Remove", role: .destructive) { stocks.remove(w.symbol) }
+            Button("Remove", role: .destructive) { stocks.remove(watch.symbol) }
         }
     }
 }
@@ -863,55 +901,64 @@ struct Sparkline: View {
     }
 }
 
+/// What a provider's usage counts: AI-written edits, premium requests, or tokens (the default for local logs).
+enum UsageUnit: String {
+    case tokens, edits, requests
+}
+
 struct AIUsageTab: View {
     @ObservedObject var usage = AIUsageService.shared
     @State private var selected = 0
+    /// The usual rate-limit window (5 hours), for a provider that does not give its own.
+    private static let defaultLimitMinutes = 300
 
     var body: some View {
         if usage.providers.isEmpty {
             EmptyState(symbol: "sparkles", title: LocalizedStringKey(usage.loading ? "Reading local logs…" : "No Claude Code, Codex, Gemini CLI, OpenCode or Cursor activity in the last 7 days"))
                 .onAppear { usage.refresh() }
         } else {
-            let p = usage.providers[min(selected, usage.providers.count - 1)]
+            let provider = usage.providers[min(selected, usage.providers.count - 1)]
+            let unit = UsageUnit(rawValue: provider.unit) ?? .tokens
+            let windowMinutes = provider.limitWindowMinutes ?? Self.defaultLimitMinutes
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
                     if usage.providers.count > 1 {
                         PillSegmented(options: Array(usage.providers.indices), selection: $selected, tint: .purple.opacity(0.7)) { LocalizedStringKey(usage.providers[$0].name) }
-                    } else { Label(p.name, systemImage: p.symbol).font(.system(size: 13, weight: .semibold)) }
-                    if let pct = p.limitPercent {
+                    } else { Label(provider.name, systemImage: provider.symbol).font(.system(size: 13, weight: .semibold)) }
+                    if let percent = provider.limitPercent {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
-                                Group { if (p.limitWindowMinutes ?? 300) >= 7 * 24 * 60 { Text("Monthly limit") } else { Text("\((p.limitWindowMinutes ?? 300) / 60)h limit") } }.foregroundStyle(.secondary); Spacer()
-                                Text(String(format: "%.0f%%", pct)).font(.system(size: 12, weight: .semibold, design: .rounded))
+                                Group { if windowMinutes >= 7 * 24 * 60 { Text("Monthly limit") } else { Text("\(windowMinutes / 60)h limit") } }.foregroundStyle(.secondary); Spacer()
+                                Text(String(format: "%.0f%%", percent)).font(.system(size: 12, weight: .semibold, design: .rounded))
                             }.font(.system(size: 11))
-                            ProgressBar(value: pct, total: 100) { _ in }.tint(.orange)
-                            if let r = p.limitResetsAt { Text("Resets \(r, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
+                            ProgressBar(value: percent, total: 100).tint(.orange)   // read-only: the limit is not ours to change
+                            if let resets = provider.limitResetsAt { Text("Resets \(resets, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
                         }.padding(8).rowCard()
                     }
-                    if p.unit == "requests" {
-                        stat("Used this month", p.today)
+                    if unit == .requests {
+                        stat("Used this month", provider.today)
                         Text("Premium requests, read through the GitHub CLI").font(.system(size: 9)).foregroundStyle(.secondary)
                     } else {
-                        stat("Last 5 hours", p.fiveHour)
-                        stat("Today", p.today)
-                        stat("7 days", p.week)
+                        stat("Last 5 hours", provider.fiveHour)
+                        stat("Today", provider.today)
+                        stat("7 days", provider.week)
                     }
-                    if p.unit != "requests", let d = p.lastActivity { Text("Last activity \(d, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
+                    if unit != .requests, let lastActivity = provider.lastActivity { Text("Last activity \(lastActivity, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
                 }.frame(width: 210, alignment: .leading)
                 VStack(alignment: .leading, spacing: 4) {
                     Group {
-                        switch p.unit {
-                        case "edits": Text("AI-written code edits per day")
-                        case "requests": Text("Monthly budget: no daily history")
-                        default: Text("Tokens per day (cache reads excluded)")
+                        switch unit {
+                        case .edits: Text("AI-written code edits per day")
+                        case .requests: Text("Monthly budget: no daily history")
+                        case .tokens: Text("Tokens per day (cache reads excluded)")
                         }
                     }.font(.system(size: 10)).foregroundStyle(.secondary)
-                    let peak = max(p.days.map(\.tokens).max() ?? 1, 1)
+                    let peak = max(provider.days.map(\.tokens).max() ?? 1, 1)
                     HStack(alignment: .bottom, spacing: 8) {
-                        ForEach(Array(p.days.enumerated()), id: \.offset) { _, d in
+                        ForEach(Array(provider.days.enumerated()), id: \.offset) { _, day in
                             VStack(spacing: 3) {
-                                Capsule().fill(Color.orange.opacity(d.tokens > 0 ? 1 : 0.15)).frame(width: 18, height: 6 + 60 * CGFloat(d.tokens) / CGFloat(peak))
-                                Text(d.label).font(.system(size: 9)).foregroundStyle(.secondary)
+                                Capsule().fill(Color.orange.opacity(day.tokens > 0 ? 1 : 0.15)).frame(width: 18, height: 6 + 60 * CGFloat(day.tokens) / CGFloat(peak))
+                                Text(day.label).font(.system(size: 9)).foregroundStyle(.secondary)
                             }
                         }
                     }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -942,7 +989,7 @@ struct RemindersTab: View {
                     Image(systemName: "plus.circle.fill").foregroundStyle(.blue)
                     TextField("Add a reminder, e.g. call mum tomorrow at 9am", text: $rem.draft).textFieldStyle(.plain).font(.system(size: 12)).focused($focused)
                         .onSubmit { rem.add() }
-                        .onChange(of: focused) { model.pinnedOpen = $0 }
+                        .keepsIslandOpen(while: focused, in: model)
                 }
                 .padding(.horizontal, 10).padding(.vertical, 6)
                 .background(DS.card, in: RoundedRectangle(cornerRadius: DS.rowRadius, style: .continuous))
@@ -1018,7 +1065,7 @@ struct NotificationsTab: View {
                                             Text(n.date, style: .relative).font(.system(size: 9)).foregroundStyle(.secondary)
                                         }
                                         if !n.body.isEmpty { Text(verbatim: n.body).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2) }
-                                        if n.app == MessageReply.app { SMSReplyField(sender: n.title) }
+                                        if n.app == MessageReply.app { SMSReplyField(sender: n.sender) }
                                     }
                                 }
                                 .padding(.horizontal, 10).padding(.vertical, 5).frame(maxWidth: .infinity, alignment: .leading)
@@ -1033,15 +1080,20 @@ struct NotificationsTab: View {
                         }
                     }
                 }
+            } else if mirror.queryFailed {
+                EmptyState(symbol: "exclamationmark.triangle", title: "Could not read notifications")
             } else {
                 EmptyState(symbol: "bell.badge", title: "Reading notifications needs Full Disk Access", actionTitle: "Open Settings", tint: .red) { PermissionsCenter.shared.openSettings(.fullDisk) }
             }
         }
         .onAppear { mirror.refresh() }
+        // A filter for an app that no longer has rows would hide every row with no chip left to clear it.
+        .onChange(of: Self.apps(in: mirror.items ?? [])) { remaining in
+            if let selected = app, !remaining.contains(selected) { app = nil }
+        }
     }
 
     private func open(_ bundleID: String) {
-        guard let u = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return }
-        NSWorkspace.shared.openApplication(at: u, configuration: .init()); NotchModel.shared.collapse()
+        AppLauncher.open(NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID), named: Self.name(bundleID))
     }
 }

@@ -5,14 +5,17 @@ import SwiftUI
 final class LiveState {
     static let shared = LiveState()
     static var lottiePath: String? { UserDefaults.standard.string(forKey: "lottiePath").flatMap { FileManager.default.fileExists(atPath: $0) ? $0 : nil } }
-    var lottiePath: String? { Self.lottiePath }
-    var hasWings: Bool {
-        let t = TimerService.shared, m = MusicService.shared, stocks = StocksService.shared
-        return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
+
+    /// Live content that the wings show. The one predicate for the root view's wings and for the window size.
+    static var hasLiveContent: Bool {
+        let timers = TimerService.shared, music = MusicService.shared, stocks = StocksService.shared
+        return timers.isActive || CaffeineService.shared.active || (music.hasTrack && music.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
             || CallMonitor.shared.call != nil || lottiePath != nil || !DownloadProgress.shared.items.isEmpty || BuildWatcher.shared.since != nil || ScreenRecorder.shared.recording
             || (stocks.pinned.flatMap { stocks.quotes[$0] } != nil)   // the pinned quote is drawn on the wing too
-            || IdlePill.enabled
     }
+
+    /// Whether the collapsed pill has wings: live content, or the idle clock that fills an otherwise empty pill.
+    var hasWings: Bool { Self.hasLiveContent || IdlePill.enabled }
 }
 
 struct NotchRootView: View {
@@ -31,7 +34,7 @@ struct NotchRootView: View {
     @AppStorage(IdlePill.key) private var idleClock = false
 
     /// Live content on the wings; the idle clock is the lowest priority and only fills an otherwise empty pill.
-    private var liveWings: Bool { recorder.recording || timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil || (stocks.pinned.flatMap { stocks.quotes[$0] } != nil) }
+    private var liveWings: Bool { LiveState.hasLiveContent }
     private var wings: Bool { liveWings || idleClock }
     private var size: CGSize { model.size(hasWings: wings) }
 

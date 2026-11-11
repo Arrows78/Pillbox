@@ -8,10 +8,11 @@ import SwiftUI
 /// (phone number or address) comes from the contact with that name, so Contacts access is asked for once.
 enum MessageReply {
     static let app = "com.apple.MobileSMS"
+    /// One store for every lookup, so the Contacts access is asked once and the store is not rebuilt per reply.
+    private nonisolated(unsafe) static let store = CNContactStore()
 
     /// The first phone number or address of the contact called `name`.
     static func handle(for name: String) async -> String? {
-        let store = CNContactStore()
         guard (try? await store.requestAccess(for: .contacts)) == true else { return nil }
         let keys = [CNContactPhoneNumbersKey, CNContactEmailAddressesKey] as [CNKeyDescriptor]
         guard let contact = (try? store.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: name), keysToFetch: keys))?.first else { return nil }
@@ -44,7 +45,9 @@ enum MessageReply {
         guard let handle = await handle(for: sender) else { return L("No number or address for this sender") }
         var error: NSDictionary?
         NSAppleScript(source: script(text: text, handle: handle))?.executeAndReturnError(&error)
-        return error == nil ? nil : L("Messages could not send it")
+        guard let error else { return nil }
+        if error[NSAppleScript.errorNumber] as? Int == -1743 { return L("Pillbox is not allowed to control Messages. Allow it in System Settings › Automation.") }
+        return L("Messages could not send it (%@)", error[NSAppleScript.errorMessage] as? String ?? "?")
     }
 }
 

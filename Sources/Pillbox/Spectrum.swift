@@ -41,8 +41,8 @@ final class AudioSpectrum: ObservableObject {
         desc.name = "Pillbox"; desc.isPrivate = true; desc.muteBehavior = .unmuted
         guard AudioHardwareCreateProcessTap(desc, &tapID) == noErr else { return }
         var fmt = AudioStreamBasicDescription(); var size = UInt32(MemoryLayout<AudioStreamBasicDescription>.size)
-        var fa = AudioObjectPropertyAddress(mSelector: kAudioTapPropertyFormat, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
-        _ = AudioObjectGetPropertyData(tapID, &fa, 0, nil, &size, &fmt)
+        var formatAddress = SystemEQ.address(kAudioTapPropertyFormat)
+        _ = AudioObjectGetPropertyData(tapID, &formatAddress, 0, nil, &size, &fmt)
         let rate = fmt.mSampleRate > 0 ? fmt.mSampleRate : 48_000
         let agg: [String: Any] = [kAudioAggregateDeviceNameKey: "Pillbox Tap", kAudioAggregateDeviceUIDKey: UUID().uuidString,
                                   kAudioAggregateDeviceIsPrivateKey: true, kAudioAggregateDeviceTapAutoStartKey: true,
@@ -70,7 +70,7 @@ final class AudioSpectrum: ObservableObject {
     private func checkHeard() {
         guard running, !warnedSilence, MusicService.shared.isPlaying, bands.allSatisfy({ $0 < 0.01 }) else { return }
         warnedSilence = true
-        NotchModel.shared.show(Activity(symbol: "waveform.slash", title: "Allow audio capture for Pillbox", subtitle: "Privacy & Security › Screen & System Audio Recording", tint: .orange, duration: 3.5))
+        NotchModel.shared.show(Activity(symbol: "waveform.slash", title: L("Allow audio capture for Pillbox"), subtitle: L("Privacy & Security › Screen & System Audio Recording"), tint: .orange, duration: 3.5))
     }
 
     private func smooth(_ new: [Float]) {

@@ -51,7 +51,7 @@ enum MCPServer {
         tool("music_control", "Control Spotify or Apple Music.", ["action": ["type": "string", "enum": ["play_pause", "next", "previous"]]], required: ["action"]),
         tool("add_to_shelf", "Add a file or folder to Pillbox's shelf.", ["path": ["type": "string"]], required: ["path"]),
         tool("show_notification", "Show a short message in the notch.", ["title": ["type": "string"], "message": ["type": "string"]], required: ["title"]),
-        tool("keep_awake", "Keep the Mac awake, or turn it off.", ["minutes": ["type": "integer"], "enabled": ["type": "boolean"]]),
+        tool("keep_awake", "Keep the Mac awake, or turn it off.", ["minutes": ["type": "integer", "minimum": 1, "maximum": 1440], "enabled": ["type": "boolean"]]),
     ]
 
     /// The response for one request, or nil for a notification (no `id`). `call` runs a tool.
@@ -62,7 +62,7 @@ enum MCPServer {
         switch method {
         case "initialize":
             let v = (req["params"] as? [String: Any])?["protocolVersion"] as? String ?? "2024-11-05"
-            return ok(["protocolVersion": v, "capabilities": ["tools": [String: Any]()], "serverInfo": ["name": "pillbox", "version": "0.1"]])
+            return ok(["protocolVersion": v, "capabilities": ["tools": [String: Any]()], "serverInfo": ["name": "pillbox", "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"]])
         case "ping": return ok([:])
         case "tools/list": return ok(["tools": tools])
         case "tools/call":
@@ -83,19 +83,28 @@ enum MCPServer {
         guard let token = defaults.string(forKey: "devAPIToken"), defaults.bool(forKey: "devAPIEnabled") else {
             return (false, "Pillbox's local API is off. Turn it on in Pillbox › Settings › Developer API.")
         }
-        var req = URLRequest(url: URL(string: "http://127.0.0.1:9998/action")!)
+        var req = URLRequest(url: URL(string: "http://127.0.0.1:\(DevAPI.defaultPort)/action")!)
         req.httpMethod = "POST"; req.timeoutInterval = 10
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.httpBody = try? JSONSerialization.data(withJSONObject: ["tool": name, "arguments": args])
-        var out: (Bool, String) = (false, "Pillbox is not running")
+        let answer = Answer()
         let sem = DispatchSemaphore(value: 0)
         URLSession.shared.dataTask(with: req) { data, resp, err in
-            if let http = resp as? HTTPURLResponse { out = (http.statusCode == 200, String(decoding: data ?? Data(), as: UTF8.self)) }
-            else if let err { out = (false, "Pillbox is not reachable: \(err.localizedDescription)") }
+            if let http = resp as? HTTPURLResponse { answer.set((http.statusCode == 200, String(decoding: data ?? Data(), as: UTF8.self))) }
+            else if let err { answer.set((false, "Pillbox is not reachable: \(err.localizedDescription)")) }
             sem.signal()
         }.resume()
-        _ = sem.wait(timeout: .now() + 12)
-        return out
+        // A late answer lands in `answer` after this returns and is never read.
+        if sem.wait(timeout: .now() + 12) == .timedOut { return (false, "Pillbox did not answer within 12 seconds. It may be busy; try again.") }
+        return answer.get() ?? (false, "Pillbox is not reachable")
+    }
+
+    /// The reply of one forwarded call, written by the URLSession callback and read by the caller.
+    private final class Answer: @unchecked Sendable {
+        private let lock = NSLock()
+        private var result: (ok: Bool, text: String)?
+        func set(_ r: (ok: Bool, text: String)) { lock.withLock { if result == nil { result = r } } }
+        func get() -> (ok: Bool, text: String)? { lock.withLock { result } }
     }
 
     /// Reads requests from stdin until it closes. Nothing else may ever be written to stdout.

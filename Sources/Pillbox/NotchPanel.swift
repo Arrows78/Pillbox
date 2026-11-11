@@ -22,7 +22,10 @@ final class NotchWindowController {
     let panel: NotchPanel
     private let hosting: PassthroughHostingView<NotchRootView>
     private let model = NotchModel.shared
+    /// Kept for the whole run: the controller is created once by AppDelegate and never torn down, so the tokens are not removed.
     private var observers: [NSObjectProtocol] = []
+    /// The settings `applyCapturePreference` reads, as last applied; other defaults changes do not need a re-apply.
+    private var capturePrefs = ""
 
     init() {
         let size = NotchModel.windowSize
@@ -39,9 +42,16 @@ final class NotchWindowController {
         panel.contentView = hosting
         reposition()
         applyCapturePreference()
+        capturePrefs = Self.capturePreferenceSignature()
         panel.orderFrontRegardless()
         observers.append(NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.applyCapturePreference() }
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let signature = Self.capturePreferenceSignature()
+                guard signature != self.capturePrefs else { return }
+                self.capturePrefs = signature
+                self.applyCapturePreference()
+            }
         })
 
         observers.append(NotificationCenter.default.addObserver(forName: .notchStateChanged, object: nil, queue: .main) { [weak self] _ in
@@ -49,11 +59,19 @@ final class NotchWindowController {
         })
         observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.model.geometry = NotchGeometry.detect()
+                let detected = NotchGeometry.detect()
+                self?.model.geometry = detected
                 self?.reposition()
-                self?.applyCapturePreference()
+                self?.applyCapturePreference(detected: detected)
             }
         })
+    }
+
+    /// The defaults that decide how the island is shown: capture, full screen, mirroring, the hidden notch, the screen and the pill width.
+    private static func capturePreferenceSignature() -> String {
+        let d = UserDefaults.standard
+        return ["hideFromCapture", "hideEverywhere", "hideInFullScreen", "hideNotch", "hideWhileMirroring", "targetDisplay", "pillWidth"]
+            .map { "\(d.object(forKey: $0) ?? "")" }.joined(separator: "|")
     }
 
     /// Visible shape rect in screen coordinates (used for hover tests).
@@ -82,20 +100,20 @@ final class NotchWindowController {
 
     /// The panel is larger than the shape, and a view that returns no hit still swallows the click there.
     /// So the window only takes the mouse while the pointer is over the visible shape; elsewhere clicks reach the windows below.
-    func updateMouseRouting(at point: NSPoint) {
-        let hidden = UserDefaults.standard.bool(forKey: "hideEverywhere")
+    func updateMouseRouting(at point: NSPoint, hidden: Bool = UserDefaults.standard.bool(forKey: "hideEverywhere")) {
         panel.ignoresMouseEvents = hidden || !shapeRectOnScreen.insetBy(dx: -4, dy: -4).contains(point)
     }
 
     /// Asks capture apps to leave the island out of screenshots, recordings and screen shares.
-    func applyCapturePreference() {
+    /// `known`: the geometry the caller has just detected, so it is not detected twice.
+    func applyCapturePreference(detected known: NotchGeometry? = nil) {
         panel.sharingType = UserDefaults.standard.bool(forKey: "hideFromCapture") ? .none : .readOnly
         // Hidden everywhere: the island is transparent and lets clicks through, but its shortcuts keep working.
         let hidden = UserDefaults.standard.bool(forKey: "hideEverywhere")
         panel.alphaValue = hidden ? 0 : 1
-        updateMouseRouting(at: NSEvent.mouseLocation)
+        updateMouseRouting(at: NSEvent.mouseLocation, hidden: hidden)
         panel.collectionBehavior = UserDefaults.standard.bool(forKey: "hideInFullScreen") ? [.canJoinAllSpaces, .stationary, .ignoresCycle] : [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
-        let detected = NotchGeometry.detect()
+        let detected = known ?? NotchGeometry.detect()
         // The pill width setting changes the geometry without changing the screen.
         let g = model.geometry
         if detected.screen != g.screen || detected.width != g.width || detected.height != g.height { model.geometry = detected; reposition() }
@@ -103,6 +121,4 @@ final class NotchWindowController {
         // A mirrored display copies the whole screen, so capture exclusion cannot hide the island on a projector: it goes away outright.
         if Mirroring.shouldHide { panel.orderOut(nil) } else if !panel.isVisible { panel.orderFrontRegardless() }
     }
-
-    func makeKey() { panel.makeKey() }
 }

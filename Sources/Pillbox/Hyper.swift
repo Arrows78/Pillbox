@@ -44,19 +44,17 @@ final class HyperKey {
         return "{\"UserKeyMapping\":[{\"HIDKeyboardModifierMappingSrc\":0x700000039,\"HIDKeyboardModifierMappingDst\":0x70000006D}]}"
     }
 
-    var active: Bool { tap != nil }
-
     func apply() { UserDefaults.standard.bool(forKey: "hyperKey") ? enable() : disable() }
 
     private func enable() {
         guard tap == nil else { return }
         guard AXIsProcessTrusted() else {
-            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: "Accessibility needed", subtitle: "Allow Pillbox, then turn Hyper on again", tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: L("Accessibility needed"), subtitle: L("Allow Pillbox, then turn Hyper on again"), tint: .orange))
             UserDefaults.standard.set(false, forKey: "hyperKey"); return
         }
         let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
         guard let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask, callback: hyperTap, userInfo: nil) else {
-            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: "Could not turn Hyper on", subtitle: "Allow Pillbox in Privacy & Security › Accessibility", tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: L("Could not turn Hyper on"), subtitle: L("Allow Pillbox in Privacy & Security › Accessibility"), tint: .orange))
             UserDefaults.standard.set(false, forKey: "hyperKey")
             return
         }
@@ -70,15 +68,18 @@ final class HyperKey {
         if let t = tap { CGEvent.tapEnable(tap: t, enable: false) }
         if let s = source { CFRunLoopRemoveSource(CFRunLoopGetMain(), s, .commonModes) }
         let was = tap != nil
-        tap = nil; source = nil; hyperHeld = false
+        tap = nil; source = nil; hyperHeld = false; hyperUsed = false
         if was { Self.hidutil(Self.mappingJSON(enabled: false)) }
     }
 
-    func reenable() { if let t = tap { CGEvent.tapEnable(tap: t, enable: true) } }
+    /// The system turns the tap off on timeout or user input, and the Caps Lock release can be lost meanwhile,
+    /// so the held state starts over.
+    func reenable() {
+        hyperHeld = false; hyperUsed = false
+        if let t = tap { CGEvent.tapEnable(tap: t, enable: true) }
+    }
 
     private static func hidutil(_ json: String) {
-        let p = Process(); p.executableURL = URL(fileURLWithPath: "/usr/bin/hidutil")
-        p.arguments = ["property", "--set", json]; p.standardOutput = Pipe(); p.standardError = Pipe()
-        try? p.run()
+        _ = ProcessRunner.run("/usr/bin/hidutil", ["property", "--set", json], timeout: 5)
     }
 }

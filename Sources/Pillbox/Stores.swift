@@ -18,7 +18,7 @@ final class NotesStore: ObservableObject {
         guard !t.isEmpty else { return }
         notes.insert(Note(text: t), at: 0); draft = ""; save()
     }
-    func toggle(_ n: Note) { if let i = notes.firstIndex(of: n) { notes[i].done.toggle(); save() } }
+    func toggle(_ n: Note) { if let i = notes.firstIndex(where: { $0.id == n.id }) { notes[i].done.toggle(); save() } }
     func remove(_ n: Note) { notes.removeAll { $0.id == n.id }; save() }
     func clearDone() { notes.removeAll(where: \.done); save() }
     func save() { Store.save(notes, "notes.json") }
@@ -52,10 +52,30 @@ final class LauncherStore: ObservableObject {
         paths.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to); save()
     }
     func launch(_ path: String) {
-        NSWorkspace.shared.openApplication(at: URL(fileURLWithPath: path), configuration: .init())
-        NotchModel.shared.collapse()
+        let url = URL(fileURLWithPath: path)
+        AppLauncher.open(url, named: url.deletingPathExtension().lastPathComponent)
     }
     private func save() { Store.save(paths, "launcher.json") }
+}
+
+/// Opens an app and collapses the island. A moved or deleted app (`url` nil or failing) shows a message instead of failing silently.
+@MainActor
+enum AppLauncher {
+    static func open(_ url: URL?, named name: String) {
+        guard let url else {
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not open the app"), subtitle: name, tint: .orange))
+            return
+        }
+        NSWorkspace.shared.openApplication(at: url, configuration: .init()) { _, error in
+            guard error != nil else { return }
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not open the app"), subtitle: name, tint: .orange))
+                }
+            }
+        }
+        NotchModel.shared.collapse()
+    }
 }
 
 struct Snippet: Identifiable, Codable, Equatable {

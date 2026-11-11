@@ -28,7 +28,11 @@ final class ShelfService: ObservableObject {
 
     func airDrop(_ list: [ShelfItem]) {
         let urls = list.map(\.url)
-        guard !urls.isEmpty, let svc = NSSharingService(named: .sendViaAirDrop), svc.canPerform(withItems: urls) else {
+        guard !urls.isEmpty else {
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Select items first"), tint: .orange))
+            return
+        }
+        guard let svc = NSSharingService(named: .sendViaAirDrop), svc.canPerform(withItems: urls) else {
             NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "AirDrop unavailable", tint: .orange))
             return
         }
@@ -46,7 +50,7 @@ final class ShelfService: ObservableObject {
     }
 
     func copyPaths(_ list: [ShelfItem]) {
-        NSPasteboard.general.clearContents(); NSPasteboard.general.setString(list.map(\.path).joined(separator: "\n"), forType: .string)
+        Pasteboard.copy(list.map(\.path).joined(separator: "\n"))
     }
 
     /// "3 items · 2 selected", the shelf's header line.
@@ -56,30 +60,35 @@ final class ShelfService: ObservableObject {
     }
 
     /// A sibling URL that does not exist yet ("name", "name 2", "name 3"…), so nothing is ever overwritten.
-    nonisolated static func uniqueURL(_ url: URL) -> URL {
+    /// `avoiding` holds paths already planned by the same batch: their programs have not written them yet.
+    /// A folder keeps its dots as part of its name ("v1.2" becomes "v1.2 2", not "v1 2.2").
+    nonisolated static func uniqueURL(_ url: URL, folder: Bool = false, avoiding taken: Set<String> = []) -> URL {
         let fm = FileManager.default
-        guard fm.fileExists(atPath: url.path) else { return url }
-        let base = url.deletingPathExtension(), ext = url.pathExtension
+        func isFree(_ u: URL) -> Bool { !fm.fileExists(atPath: u.path) && !taken.contains(u.path) }
+        if isFree(url) { return url }
+        let base = folder ? url.path : url.deletingPathExtension().path, ext = folder ? "" : url.pathExtension
         var n = 2
         while true {
-            let candidate = (ext.isEmpty ? URL(fileURLWithPath: base.path + " \(n)") : URL(fileURLWithPath: base.path + " \(n)").appendingPathExtension(ext))
-            if !fm.fileExists(atPath: candidate.path) { return candidate }
+            let candidate = URL(fileURLWithPath: base + " \(n)")
+            let named = ext.isEmpty ? candidate : candidate.appendingPathExtension(ext)
+            if isFree(named) { return named }
             n += 1
         }
     }
 
     /// Compresses files into a zip (or expands archives into a new folder) with the system `ditto`.
     func zipOrUnzip(_ list: [ShelfItem]) {
+        var planned = Set<String>()   // every output of this batch, so two inputs cannot share one
         for item in list {
             let u = item.url
             let p = Process()
             p.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
             let out: URL
             if u.pathExtension.lowercased() == "zip" {
-                out = Self.uniqueURL(u.deletingPathExtension())
+                out = Self.uniqueURL(u.deletingPathExtension(), folder: true, avoiding: planned)
                 p.arguments = ["-x", "-k", u.path, out.path]
             } else {
-                out = Self.uniqueURL(u.appendingPathExtension("zip"))
+                out = Self.uniqueURL(u.appendingPathExtension("zip"), avoiding: planned)
                 var isDir: ObjCBool = false
                 FileManager.default.fileExists(atPath: u.path, isDirectory: &isDir)
                 // --keepParent embeds the parent folder name: wanted for a folder, wrong for a single file.
@@ -97,6 +106,7 @@ final class ShelfService: ObservableObject {
                     }
                 }
             }
+            planned.insert(out.path)
             do { try p.run() } catch { NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: "Archive failed", tint: .red)) }
         }
     }

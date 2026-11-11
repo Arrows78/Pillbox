@@ -1,5 +1,5 @@
 import AppKit
-import AVFoundation
+@preconcurrency import AVFoundation
 import SwiftUI
 
 private struct CameraPreview: NSViewRepresentable {
@@ -20,17 +20,22 @@ final class CameraMirror {
     static let shared = CameraMirror()
     private var panel: NSPanel?
     private var session: AVCaptureSession?
+    /// The permission prompt is up and has not answered yet.
+    private var requesting = false
 
     var isOpen: Bool { panel?.isVisible == true }
 
     func toggle() { isOpen ? close() : open() }
 
     func open() {
+        guard !isOpen, !requesting else { return }
+        requesting = true
         AVCaptureDevice.requestAccess(for: .video) { ok in
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
+                    self.requesting = false
                     guard ok else {
-                        NotchModel.shared.show(Activity(symbol: "video.slash", title: "Camera access denied", subtitle: "Allow it in System Settings", tint: .orange)); return
+                        NotchModel.shared.show(Activity(symbol: "video.slash", title: L("Camera access denied"), subtitle: L("Allow it in System Settings"), tint: .orange)); return
                     }
                     self.present()
                 }
@@ -39,8 +44,9 @@ final class CameraMirror {
     }
 
     private func present() {
+        close()   // a session left from an earlier open must not keep running behind the new one
         guard let cam = AVCaptureDevice.default(for: .video), let input = try? AVCaptureDeviceInput(device: cam) else {
-            NotchModel.shared.show(Activity(symbol: "video.slash", title: "No camera found", tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "video.slash", title: L("No camera found"), tint: .orange)); return
         }
         let s = AVCaptureSession(); s.sessionPreset = .medium
         if s.canAddInput(input) { s.addInput(input) }

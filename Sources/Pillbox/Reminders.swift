@@ -25,6 +25,7 @@ final class RemindersService: ObservableObject {
     func start() {
         guard !observing, authorized else { return }
         observing = true
+        watchdog?.invalidate(); watchdog = nil   // access is here, so the timer has nothing left to do
         refresh()
         NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: store, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
@@ -34,7 +35,7 @@ final class RemindersService: ObservableObject {
     /// Called at launch. A timer picks up access granted later in System Settings.
     func watch() {
         start()
-        guard watchdog == nil else { return }
+        guard !observing, watchdog == nil else { return }
         watchdog = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.start() }
         }
@@ -70,7 +71,9 @@ final class RemindersService: ObservableObject {
 
     func add() {
         let (title, due) = Self.parse(draft)
-        guard authorized, !title.isEmpty, let cal = store.defaultCalendarForNewReminders() else { return }
+        guard !title.isEmpty else { return }
+        guard authorized else { fail(L("Reminders access is off")); return }
+        guard let cal = store.defaultCalendarForNewReminders() else { fail(L("There is no default list for new reminders")); return }
         let r = EKReminder(eventStore: store)
         r.title = title; r.calendar = cal
         if let due {
@@ -78,13 +81,18 @@ final class RemindersService: ObservableObject {
             r.addAlarm(EKAlarm(absoluteDate: due))
         }
         do { try store.save(r, commit: true); draft = ""; refresh() }
-        catch { NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Could not save the reminder", tint: .orange)) }
+        catch { fail(L("Could not save the reminder")) }
     }
 
+    /// The row leaves the list only once EventKit has saved the completion; otherwise the next refresh would bring it back.
     func complete(_ item: ReminderItem) {
         guard let r = store.calendarItem(withIdentifier: item.id) as? EKReminder else { return }
         r.isCompleted = true
-        try? store.save(r, commit: true)
-        items.removeAll { $0.id == item.id }
+        do { try store.save(r, commit: true); items.removeAll { $0.id == item.id } }
+        catch { fail(L("Could not complete the reminder")) }
+    }
+
+    private func fail(_ title: String) {
+        NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: title, tint: .orange))
     }
 }

@@ -9,7 +9,7 @@ import ApplicationServices
 final class WindowDrag {
     static let shared = WindowDrag()
     nonisolated static let key = "windowDrag"
-    static let minSize = CGSize(width: 200, height: 120)
+    nonisolated static let minSize = CGSize(width: 200, height: 120)
 
     private var monitors: [Any] = []
     private struct Grab { let window: AXUIElement; let origin: CGPoint; let size: CGSize; let mouse: NSPoint; let resize: Bool }
@@ -41,20 +41,9 @@ final class WindowDrag {
         let mods = e.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard mods.contains([.control, .option]), AXIsProcessTrusted() else { return }
         let p = NSEvent.mouseLocation
-        let primaryH = NSScreen.screens.first?.frame.height ?? 0
-        var element: AXUIElement?
-        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(p.x), Float(primaryH - p.y), &element) == .success,
-              let under = element else { return }
-        var winRef: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(under, kAXWindowAttribute as CFString, &winRef) == .success, let w = winRef else { return }
-        let window = w as! AXUIElement
-        var posRef: CFTypeRef?, sizeRef: CFTypeRef?
-        var pos = CGPoint.zero, size = CGSize.zero
-        guard AXUIElementCopyAttributeValue(window, kAXPositionAttribute as CFString, &posRef) == .success, let pv = posRef,
-              AXUIElementCopyAttributeValue(window, kAXSizeAttribute as CFString, &sizeRef) == .success, let sv = sizeRef else { return }
-        AXValueGetValue(pv as! AXValue, .cgPoint, &pos)
-        AXValueGetValue(sv as! AXValue, .cgSize, &size)
-        grab = Grab(window: window, origin: pos, size: size, mouse: p, resize: mods.contains(.shift))
+        // Without a readable frame the drag is skipped: starting from a made-up origin would jump the window.
+        guard let window = AXWindow.window(at: p), let frame = AXWindow.frame(of: window) else { return }
+        grab = Grab(window: window, origin: frame.origin, size: frame.size, mouse: p, resize: mods.contains(.shift))
     }
 
     private func drag() {

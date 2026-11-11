@@ -3,12 +3,36 @@ import CryptoKit
 
 // MARK: Automatic updates (GitHub releases, opt-in)
 
+/// Why an update could not be downloaded or installed. The text is what the island shows.
+enum UpdateError: Error, LocalizedError {
+    case download, checksumMissing, checksumMismatch, save, unpack, notPillbox, install
+    var errorDescription: String? {
+        switch self {
+        case .download: L("The download failed")
+        case .checksumMissing: L("The checksum is missing, so the update was not installed")
+        case .checksumMismatch: L("The checksum does not match")
+        case .save: L("Could not save the download")
+        case .unpack: L("Could not unpack the download")
+        case .notPillbox: L("The archive is not a Pillbox release")
+        case .install: L("The update could not be installed")
+        }
+    }
+}
+
+/// When the daily checks are due. Shared by the app update check and the Homebrew check.
+enum DailyCheck {
+    /// Due once a day, and only when the switch is on.
+    nonisolated static func due(enabled: Bool, last: Date?, now: Date) -> Bool {
+        enabled && (last.map { now.timeIntervalSince($0) >= 86_400 } ?? true)
+    }
+}
+
 /// Checks GitHub once a day when the user turned it on, shows an island with an Update button, and installs the
 /// release in place: the zip is downloaded, its SHA-256 checked against the published one, unpacked, swapped in and relaunched.
 @MainActor
 final class Updater {
     static let shared = Updater()
-    nonisolated static let autoKey = "autoUpdate", lastKey = "lastUpdateCheck", skipKey = "skippedUpdate"
+    nonisolated static let autoKey = "autoUpdate", lastKey = "lastUpdateCheck"
     private var timer: Timer?
     private var busy = false
 
@@ -32,11 +56,6 @@ final class Updater {
 
     nonisolated static func sha256(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
 
-    /// Due once a day, and only when the switch is on.
-    nonisolated static func due(enabled: Bool, last: Date?, now: Date) -> Bool {
-        enabled && (last.map { now.timeIntervalSince($0) >= 86_400 } ?? true)
-    }
-
     func start() {
         timer = Timer.scheduledTimer(withTimeInterval: 3600, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.tick() } }
         DispatchQueue.main.asyncAfter(deadline: .now() + 20) { MainActor.assumeIsolated { self.tick() } }
@@ -44,7 +63,7 @@ final class Updater {
 
     private func tick() {
         let last = UserDefaults.standard.object(forKey: Self.lastKey) as? Date
-        guard Self.due(enabled: UserDefaults.standard.bool(forKey: Self.autoKey), last: last, now: Date()) else { return }
+        guard DailyCheck.due(enabled: UserDefaults.standard.bool(forKey: Self.autoKey), last: last, now: Date()) else { return }
         UserDefaults.standard.set(Date(), forKey: Self.lastKey)
         fetch { [weak self] r in self?.offer(r) }
     }
@@ -66,9 +85,9 @@ final class Updater {
     }
 
     private func offer(_ r: Release?) {
-        guard let r, UpdateCheck.isNewer(r.version, than: Diagnostics.version), UserDefaults.standard.string(forKey: Self.skipKey) != r.version else { return }
+        guard let r, UpdateCheck.isNewer(r.version, than: Diagnostics.version) else { return }
         NotchModel.shared.show(Activity(symbol: "arrow.down.app.fill", title: L("Pillbox %@ is available", r.version), subtitle: L("You are using version %@.", Diagnostics.version), tint: .blue,
-                                        actionTitle: "Update", action: { [weak self] in self?.install(r) }, duration: 10))
+                                        actionTitle: L("Update"), action: { [weak self] in self?.install(r) }, duration: 10))
     }
 
     /// Where the running app lives; nil when it cannot be replaced (not writable, not a bundle).
@@ -92,36 +111,42 @@ final class Updater {
                     switch result {
                     case .failure(let why):
                         try? FileManager.default.removeItem(at: dir)
-                        NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: "Could not update", subtitle: why, tint: .orange,
-                                                        actionTitle: r.page == nil ? nil : "Release page", action: { if let p = r.page { NSWorkspace.shared.open(p) } }, duration: 8))
+                        NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: L("Could not update"), subtitle: why.localizedDescription, tint: .orange,
+                                                        actionTitle: r.page == nil ? nil : L("Release page"), action: { if let p = r.page { NSWorkspace.shared.open(p) } }, duration: 8))
                     case .success(let app):
-                        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Installing the update…", tint: .green, duration: 5))
-                        Self.swap(new: app, into: target)
+                        // Only claim the install once the swap has started; otherwise say so and keep the installed app.
+                        if Self.swap(new: app, into: target) {
+                            NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: L("Installing the update…"), tint: .green, duration: 5))
+                        } else {
+                            try? FileManager.default.removeItem(at: dir)
+                            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: L("Could not update"), subtitle: UpdateError.install.localizedDescription, tint: .orange, duration: 8))
+                        }
                     }
                 }
             }
         }
     }
 
-    private nonisolated static func download(zip: URL, sha: URL?, version: String, into dir: URL) -> Result<URL, String> {
+    nonisolated static func download(zip: URL, sha: URL?, version: String, into dir: URL) -> Result<URL, UpdateError> {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        guard let data = try? Data(contentsOf: zip), data.count > 1000 else { return .failure(L("The download failed")) }
+        guard let data = try? Data(contentsOf: zip), data.count > 1000 else { return .failure(.download) }
         // Fails closed: an update without its checksum is not installed.
-        guard let sha, let text = try? String(contentsOf: sha, encoding: .utf8) else { return .failure(L("The checksum is missing, so the update was not installed")) }
-        guard let expected = digest(in: text), expected == sha256(data) else { return .failure(L("The checksum does not match")) }
+        guard let sha, let text = try? String(contentsOf: sha, encoding: .utf8) else { return .failure(.checksumMissing) }
+        guard let expected = digest(in: text), expected == sha256(data) else { return .failure(.checksumMismatch) }
         let file = dir.appendingPathComponent("Pillbox.zip")
-        guard (try? data.write(to: file)) != nil else { return .failure(L("Could not save the download")) }
+        guard (try? data.write(to: file)) != nil else { return .failure(.save) }
         let p = Process(); p.executableURL = URL(fileURLWithPath: "/usr/bin/ditto"); p.arguments = ["-x", "-k", file.path, dir.path]; p.standardError = Pipe(); p.standardOutput = Pipe()
-        guard (try? p.run()) != nil else { return .failure(L("Could not unpack the download")) }
+        guard (try? p.run()) != nil else { return .failure(.unpack) }
         p.waitUntilExit()
         let app = dir.appendingPathComponent("Pillbox.app")
         guard p.terminationStatus == 0, let info = NSDictionary(contentsOf: app.appendingPathComponent("Contents/Info.plist")),
-              let v = info["CFBundleShortVersionString"] as? String, !UpdateCheck.isNewer(version, than: v) else { return .failure(L("The archive is not a Pillbox release")) }
+              let v = info["CFBundleShortVersionString"] as? String, !UpdateCheck.isNewer(version, than: v) else { return .failure(.notPillbox) }
         return .success(app)
     }
 
     /// Replaces the app once this process has exited, then relaunches it. Quarantine is dropped: the user asked for the install.
-    private static func swap(new: URL, into target: URL) {
+    /// Returns false when the helper could not be started, in which case nothing has been replaced.
+    private static func swap(new: URL, into target: URL) -> Bool {
         // Paths go in as arguments, not inside the script, so spaces and quotes in them cannot break it. The copy is
         // made beside the old app and moved over it only once complete: a failed copy leaves the installed app in place.
         let script = """
@@ -135,12 +160,11 @@ final class Updater {
         let p = Process(); p.executableURL = URL(fileURLWithPath: "/bin/zsh")
         p.arguments = ["-c", script, "pillbox-update", String(ProcessInfo.processInfo.processIdentifier), target.path, new.path]
         p.standardOutput = nil; p.standardError = nil
-        guard (try? p.run()) != nil else { return }
+        guard (try? p.run()) != nil else { return false }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { NSApp.terminate(nil) }
+        return true
     }
 }
-
-extension String: @retroactive Error {}
 
 // MARK: Homebrew updates (opt-in)
 
@@ -165,25 +189,25 @@ final class BrewUpdates {
 
     private func tick() {
         let last = UserDefaults.standard.object(forKey: Self.lastKey) as? Date
-        guard Updater.due(enabled: UserDefaults.standard.bool(forKey: Self.key), last: last, now: Date()) else { return }
+        guard DailyCheck.due(enabled: UserDefaults.standard.bool(forKey: Self.key), last: last, now: Date()) else { return }
         UserDefaults.standard.set(Date(), forKey: Self.lastKey)
         check(quiet: true)
     }
 
     /// From the palette too: `quiet` only speaks when something is outdated.
     func check(quiet: Bool) {
-        guard let brew = Self.brew else { if !quiet { NotchModel.shared.show(Activity(symbol: "shippingbox", title: "Homebrew is not installed", tint: .orange)) }; return }
+        guard let brew = Self.brew else { if !quiet { NotchModel.shared.show(Activity(symbol: "shippingbox", title: L("Homebrew is not installed"), tint: .orange)) }; return }
         DispatchQueue.global(qos: .utility).async {
             let r = ActionRunner.runShell("\"\(brew)\" outdated --quiet", timeout: 120)
             let names = r.status == 0 ? Self.parse(r.output) : []
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     if names.isEmpty {
-                        if !quiet { NotchModel.shared.show(Activity(symbol: "shippingbox", title: r.status == 0 ? "Homebrew is up to date" : "Could not run brew outdated", tint: r.status == 0 ? .green : .orange)) }
+                        if !quiet { NotchModel.shared.show(Activity(symbol: "shippingbox", title: r.status == 0 ? L("Homebrew is up to date") : L("Could not run brew outdated"), tint: r.status == 0 ? .green : .orange)) }
                         return
                     }
                     NotchModel.shared.show(Activity(symbol: "shippingbox.fill", title: L("%d Homebrew update(s)", names.count), subtitle: names.prefix(4).joined(separator: ", "), tint: .yellow,
-                                                    actionTitle: "Upgrade", action: { Self.upgradeInTerminal(brew) }, duration: 8))
+                                                    actionTitle: L("Upgrade"), action: { Self.upgradeInTerminal(brew) }, duration: 8))
                 }
             }
         }
@@ -193,6 +217,13 @@ final class BrewUpdates {
     private static func upgradeInTerminal(_ brew: String) {
         NotchModel.shared.pinnedOpen = true
         NotchModel.shared.expand(.terminal)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { MainActor.assumeIsolated { TerminalSession.shared.view.send(txt: "\"\(brew)\" upgrade\n") } }
+        typeWhenRunning("\"\(brew)\" upgrade\n")
+    }
+
+    /// Types into the shell once its process is running, rather than after a fixed delay. After about 2 s it types anyway.
+    private static func typeWhenRunning(_ text: String, attempts: Int = 40) {
+        let view = TerminalSession.shared.view
+        if view.process?.running == true || attempts == 0 { view.send(txt: text); return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { MainActor.assumeIsolated { typeWhenRunning(text, attempts: attempts - 1) } }
     }
 }

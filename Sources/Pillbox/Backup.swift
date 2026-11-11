@@ -9,7 +9,8 @@ enum SettingsBackup {
         case bool
         case number(ClosedRange<Double>)
         case text([String]?)   // nil accepts any text, a list restricts the value to it
-        case texts
+        case textList         // a comma-separated list of names
+        case equalizer        // per-app bass, mid and treble: three values each, in -12...12 dB
     }
 
     static var keys: [String: Kind] {
@@ -18,8 +19,8 @@ enum SettingsBackup {
                     "hyperKey", "hyperEscape", "hideMenuBarIcons", "menuBarCalendar", "liveSpectrum", "doubleTapOpen", "snapZones", "peekOnHover",
                     "desktopWidgets", "brightnessHUD", "focusIsland", "callIsland", "copyStack", "notificationIsland", "shakeToOpen", "buildIsland",
                     "hideInFullScreen", "screenshotShelf", ExtraBrightness.key, WindowDrag.key, "driveEject", "shortcutsOnly", "showMenuBarIcon"] { k[key] = .bool }
-        for key in ["dictationShortcut", "activityCounter", "focusBlocking", "spaceIsland", "cameraGuard"] { k[key] = .bool }
-        for key in [IdlePill.key, Haptics.key, Mirroring.key, SpaceSwipe.key, EyeBreaks.key, NotificationFeed.codeKey, Updater.autoKey, Updater.betaKey, BrewUpdates.key, AIUsageService.copilotKey] { k[key] = .bool }
+        for key in ["dictationShortcut", "activityCounter", "focusBlocking", "spaceIsland", "cameraGuard", "bluetoothIsland"] { k[key] = .bool }
+        for key in [IdlePill.key, Haptics.key, Mirroring.key, SpaceSwipe.key, EyeBreaks.key, NotificationFeed.codeIslandKey, Updater.autoKey, Updater.betaKey, BrewUpdates.key, AIUsageService.copilotKey] { k[key] = .bool }
         k[TypingSounds.profileKey] = .text(TypingSounds.Profile.allCases.map(\.rawValue))
         k[AmbientNoise.kindKey] = .text(AmbientNoise.Kind.allCases.map(\.rawValue))
         k[TypingSounds.volumeKey] = .number(0...1); k[AmbientNoise.volumeKey] = .number(0...1)
@@ -31,6 +32,9 @@ enum SettingsBackup {
         k["pillWidth"] = .number(120...260)
         k["fullChargeLevel"] = .number(80...100)
         k["usageAlert"] = .number(0...100)
+        k["drainAlert"] = .number(0...100)
+        k[AppVolumeService.eqKey] = .equalizer
+        k[AIUsageService.orderKey] = .text(nil); k[AIUsageService.hiddenKey] = .text(nil)
         k["breakReminder"] = .number(0...240)
         k["playerSize"] = .number(160...400)
         k["lottieSpeed"] = .number(0.1...4)
@@ -44,7 +48,7 @@ enum SettingsBackup {
         k["targetDisplay"] = .text(nil)
         k["lottiePath"] = .text(nil)
         k["pinnedStock"] = .text(nil)
-        k["detachedTabs"] = .texts
+        k["detachedTabs"] = .textList
         return k
     }
 
@@ -62,9 +66,13 @@ enum SettingsBackup {
         case .text(let allowed):
             guard let s = value as? String, allowed?.contains(s) ?? true else { return nil }
             return s
-        case .texts:
+        case .textList:
             guard let a = value as? [String] else { return nil }
             return a
+        case .equalizer:
+            guard let bands = value as? [String: [Double]],
+                  bands.values.allSatisfy({ $0.count == 3 && $0.allSatisfy { (-12...12).contains($0) } }) else { return nil }
+            return bands
         }
     }
 

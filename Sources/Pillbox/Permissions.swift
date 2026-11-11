@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import AVFoundation
+import Combine
 import CoreLocation
 import EventKit
 
@@ -61,7 +62,8 @@ final class PermissionsCenter: ObservableObject {
     @Published private(set) var states: [PermissionKind: PermissionState] = [:]
     private var warnedFeatures: Set<String> = []
 
-    func refresh() { for k in PermissionKind.allCases { states[k] = state(of: k) } }
+    /// Assigns only what changed: a @Published write re-renders the card even when the value is the same.
+    func refresh() { for k in PermissionKind.allCases { let s = state(of: k); if states[k] != s { states[k] = s } } }
 
     /// Global key monitors receive nothing without Input Monitoring, so the feature would look dead. Says so once per feature.
     func checkInputMonitoring(for feature: String) {
@@ -101,8 +103,8 @@ final class PermissionsCenter: ObservableObject {
             case .notDetermined: return .notDetermined
             default: return .denied
             }
-        case .spotify: return automation(.spotify, ask: false)
-        case .music: return automation(.music, ask: false)
+        case .spotify: return Self.automation(.spotify, ask: false)
+        case .music: return Self.automation(.music, ask: false)
         }
     }
 
@@ -120,8 +122,8 @@ final class PermissionsCenter: ObservableObject {
         case .reminders: RemindersService.shared.requestAccess()
         case .location: WeatherService.shared.requestAuthorization()
         case .camera: AVCaptureDevice.requestAccess(for: .video) { _ in }
-        case .spotify: _ = automation(.spotify, ask: true)
-        case .music: _ = automation(.music, ask: true)
+        case .spotify: askAutomation(.spotify)
+        case .music: askAutomation(.music)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { MainActor.assumeIsolated { self.refresh() } }
     }
@@ -132,11 +134,19 @@ final class PermissionsCenter: ObservableObject {
         if let u = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(k.settingsURL)") { NSWorkspace.shared.open(u) }
     }
 
+    /// Asks for Automation consent without blocking the main thread: with `ask`, the system dialog holds the call until it is answered.
+    private func askAutomation(_ player: Player) {
+        Task.detached {
+            _ = Self.automation(player, ask: true)
+            await MainActor.run { PermissionsCenter.shared.refresh() }
+        }
+    }
+
     /// Automation consent for another app. Only answerable while that app is running.
-    private func automation(_ p: Player, ask: Bool) -> PermissionState {
-        guard !NSRunningApplication.runningApplications(withBundleIdentifier: p.bundleID).isEmpty else { return .unavailable }
+    private nonisolated static func automation(_ player: Player, ask: Bool) -> PermissionState {
+        guard !NSRunningApplication.runningApplications(withBundleIdentifier: player.bundleID).isEmpty else { return .unavailable }
         var desc = AEAddressDesc()
-        let id = Array(p.bundleID.utf8)
+        let id = Array(player.bundleID.utf8)
         guard AECreateDesc(DescType(typeApplicationBundleID), id, id.count, &desc) == noErr else { return .unavailable }
         defer { AEDisposeDesc(&desc) }
         let r = AEDeterminePermissionToAutomateTarget(&desc, AEEventClass(typeWildCard), AEEventID(typeWildCard), ask)

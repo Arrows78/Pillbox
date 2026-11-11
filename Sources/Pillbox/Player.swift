@@ -5,7 +5,6 @@ enum PlayerSize: Int, CaseIterable, Identifiable {
     case small = 160, medium = 220, large = 300, xlarge = 400
     var id: Int { rawValue }
     var title: String { switch self { case .small: L("Small"); case .medium: L("Medium"); case .large: L("Large"); case .xlarge: L("Extra large") } }
-    static var current: PlayerSize { PlayerSize(rawValue: UserDefaults.standard.integer(forKey: "playerSize")) ?? .medium }
 }
 
 enum SwipeAction { case next, previous }
@@ -65,7 +64,7 @@ final class FloatingPlayer {
     func show() {
         let p = panel ?? {
             let p = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-            p.isOpaque = false; p.backgroundColor = .clear; p.hasShadow = true; p.level = .floating; p.isMovableByWindowBackground = true
+            p.styleAsOverlay(level: .floating); p.isMovableByWindowBackground = true
             p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             let host = NSHostingView(rootView: FloatingPlayerView()); host.sizingOptions = [.intrinsicContentSize]
             p.contentView = host; p.setFrameAutosaveName("PillboxFloatingPlayer"); panel = p; return p

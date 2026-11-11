@@ -44,11 +44,6 @@ final class MusicService: ObservableObject {
     /// Where playback is at `date`: the last reading, moved on by the time since while playing, so word highlights stay smooth.
     func playhead(at date: Date) -> Double { position + (isPlaying ? max(0, date.timeIntervalSince(polledAt)) : 0) }
 
-    var currentLyric: String? {
-        guard !lyrics.isEmpty else { return nil }
-        return lyrics.last(where: { $0.time <= position + 0.2 })?.text
-    }
-
     func start() {
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.poll() }
@@ -64,7 +59,9 @@ final class MusicService: ObservableObject {
         // Interpolate between polls so the progress bar stays smooth.
         let candidates = [Player.spotify, .music].filter(running)
         guard !candidates.isEmpty else { clear(); return }
-        let wanted = candidates.contains(player ?? .spotify) ? (player ?? candidates[0]) : candidates[0]
+        // Keep the current player while it is running, otherwise take the first running one.
+        var wanted = candidates[0]
+        if let current = player, candidates.contains(current) { wanted = current }
         fetch(wanted, fallback: candidates.first(where: { $0 != wanted }))
     }
 
@@ -72,7 +69,8 @@ final class MusicService: ObservableObject {
         if player != nil { player = nil; title = ""; artist = ""; isPlaying = false; artwork = nil; lyrics = []; trackKey = "" }
     }
 
-    private func fetch(_ p: Player, fallback: Player?) {
+    /// `probing`: this read only checks whether the other player is playing; it changes nothing unless it is.
+    private func fetch(_ p: Player, fallback: Player?, probing: Bool = false) {
         let script: String
         if p == .spotify {
             script = """
@@ -92,14 +90,15 @@ final class MusicService: ObservableObject {
         queue.async { [weak self] in
             let d = Self.run(script)
             DispatchQueue.main.async {
-                MainActor.assumeIsolated { self?.apply(d, player: p, fallback: fallback) }
+                MainActor.assumeIsolated { self?.apply(d, player: p, fallback: fallback, probing: probing) }
             }
         }
     }
 
-    private func apply(_ d: NSAppleEventDescriptor?, player p: Player, fallback: Player?) {
+    private func apply(_ d: NSAppleEventDescriptor?, player p: Player, fallback: Player?, probing: Bool = false) {
         // No answer at all from a running player means Automation refused it. A "stopped" answer is a normal state.
         guard let d, d.numberOfItems >= 6, d.atIndex(1)?.stringValue != "stopped" else {
+            if probing { return }
             if let fallback { fetch(fallback, fallback: nil) } else {
                 automationDenied = d == nil && running(p) ? p : nil
                 clear()
@@ -110,10 +109,12 @@ final class MusicService: ObservableObject {
         func str(_ i: Int) -> String { d.atIndex(i)?.stringValue ?? "" }
         func num(_ i: Int) -> Double { Double(str(i).replacingOccurrences(of: ",", with: ".")) ?? 0 }
         let playing = str(1) == "playing"
+        // A probe that finds the other player silent leaves the state alone, so the shown player does not flip every poll.
+        if probing && !playing { return }
         shuffling = str(8) == "true"; repeating = str(9) == "true"
         if !playing, let fallback, !isPlaying, player != fallback {
-            // Prefer whichever app is actually playing.
-            fetch(fallback, fallback: nil)
+            // Prefer whichever app is actually playing: its answer decides, this one's state is still written below.
+            fetch(fallback, fallback: nil, probing: true)
         }
         player = p
         isPlaying = playing
@@ -130,16 +131,17 @@ final class MusicService: ObservableObject {
     }
 
     private func loadArtwork(_ p: Player, url: String) {
+        let key = trackKey
         if p == .spotify, let u = URL(string: url) {
             URLSession.shared.dataTask(with: u) { data, _, _ in
                 guard let data, let img = NSImage(data: data) else { return }
-                DispatchQueue.main.async { MainActor.assumeIsolated { self.artwork = img } }
+                DispatchQueue.main.async { MainActor.assumeIsolated { if self.trackKey == key { self.artwork = img } } }
             }.resume()
         } else if p == .music {
             queue.async { [weak self] in
                 let d = Self.run("tell application \"Music\" to return data of artwork 1 of current track")
                 guard let data = d?.data, let img = NSImage(data: data) else { return }
-                DispatchQueue.main.async { MainActor.assumeIsolated { self?.artwork = img } }
+                DispatchQueue.main.async { MainActor.assumeIsolated { if self?.trackKey == key { self?.artwork = img } } }
             }
         }
     }
@@ -183,13 +185,18 @@ final class MusicService: ObservableObject {
         guard trimmed.contains("<"), let pattern = try? NSRegularExpression(pattern: #"<(\d+):(\d+(?:[.,]\d+)?)>([^<]*)"#) else { return (trimmed, []) }
         let ns = trimmed as NSString
         var words: [LyricWord] = []
-        for m in pattern.matches(in: trimmed, range: NSRange(location: 0, length: ns.length)) {
+        let matches = pattern.matches(in: trimmed, range: NSRange(location: 0, length: ns.length))
+        for m in matches {
             guard let mi = Double(ns.substring(with: m.range(at: 1))),
                   let se = Double(ns.substring(with: m.range(at: 2)).replacingOccurrences(of: ",", with: ".")) else { continue }
             let word = ns.substring(with: m.range(at: 3)).trimmingCharacters(in: .whitespaces)
             if !word.isEmpty { words.append(LyricWord(time: mi * 60 + se, text: word)) }
         }
         guard !words.isEmpty else { return (trimmed, []) }
+        // Text before the first stamp is sung at the first stamp's time, so it is kept rather than dropped.
+        let leadEnd = matches.first?.range.location ?? ns.length
+        let lead = ns.substring(to: leadEnd).trimmingCharacters(in: .whitespaces)
+        if !lead.isEmpty { words.insert(contentsOf: lead.split(separator: " ").map { LyricWord(time: words[0].time, text: String($0)) }, at: 0) }
         return (words.map(\.text).joined(separator: " "), words)
     }
 
@@ -214,7 +221,7 @@ final class MusicService: ObservableObject {
     func favorite() {
         guard player == .music else { return }
         command("set favorited of current track to true")
-        NotchModel.shared.show(Activity(symbol: "heart.fill", title: "Added to favorites", tint: .pink, duration: 1.5))
+        NotchModel.shared.show(Activity(symbol: "heart.fill", title: L("Added to favorites"), tint: .pink, duration: 1.5))
     }
 
     func seek(to t: Double) { position = t; command("set player position to \(t)") }

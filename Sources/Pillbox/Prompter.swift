@@ -41,13 +41,14 @@ enum PrompterText {
     static func words(_ script: String) -> [(word: String, start: Int)] {
         var out: [(String, Int)] = []
         var i = script.startIndex
+        var offset = 0   // character offset of `i`, counted as it moves (measuring from the start each time is quadratic)
         while i < script.endIndex {
-            while i < script.endIndex, script[i].isWhitespace { i = script.index(after: i) }
-            let start = i
-            while i < script.endIndex, !script[i].isWhitespace { i = script.index(after: i) }
+            while i < script.endIndex, script[i].isWhitespace { i = script.index(after: i); offset += 1 }
+            let start = i, startOffset = offset
+            while i < script.endIndex, !script[i].isWhitespace { i = script.index(after: i); offset += 1 }
             if start < i {
                 let w = normalize(String(script[start..<i]))
-                if !w.isEmpty { out.append((w, script.distance(from: script.startIndex, to: start))) }
+                if !w.isEmpty { out.append((w, startOffset)) }
             }
         }
         return out
@@ -76,6 +77,8 @@ enum PrompterText {
 @MainActor
 final class VoiceFollower {
     private let listener = SpeechListener()
+    /// Called when the listener stops on its own (for example it could not restart), so the caller can turn voice off.
+    var onEnded: (() -> Void)?
     private var words: [String] = []
     private var starts: [Int] = []
     private var total = 1
@@ -90,7 +93,7 @@ final class VoiceFollower {
         words = parsed.map(\.word); starts = parsed.map(\.start); total = max(script.count, 1); position = 0
         self.onMove = onMove
         // Each new recognition request starts from the words heard so far, so `position` carries over.
-        return listener.start { [weak self] heard, _, _ in if !heard.isEmpty { self?.consume(heard) } }
+        return listener.start(onStopped: { [weak self] in self?.onEnded?() }) { [weak self] heard, _, _ in if !heard.isEmpty { self?.consume(heard) } }
     }
 
     private func consume(_ heard: [String]) {
@@ -111,7 +114,9 @@ final class PrompterStore: ObservableObject {
     @Published var selected: UUID?
 
     init() {
-        if scripts.isEmpty, let old = UserDefaults.standard.string(forKey: "teleScript"), !old.isEmpty { scripts = [PrompterScript(text: old)] }
+        // The single script the panel kept before the library existed: moved in once, then its key is cleared so it cannot come back.
+        if scripts.isEmpty, let old = UserDefaults.standard.string(forKey: "teleScript"), !old.isEmpty { scripts = [PrompterScript(text: old)]; save() }
+        UserDefaults.standard.removeObject(forKey: "teleScript")
         selected = scripts.first?.id
     }
 
@@ -189,10 +194,7 @@ struct PrompterTab: View {
                         Image(systemName: tele.voice ? "mic.fill" : "mic.slash.fill").frame(width: 30, height: 26)
                             .background(tele.voice ? Color.pink.opacity(0.3) : Color.white.opacity(0.08), in: Capsule())
                     }.buttonStyle(.plain).help("Follow my voice").accessibilityLabel("Follow my voice")
-                    Button {
-                        guard let s = store.current else { return }
-                        tele.begin(script: s.text)
-                    } label: { Label("Start", systemImage: "play.fill") }
+                    Button { tele.begin() } label: { Label("Start", systemImage: "play.fill") }
                         .buttonStyle(PillButtonStyle(tint: .pink)).disabled(store.current?.text.isEmpty ?? true)
                 }
             }

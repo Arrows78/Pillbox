@@ -56,12 +56,9 @@ enum GitHubPRs {
     /// `kind` is "--author" or "--review-requested"; always for the logged-in user.
     static func fetch(_ kind: String) -> [PullRequest]? {
         guard let gh = tool else { return nil }
-        let p = Process(); p.executableURL = URL(fileURLWithPath: gh)
-        p.arguments = ["search", "prs", kind, "@me", "--state", "open", "--limit", "20", "--json", "title,url,number,repository,isDraft"]
-        let out = Pipe(); p.standardOutput = out; p.standardError = Pipe()
-        guard (try? p.run()) != nil else { return nil }
-        let data = out.fileHandleForReading.readDataToEndOfFile(); p.waitUntilExit()
-        return p.terminationStatus == 0 ? parse(data) : nil
+        // Stopped after 30 seconds, so a hung network call or a keychain prompt cannot keep the tab loading forever.
+        let r = ProcessRunner.run(gh, ["search", "prs", kind, "@me", "--state", "open", "--limit", "20", "--json", "title,url,number,repository,isDraft"], timeout: 30)
+        return r.status == 0 ? parse(Data(r.output.utf8)) : nil
     }
 }
 
@@ -131,7 +128,7 @@ struct PullRequestsTab: View {
                         }.buttonStyle(.plain)
                         .contextMenu {
                             Button("Open on GitHub") { if let u = URL(string: pr.url) { NSWorkspace.shared.open(u) } }
-                            Button("Copy link") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(pr.url, forType: .string) }
+                            Button("Copy link") { TextCopy.copy(pr.url) }
                         }
                     }
                 }

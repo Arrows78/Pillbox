@@ -35,6 +35,31 @@ struct SettingsView: View {
     private func refreshEqualizer() {
         if #available(macOS 14.2, *) { EqualizerService.shared.apply() }
     }
+
+    /// One equalizer band: a slider from -12 to +12 dB that reapplies the equalizer as it moves.
+    private func equalizerRow(_ title: LocalizedStringKey, _ gain: Binding<Double>) -> some View {
+        SettingsRow(title: title) { Slider(value: gain, in: -12...12).frame(width: 180).onChange(of: gain.wrappedValue) { _, _ in refreshEqualizer() } }
+    }
+
+    /// The Display picker's choice by screen position. Two identical monitors share a name, so the position is what tells them apart;
+    /// the name stays in `targetDisplay`, which the island reads.
+    private var displaySelection: Binding<String> {
+        Binding(get: {
+            NSScreen.screens.firstIndex { $0.localizedName == targetDisplay }.map { String($0) } ?? ""
+        }, set: { tag in
+            if let i = Int(tag), NSScreen.screens.indices.contains(i) { targetDisplay = NSScreen.screens[i].localizedName } else { targetDisplay = "" }
+        })
+    }
+
+    /// Stores the typed key. Save and Enter both call it; the field clears and the row says "saved" only when the Keychain accepted the key.
+    private func saveKey() {
+        guard !apiKey.isEmpty else { return }
+        guard Keychain.set(apiKey, AskModel.keyService) else {
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not save the key in the Keychain"), tint: .orange))
+            return
+        }
+        keySaved = true; apiKey = ""
+    }
     @AppStorage("focusIsland") private var focusIsland = true
     @AppStorage("callIsland") private var callIsland = true
     @AppStorage("hudStyle") private var hudStyle = "notch"
@@ -73,7 +98,7 @@ struct SettingsView: View {
     @AppStorage(Mirroring.key) private var hideWhileMirroring = false
     @AppStorage(SpaceSwipe.key) private var swipeSpaces = false
     @AppStorage(EyeBreaks.key) private var eyeBreaks = false
-    @AppStorage(NotificationFeed.codeKey) private var codeIsland = true
+    @AppStorage(NotificationFeed.codeIslandKey) private var codeIsland = true
     @AppStorage(Updater.autoKey) private var autoUpdate = false
     @AppStorage(Updater.betaKey) private var betaUpdates = false
     @AppStorage(BrewUpdates.key) private var brewUpdates = false
@@ -96,6 +121,9 @@ struct SettingsView: View {
         }
         .frame(width: 780, height: 580)
         .background(Color(nsColor: SettingsStyle.window))
+        .onReceive(NotificationCenter.default.publisher(for: SettingsWindow.paneRequest)) { note in
+            if let requested = note.object as? SettingsPane { pane = requested }
+        }
     }
 
     @ViewBuilder private var page: some View {
@@ -182,7 +210,14 @@ struct SettingsView: View {
         let panel = NSOpenPanel()
         panel.allowedContentTypes = [.propertyList]
         guard panel.runModal() == .OK, let url = panel.url else { return }
-        guard let data = try? Data(contentsOf: url), let n = SettingsBackup.restore(data) else {
+        let data: Data
+        do { data = try Data(contentsOf: url) } catch {
+            let alert = NSAlert()
+            alert.messageText = L("Could not read the backup file")
+            alert.informativeText = error.localizedDescription
+            alert.runModal(); return
+        }
+        guard let n = SettingsBackup.restore(data) else {
             let alert = NSAlert()
             alert.messageText = L("This file is not a Pillbox backup")
             alert.runModal(); return
@@ -206,9 +241,9 @@ struct SettingsView: View {
         SettingsPage(pane: .island) {
             SettingsCard(title: "Island") {
                 SettingsRow(title: "Display", subtitle: "Which screen shows the island. Automatic uses the screen with the notch.") {
-                    Picker("", selection: $targetDisplay) {
+                    Picker("", selection: displaySelection) {
                         Text("Automatic").tag("")
-                        ForEach(NSScreen.screens, id: \.localizedName) { Text(verbatim: $0.localizedName).tag($0.localizedName) }
+                        ForEach(Array(NSScreen.screens.enumerated()), id: \.offset) { index, screen in Text(verbatim: screen.localizedName).tag(String(index)) }
                     }.labelsHidden().frame(width: 170)
                 }
                 SettingsRow(title: "Panel size") { Slider(value: $panelScale, in: 0.8...1.3).frame(width: 180) }
@@ -266,9 +301,9 @@ struct SettingsView: View {
                     SettingsToggle("System equalizer", "Shapes everything the Mac plays. Needs System Audio Recording. Off by default.", isOn: $systemEQ)
                         .onChange(of: systemEQ) { _, _ in refreshEqualizer() }
                     if systemEQ {
-                        SettingsRow(title: "Bass") { Slider(value: $eqBass, in: -12...12).frame(width: 180).onChange(of: eqBass) { _, _ in refreshEqualizer() } }
-                        SettingsRow(title: "Mid") { Slider(value: $eqMid, in: -12...12).frame(width: 180).onChange(of: eqMid) { _, _ in refreshEqualizer() } }
-                        SettingsRow(title: "Treble") { Slider(value: $eqTreble, in: -12...12).frame(width: 180).onChange(of: eqTreble) { _, _ in refreshEqualizer() } }
+                        equalizerRow("Bass", $eqBass)
+                        equalizerRow("Mid", $eqMid)
+                        equalizerRow("Treble", $eqTreble)
                     }
                 }
             }
@@ -383,8 +418,8 @@ struct SettingsView: View {
                 SettingsRow(title: "Anthropic API key", subtitle: keySaved ? "A key is saved in your Keychain" : "No key saved") {
                     HStack {
                         SecureField("", text: $apiKey).textFieldStyle(.roundedBorder).frame(width: 200)
-                            .onSubmit { Keychain.set(apiKey, AskModel.keyService); keySaved = !apiKey.isEmpty; apiKey = "" }
-                        Button("Save key") { Keychain.set(apiKey, AskModel.keyService); keySaved = !apiKey.isEmpty; apiKey = "" }.disabled(apiKey.isEmpty)
+                            .onSubmit { saveKey() }
+                        Button("Save key") { saveKey() }.disabled(apiKey.isEmpty)
                         if keySaved { Button("Remove key") { Keychain.delete(AskModel.keyService); keySaved = false } }
                     }.controlSize(.small)
                 }
@@ -396,10 +431,8 @@ struct SettingsView: View {
     private var developer: some View {
         SettingsPage(pane: .developer) {
             SettingsCard(title: "Developer API") {
-                SettingsRow(title: "Enable local API", subtitle: "Scripts and AI apps on this Mac can then reach Pillbox, with a private token.") {
-                    Toggle("", isOn: $devAPI).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(SettingsStyle.accent)
-                        .onChange(of: devAPI) { _, _ in DevAPI.shared.apply() }
-                }
+                SettingsToggle("Enable local API", "Scripts and AI apps on this Mac can then reach Pillbox, with a private token.", isOn: $devAPI)
+                    .onChange(of: devAPI) { _, _ in DevAPI.shared.apply() }
                 if devAPI {
                     SettingsRow(title: "Address", subtitle: "Reachable from this Mac only.") {
                         Text(verbatim: "127.0.0.1:\(DevAPI.defaultPort)").font(.system(size: 12, design: .monospaced)).foregroundStyle(SettingsStyle.dim).textSelection(.enabled)
@@ -408,12 +441,10 @@ struct SettingsView: View {
                         MCPServer.configuration(executable: Bundle.main.executablePath ?? "/Applications/Pillbox.app/Contents/MacOS/Pillbox")
                     }
                     copyRow("Copy Claude Code turn-summary hook") {
-                        let path = Bundle.main.path(forResource: "claude-stop-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-stop-hook.sh"
-                        return "{\"hooks\":{\"Stop\":[{\"hooks\":[{\"type\":\"command\",\"command\":\"\(path)\",\"timeout\":10}]}]}}"
+                        Self.hookJSON(event: "Stop", command: Bundle.main.path(forResource: "claude-stop-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-stop-hook.sh", timeout: 10)
                     }
                     copyRow("Copy Claude Code approval hook") {
-                        let path = Bundle.main.path(forResource: "claude-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-hook.sh"
-                        return "{\"hooks\":{\"PreToolUse\":[{\"matcher\":\"Bash|Write|Edit\",\"hooks\":[{\"type\":\"command\",\"command\":\"\(path)\",\"timeout\":130}]}]}}"
+                        Self.hookJSON(event: "PreToolUse", matcher: "Bash|Write|Edit", command: Bundle.main.path(forResource: "claude-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-hook.sh", timeout: 130)
                     }
                     copyRow("Copy zsh hook for long-running commands") { Self.zshHook }
                     copyRow("Copy example request") {
@@ -427,6 +458,15 @@ struct SettingsView: View {
     /// A row whose button puts `text()` on the pasteboard and says so.
     private func copyRow(_ title: LocalizedStringKey, text: @escaping () -> String) -> some View {
         SettingsRow(title: title) { CopyButton(text: text) }
+    }
+
+    /// A Claude Code hook entry as JSON. JSONSerialization escapes the command, so a quote in the path cannot break the output.
+    static func hookJSON(event: String, matcher: String? = nil, command: String, timeout: Int) -> String {
+        var entry: [String: Any] = ["hooks": [["type": "command", "command": command, "timeout": timeout]]]
+        if let matcher { entry["matcher"] = matcher }
+        let root: [String: Any] = ["hooks": [event: [entry]]]
+        guard let data = try? JSONSerialization.data(withJSONObject: root, options: [.sortedKeys, .withoutEscapingSlashes]) else { return "" }
+        return String(decoding: data, as: UTF8.self)
     }
 
     private static let zshHook = """
@@ -449,7 +489,9 @@ struct SettingsView: View {
                             }
                         }
                     } else {
-                        SettingsRow(title: LocalizedStringKey(s.title), subtitle: s == .pasteNext && !copyStack ? "Turn on Copy stack in Island first." : nil) { Keycaps(s.keycaps) }
+                        let note: String? = HotKey.unavailable.contains(s.rawValue) ? L("Another app already uses this shortcut.")
+                            : (s == .pasteNext && !copyStack ? "Turn on Copy stack in Island first." : nil)
+                        SettingsRow(title: LocalizedStringKey(s.title), subtitle: note.map { LocalizedStringKey($0) }) { Keycaps(s.keycaps) }
                     }
                 }
                 if doubleTapOpen { SettingsRow(title: "Open the notch", subtitle: "Press Control twice quickly.") { Keycaps("⌃⌃") } }
@@ -513,7 +555,7 @@ struct CopyButton: View {
 
     var body: some View {
         Button(LocalizedStringKey(copied ? "Copied" : title)) {
-            NSPasteboard.general.clearContents(); NSPasteboard.general.setString(text(), forType: .string)
+            Pasteboard.copy(text())
             copied = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { copied = false }
         }.controlSize(.small)
@@ -540,12 +582,13 @@ struct AIUsageOrderRows: View {
     @AppStorage(AIUsageService.hiddenKey) private var hidden = ""
 
     /// Stored order first, then any provider the stored order does not mention yet.
+    /// Names a provider that no longer exists are dropped here, so they are not kept in the stored lists.
     private var names: [String] {
-        let stored = order.split(separator: ",").map(String.init)
+        let stored = order.split(separator: ",").map(String.init).filter { AIUsageService.allNames.contains($0) }
         return stored + AIUsageService.allNames.filter { !stored.contains($0) }
     }
 
-    private var hiddenSet: Set<String> { Set(hidden.split(separator: ",").map(String.init)) }
+    private var hiddenSet: Set<String> { Set(hidden.split(separator: ",").map(String.init).filter { AIUsageService.allNames.contains($0) }) }
 
     var body: some View {
         ForEach(Array(names.enumerated()), id: \.element) { index, name in
@@ -581,9 +624,13 @@ struct AIUsageOrderRows: View {
 @MainActor
 enum SettingsWindow {
     private static var window: NSWindow?
-    static func show(pane: SettingsPane = .general) {
+    /// Tells an open settings window to show another pane; its object is the SettingsPane.
+    static let paneRequest = Notification.Name("PillboxSettingsPaneRequest")
+
+    /// Opens the window on `pane`. An open window switches to a pane that is asked for; without one it stays where it is.
+    static func show(pane: SettingsPane? = nil) {
         if window == nil {
-            let w = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(pane: pane)))
+            let w = NSWindow(contentViewController: NSHostingController(rootView: SettingsView(pane: pane ?? .general)))
             w.title = "Pillbox Settings"
             w.styleMask = [.titled, .closable, .fullSizeContentView]
             w.titlebarAppearsTransparent = true
@@ -592,6 +639,8 @@ enum SettingsWindow {
             w.isMovableByWindowBackground = true
             w.isReleasedWhenClosed = false
             window = w
+        } else if let pane {
+            NotificationCenter.default.post(name: paneRequest, object: pane)
         }
         applyTheme()
         NSApp.activate(ignoringOtherApps: true)
@@ -624,7 +673,7 @@ struct DetachToggle: View {
             .onChange(of: on) { _, v in
                 var set = MenuBarDetach.wanted
                 if v { set.insert(tab) } else { set.remove(tab) }
-                UserDefaults.standard.set(set.map(\.rawValue).sorted(), forKey: "detachedTabs")
+                MenuBarDetach.setWanted(set)
             }
             .onReceive(NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)) { _ in
                 let now = MenuBarDetach.wanted.contains(tab)   // an import or a reset changes it behind this switch

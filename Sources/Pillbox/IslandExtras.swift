@@ -137,7 +137,7 @@ enum SpaceSwipe {
     /// Sends ⌃← or ⌃→, the Mission Control shortcuts, so macOS moves to the neighbouring Space (needs Accessibility).
     @MainActor static func go(left: Bool) {
         guard AXIsProcessTrusted() else {
-            NotchModel.shared.show(Activity(symbol: "hand.raised.fill", title: "Accessibility needed", subtitle: "Allow Pillbox to switch desktops", tint: .orange,
+            NotchModel.shared.show(Activity(symbol: "hand.raised.fill", title: L("Accessibility needed"), subtitle: L("Allow Pillbox to switch desktops"), tint: .orange,
                                             actionTitle: "Settings", action: { PermissionsCenter.shared.openSettings(.accessibility) }, duration: 5))
             return
         }

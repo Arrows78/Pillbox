@@ -40,23 +40,33 @@ struct Biquad {
 /// Bass, mid and treble bands in series, applied in place to Float32 audio.
 final class EQProcessor {
     static let maxChannels = 8
-    private var bands: [Biquad.Coefficients] = []
-    /// x1, x2, y1, y2 for each channel and band.
-    private var state = [Double](repeating: 0, count: maxChannels * 3 * 4)
     private let lock = NSLock()
+    /// Written by `configure` on the main thread under the lock; the audio thread copies it from there.
+    private var pending: [Biquad.Coefficients] = []
+    private var pendingGeneration = 0
+    /// Used only by the audio thread: the coefficients in effect, and x1, x2, y1, y2 for each channel and band.
+    private var bands: [Biquad.Coefficients] = []
+    private var appliedGeneration = 0
+    private var state = [Double](repeating: 0, count: maxChannels * 3 * 4)
 
-    /// Sets the three gains in dB (-12...12) for a sample rate, and clears the filter memory.
+    /// Sets the three gains in dB (-12...12) for a sample rate. The audio thread switches to them on its next buffer.
     func configure(bassDB: Double, midDB: Double, trebleDB: Double, rate: Double) {
-        lock.lock(); defer { lock.unlock() }
-        bands = [Biquad.shelf(100, gainDB: bassDB, rate: rate, high: false),
-                 Biquad.peak(1_000, gainDB: midDB, rate: rate),
-                 Biquad.shelf(8_000, gainDB: trebleDB, rate: rate, high: true)]
-        state = [Double](repeating: 0, count: Self.maxChannels * 3 * 4)
+        let coefficients = [Biquad.shelf(100, gainDB: bassDB, rate: rate, high: false),
+                            Biquad.peak(1_000, gainDB: midDB, rate: rate),
+                            Biquad.shelf(8_000, gainDB: trebleDB, rate: rate, high: true)]
+        lock.lock(); pending = coefficients; pendingGeneration += 1; lock.unlock()
     }
 
     /// Filters `frames` samples of one channel, `stride` floats apart, in place.
     func process(_ samples: UnsafeMutablePointer<Float>, stride: Int, frames: Int, channel: Int) {
-        lock.lock(); defer { lock.unlock() }
+        // The audio thread never waits: if configure holds the lock, the coefficients already in use carry on.
+        if lock.`try`() {
+            if pendingGeneration != appliedGeneration {
+                bands = pending; appliedGeneration = pendingGeneration
+                for i in state.indices { state[i] = 0 }
+            }
+            lock.unlock()
+        }
         guard !bands.isEmpty, channel < Self.maxChannels else { return }
         for band in 0..<3 {
             let k = bands[band], s = (channel * 3 + band) * 4
@@ -91,7 +101,7 @@ final class SystemEQ {
     /// Called on the main queue when the default output device changes while running.
     var onOutputChange: (() -> Void)?
 
-    private static func address(_ selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
+    static func address(_ selector: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
         AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
     }
 
@@ -102,9 +112,10 @@ final class SystemEQ {
     }
 
     private static func string(_ device: AudioObjectID, _ selector: AudioObjectPropertySelector) -> String? {
-        var addr = address(selector), value: CFString? = nil, size = UInt32(MemoryLayout<CFString?>.size)
+        // CoreAudio writes a retained CFString; read it through an Unmanaged reference, as the API documents.
+        var addr = address(selector), value: Unmanaged<CFString>? = nil, size = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
         guard AudioObjectGetPropertyData(device, &addr, 0, nil, &size, &value) == noErr else { return nil }
-        return value as String?
+        return value?.takeRetainedValue() as String?
     }
 
     /// This process's audio object, so the tap can leave out what the equalizer itself plays (or it feeds back on itself).

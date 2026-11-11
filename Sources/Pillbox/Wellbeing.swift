@@ -35,13 +35,21 @@ final class EyeBreaks {
         taken = taken.filter { $0.key >= TimerService.dayKey(Calendar.current.date(byAdding: .day, value: -7, to: Date())!) }
         Store.save(taken, "eyebreaks.json")
         var left = Self.rest
+        var shown: UUID?      // the island this countdown last put up
+        var onScreen = false
         func show() {
-            NotchModel.shared.show(Activity(symbol: "eye", title: "Rest your eyes", subtitle: L("Look far away for %d s · break %d today", left, today),
-                                            tint: .mint, progress: Double(left) / Double(Self.rest), duration: Double(left) + 1))
+            let a = Activity(symbol: "eye", title: L("Rest your eyes"), subtitle: L("Look far away for %d s · break %d today", left, today),
+                             tint: .mint, progress: Double(left) / Double(Self.rest), duration: Double(left) + 1)
+            shown = a.id
+            NotchModel.shared.show(a)
         }
         show()
         countdown = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] t in
             MainActor.assumeIsolated {
+                // Tapping the island dismisses it: once it has left the screen, the countdown stops rather than bringing it back.
+                let visible = NotchModel.shared.activity?.id == shown
+                if onScreen && !visible { t.invalidate(); self?.countdown = nil; return }
+                onScreen = visible
                 left -= 1
                 if left <= 0 { t.invalidate(); self?.countdown = nil; NotchModel.shared.dismissActivity(); NSSound(named: "Tink")?.play(); return }
                 show()
@@ -93,7 +101,13 @@ final class AmbientNoise: ObservableObject {
             engine = e
         }
         engine?.mainMixerNode.outputVolume = Self.volume
-        if engine?.isRunning != true { try? engine?.start() }
+        if engine?.isRunning != true {
+            // Without an output device the engine does not start: say so rather than show "playing" in silence.
+            do { try engine?.start() } catch {
+                NotchModel.shared.show(Activity(symbol: "speaker.slash.fill", title: L("Could not play the sound"), subtitle: L("No audio output is available"), tint: .orange, duration: 4))
+                return
+            }
+        }
         playing = true
     }
 
@@ -116,10 +130,16 @@ final class AmbientNoise: ObservableObject {
 }
 
 /// Noise generator shared with the audio thread: white is random, pink filters it (Paul Kellet), brown integrates it.
+/// `kind` is written on the main thread and read on the audio thread, so it sits behind a lock that is held only for the copy.
 final class NoiseState: @unchecked Sendable {
-    var kind: AmbientNoise.Kind = .brown
+    private let lock = NSLock()
+    private var storedKind: AmbientNoise.Kind = .brown
+    var kind: AmbientNoise.Kind {
+        get { lock.lock(); defer { lock.unlock() }; return storedKind }
+        set { lock.lock(); defer { lock.unlock() }; storedKind = newValue }
+    }
     private var rng = SystemRandomNumberGenerator()
-    private var b = [Float](repeating: 0, count: 7)
+    private var pinkBands = [Float](repeating: 0, count: 7)   // the filter's running state
     private var brown: Float = 0
 
     func next() -> Float {
@@ -127,10 +147,10 @@ final class NoiseState: @unchecked Sendable {
         switch kind {
         case .white, .off: return w * 0.25
         case .pink:
-            b[0] = 0.99886 * b[0] + w * 0.0555179; b[1] = 0.99332 * b[1] + w * 0.0750759; b[2] = 0.96900 * b[2] + w * 0.1538520
-            b[3] = 0.86650 * b[3] + w * 0.3104856; b[4] = 0.55000 * b[4] + w * 0.5329522; b[5] = -0.7616 * b[5] - w * 0.0168980
-            let p = b[0] + b[1] + b[2] + b[3] + b[4] + b[5] + b[6] + w * 0.5362
-            b[6] = w * 0.115926
+            pinkBands[0] = 0.99886 * pinkBands[0] + w * 0.0555179; pinkBands[1] = 0.99332 * pinkBands[1] + w * 0.0750759; pinkBands[2] = 0.96900 * pinkBands[2] + w * 0.1538520
+            pinkBands[3] = 0.86650 * pinkBands[3] + w * 0.3104856; pinkBands[4] = 0.55000 * pinkBands[4] + w * 0.5329522; pinkBands[5] = -0.7616 * pinkBands[5] - w * 0.0168980
+            let p = pinkBands[0] + pinkBands[1] + pinkBands[2] + pinkBands[3] + pinkBands[4] + pinkBands[5] + pinkBands[6] + w * 0.5362
+            pinkBands[6] = w * 0.115926
             return p * 0.08
         case .brown:
             brown = (brown + 0.02 * w) / 1.02

@@ -4,9 +4,10 @@ import SwiftUI
 import Vision
 
 enum OCR {
-    static func text(in image: CGImage) -> String {
+    /// The text in the image, or nil when Vision could not read it, so a failure is not taken for an empty screen.
+    static func recognize(in image: CGImage) -> String? {
         let req = VNRecognizeTextRequest(); req.recognitionLevel = .accurate; req.usesLanguageCorrection = true
-        try? VNImageRequestHandler(cgImage: image).perform([req])
+        do { try VNImageRequestHandler(cgImage: image).perform([req]) } catch { return nil }
         return (req.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
     }
 }
@@ -88,6 +89,7 @@ final class WindowWatch: ObservableObject {
     @Published private(set) var lastText = ""
     private var timer: Timer?
     private var busy = false
+    private var reading: Task<Void, Never>?
 
     var watching: Bool { region != nil }
 
@@ -106,15 +108,16 @@ final class WindowWatch: ObservableObject {
         }
     }
 
-    func stop() { timer?.invalidate(); region = nil; lastText = "" }
+    func stop() { timer?.invalidate(); reading?.cancel(); region = nil; lastText = "" }
 
     private func check() {
         guard let r = region, !busy else { return }
         busy = true
-        Task {
+        reading = Task {
             defer { busy = false }
-            guard let img = try? await ScreenGrab.capture(r) else { return }
-            let text = await Task.detached { OCR.text(in: img) }.value
+            guard let img = try? await ScreenGrab.capture(r), !Task.isCancelled else { return }
+            // A failed read is skipped rather than stored as "": the next real reading must still count as a change.
+            guard let text = await Task.detached(operation: { OCR.recognize(in: img) }).value, !Task.isCancelled else { return }
             let old = lastText
             lastText = text
             if !old.isEmpty, Self.changed(old, text) {
@@ -135,13 +138,17 @@ enum Keychain {
         return String(data: d, encoding: .utf8)
     }
 
-    @discardableResult
+    /// Stores the value in place of the old one. Returns false when the Keychain refuses, and then the old value stays.
     static func set(_ value: String, _ service: String, account: String = "default") -> Bool {
-        delete(service, account: account)
-        guard !value.isEmpty else { return true }
-        let q: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: account,
-                                kSecValueData as String: Data(value.utf8)]
-        return SecItemAdd(q as CFDictionary, nil) == errSecSuccess
+        guard !value.isEmpty else { delete(service, account: account); return true }
+        let match: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service, kSecAttrAccount as String: account]
+        let data = Data(value.utf8)
+        if SecItemCopyMatching(match as CFDictionary, nil) == errSecSuccess {
+            return SecItemUpdate(match as CFDictionary, [kSecValueData as String: data] as CFDictionary) == errSecSuccess
+        }
+        var add = match
+        add[kSecValueData as String] = data
+        return SecItemAdd(add as CFDictionary, nil) == errSecSuccess
     }
 
     static func delete(_ service: String, account: String = "default") {
@@ -180,8 +187,15 @@ final class AskModel: ObservableObject {
         return t.isEmpty ? nil : t
     }
 
+    /// The message the API sends with a failed status, with the status itself.
+    nonisolated static func apiError(_ data: Data?, status: Int) -> String {
+        let root = data.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
+        if let detail = (root?["error"] as? [String: Any])?["message"] as? String { return L("The API returned status %d: %@", status, detail) }
+        return L("The API returned status %d", status)
+    }
+
     func ask() {
-        guard let key = Keychain.get(Self.keyService), !question.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        guard !busy, let key = Keychain.get(Self.keyService), !question.trimmingCharacters(in: .whitespaces).isEmpty else { return }
         busy = true; error = nil; answer = ""
         var req = URLRequest(url: URL(string: "https://api.anthropic.com/v1/messages")!)
         req.httpMethod = "POST"; req.timeoutInterval = 60
@@ -192,8 +206,11 @@ final class AskModel: ObservableObject {
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     self.busy = false
-                    if let data, let a = Self.parseAnswer(data) { self.answer = a }
-                    else { self.error = err?.localizedDescription ?? L("No answer (check the API key)") }
+                    let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                    if let err { self.error = err.localizedDescription }
+                    else if (200..<300).contains(status), let data, let a = Self.parseAnswer(data) { self.answer = a }
+                    else if status != 0 { self.error = Self.apiError(data, status: status) }
+                    else { self.error = L("No answer (check the API key)") }
                 }
             }
         }.resume()
@@ -209,9 +226,9 @@ struct AskView: View {
             ScrollView { Text(verbatim: m.text.isEmpty ? "—" : m.text).font(.system(size: 12)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
                 .frame(height: 110).padding(8).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             HStack {
-                Button("Copy text") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(m.text, forType: .string) }
+                Button("Copy text") { Pasteboard.copy(m.text) }
                 Button("Search") { if let r = WebSearch.resolve(String(m.text.prefix(120))) { NSWorkspace.shared.open(r.url) } }
-                Button("Translate") { if let r = WebSearch.resolve("tr " + String(m.text.prefix(500))) { NSWorkspace.shared.open(r.url) } }
+                Button("Translate") { if let r = WebSearch.resolve(TranslateRoute.prefix + " " + String(m.text.prefix(500))) { NSWorkspace.shared.open(r.url) } }
                 ForEach(Array(AskModel.links(in: m.text).prefix(2)), id: \.self) { u in Button { NSWorkspace.shared.open(u) } label: { Label(u.host ?? "link", systemImage: "link") } }
                 Spacer()
                 Button { close() } label: { Image(systemName: "xmark") }.buttonStyle(.plain).accessibilityLabel("Close")
@@ -244,7 +261,7 @@ enum AskAboutScreen {
                 guard let img = try? await ScreenGrab.capture(r) else {
                     NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Could not capture the screen", tint: .orange)); return
                 }
-                let text = await Task.detached { OCR.text(in: img) }.value
+                let text = await Task.detached { OCR.recognize(in: img) }.value ?? ""
                 show(text: text, near: r)
             }
         }
@@ -254,8 +271,9 @@ enum AskAboutScreen {
         panel?.orderOut(nil)
         let model = AskModel(text: text)
         let p = NotchPanel(contentRect: NSRect(x: 0, y: 0, width: 520, height: 300), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
-        p.isOpaque = false; p.backgroundColor = .clear; p.hasShadow = true; p.level = .floating
-        let host = NSHostingView(rootView: AskView(m: model) { p.orderOut(nil) }.clipShape(RoundedRectangle(cornerRadius: 16)))
+        p.styleAsOverlay(level: .floating)
+        // Weak: the close button lives in the panel's own hosting view, so a strong capture would keep the panel, model and view alive.
+        let host = NSHostingView(rootView: AskView(m: model) { [weak p] in p?.orderOut(nil) }.clipShape(RoundedRectangle(cornerRadius: 16)))
         p.contentView = host
         let size = host.fittingSize
         p.setFrame(NSRect(x: max(r.minX, 20), y: max(r.minY - size.height - 10, 40), width: 520, height: size.height), display: true)

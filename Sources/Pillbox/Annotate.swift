@@ -72,12 +72,15 @@ enum Annotator {
         return CGImageSourceCreateThumbnailAtIndex(src, 0, opts as CFDictionary)
     }
 
+    /// One context for every pixelation: creating one is expensive.
+    private static let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+
     /// Big square blocks, so the hidden text cannot be read back.
     nonisolated static func pixelated(_ image: CGImage) -> CGImage? {
         let ci = CIImage(cgImage: image)
         let scale = max(10, Double(min(image.width, image.height)) / 45)
         let out = ci.clampedToExtent().applyingFilter("CIPixellate", parameters: [kCIInputScaleKey: scale, kCIInputCenterKey: CIVector(x: 0, y: 0)]).cropped(to: ci.extent)
-        return CIContext(options: [.useSoftwareRenderer: false]).createCGImage(out, from: ci.extent)
+        return ciContext.createCGImage(out, from: ci.extent)
     }
 
     /// The picture with every mark drawn on it, at full resolution.
@@ -156,7 +159,7 @@ enum Annotator {
     @MainActor private static var windows: [NSWindow] = []
 
     @MainActor static func open(_ url: URL) {
-        guard let img = load(url) else { NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Could not open the image", tint: .orange)); return }
+        guard let img = load(url) else { NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not open the image"), tint: .orange)); return }
         NotchModel.shared.collapse()
         let model = AnnotatorModel(source: url, image: img)
         let vis = (NSScreen.main ?? NSScreen.screens[0]).visibleFrame
@@ -167,8 +170,11 @@ enum Annotator {
         w.contentView = NSHostingView(rootView: AnnotatorView(m: model))
         w.center(); w.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true)
         windows.append(w)
-        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: w, queue: .main) { _ in
-            MainActor.assumeIsolated { windows.removeAll { $0 === w } }
+        // The loop ends at the first close, which also drops the observer (no lingering block per window).
+        Task { @MainActor in
+            for await _ in NotificationCenter.default.notifications(named: NSWindow.willCloseNotification, object: w) {
+                windows.removeAll { $0 === w }; break
+            }
         }
     }
 }
@@ -177,8 +183,11 @@ enum Annotator {
 final class AnnotatorModel: ObservableObject {
     let source: URL
     let image: CGImage
-    private let pixelated: CGImage?
-    @Published var marks: [Mark] = [] { didSet { rendered = Annotator.render(image, marks: marks, pixelated: pixelated) ?? image } }
+    /// Only computed when a pixelate mark is drawn.
+    private lazy var pixelated: CGImage? = Annotator.pixelated(image)
+    @Published var marks: [Mark] = [] {
+        didSet { rendered = Annotator.render(image, marks: marks, pixelated: marks.contains { $0.kind == .pixelate } ? pixelated : nil) ?? image }
+    }
     @Published var draft: Mark?
     @Published var tool: Mark.Kind = .arrow
     @Published var color = 0
@@ -187,7 +196,6 @@ final class AnnotatorModel: ObservableObject {
 
     init(source: URL, image: CGImage) {
         self.source = source; self.image = image; rendered = image
-        pixelated = Annotator.pixelated(image)
     }
 
     var size: CGSize { CGSize(width: image.width, height: image.height) }
@@ -217,16 +225,16 @@ final class AnnotatorModel: ObservableObject {
     func copy() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.writeObjects([NSImage(cgImage: rendered, size: size)])
-        NotchModel.shared.show(Activity(symbol: "doc.on.clipboard", title: "Image copied", tint: .green))
+        NotchModel.shared.show(Activity(symbol: "doc.on.clipboard", title: L("Image copied"), tint: .green))
     }
 
     func save() {
         let url = ShelfService.uniqueURL(Annotator.outputURL(for: source))
         guard let d = Annotator.pngData(rendered), (try? d.write(to: url)) != nil else {
-            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Could not save the image", tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not save the image"), tint: .orange)); return
         }
         ShelfService.shared.add([url])
-        NotchModel.shared.show(Activity(symbol: "pencil.tip.crop.circle", title: "Annotated image saved", subtitle: url.lastPathComponent, tint: .green))
+        NotchModel.shared.show(Activity(symbol: "pencil.tip.crop.circle", title: L("Annotated image saved"), subtitle: url.lastPathComponent, tint: .green))
     }
 }
 
@@ -290,7 +298,10 @@ private struct DraftShape: View {
     var body: some View {
         let t = CGAffineTransform(scaleX: scale, y: scale)
         let color = Color(cgColor: mark.color)
-        if mark.kind == .pixelate || mark.kind == .loupe {
+        if mark.kind == .pixelate {
+            // The saved result blurs a rectangle, so the preview shows one.
+            Path(mark.rect.applying(t)).stroke(color, style: StrokeStyle(lineWidth: 1.5, dash: [5]))
+        } else if mark.kind == .loupe {
             Path(ellipseIn: mark.rect.applying(t)).stroke(color, style: StrokeStyle(lineWidth: 1.5, dash: [5]))
         } else if mark.kind == .step, let c = mark.points.first {
             let d = lineWidth * 12 * scale

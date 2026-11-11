@@ -28,10 +28,11 @@ final class BrightnessHUD {
     }
 
     private func poll() {
-        guard UserDefaults.standard.object(forKey: "brightnessHUD") as? Bool ?? true, let v = DisplayBrightness.current() else { return }
+        guard let v = DisplayBrightness.current() else { return }
+        // Tracked even while the HUD is off, so turning it back on does not show the change made in the meantime.
         defer { last = v }
-        guard let l = last, abs(l - v) > 0.01 else { return }
-        NotchModel.shared.show(Activity(symbol: v < 0.5 ? "sun.min.fill" : "sun.max.fill", title: "Brightness", tint: .yellow, progress: Double(v), duration: 1.4, priority: .low))
+        guard Defaults.bool("brightnessHUD", default: true), let l = last, abs(l - v) > 0.01 else { return }
+        NotchModel.shared.show(Activity(symbol: v < 0.5 ? "sun.min.fill" : "sun.max.fill", title: L("Brightness"), tint: .yellow, progress: Double(v), duration: 1.4, priority: .low))
     }
 }
 
@@ -61,7 +62,7 @@ final class FocusMonitor: ObservableObject {
     }
 
     private func poll() {
-        guard UserDefaults.standard.object(forKey: "focusIsland") as? Bool ?? true, let d = FileManager.default.contents(atPath: Self.path) else { return }
+        guard Defaults.bool("focusIsland", default: true), let d = FileManager.default.contents(atPath: Self.path) else { return }
         let new = Self.parse(d)
         defer { first = false }
         guard new != mode else { return }
@@ -79,26 +80,40 @@ struct NotificationItem: Identifiable {
     let title: String
     let body: String
     let date: Date
+    /// The title alone, without the subtitle: the name a contact is looked up by.
+    var sender = ""
+}
+
+/// What reading Notification Center's database gave.
+enum NotificationRead {
+    case items([NotificationItem])
+    case noAccess   // the database cannot be opened (no Full Disk Access)
+    case failed     // it opened, but the query did not work
 }
 
 /// Reads Notification Center's database (needs Full Disk Access). Read-only; nothing is stored or sent.
 enum NotificationReader {
     static let path = NSHomeDirectory() + "/Library/Group Containers/group.com.apple.usernoted/db2/db"
 
-    static func parse(_ blob: Data) -> (app: String, title: String, body: String)? {
+    static func parse(_ blob: Data) -> (app: String, title: String, body: String, sender: String)? {
         guard let plist = try? PropertyListSerialization.propertyList(from: blob, format: nil) as? [String: Any], let req = plist["req"] as? [String: Any] else { return nil }
         let title = [req["titl"], req["subt"]].compactMap { $0 as? String }.filter { !$0.isEmpty }.joined(separator: " · ")
-        return (plist["app"] as? String ?? "", title, req["body"] as? String ?? "")
+        return (plist["app"] as? String ?? "", title, req["body"] as? String ?? "", req["titl"] as? String ?? "")
     }
 
-    /// nil when the database cannot be opened (no Full Disk Access).
+    /// nil when the rows cannot be read: no database access, or a failed query.
     static func read(limit: Int = 30, path: String = path) -> [NotificationItem]? {
+        guard case .items(let items) = load(limit: limit, path: path) else { return nil }
+        return items
+    }
+
+    static func load(limit: Int = 30, path: String = path) -> NotificationRead {
         var db: OpaquePointer?
-        guard sqlite3_open_v2("file:\(path)?mode=ro", &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else { sqlite3_close(db); return nil }
+        guard sqlite3_open_v2("file:\(path)?mode=ro", &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else { sqlite3_close(db); return .noAccess }
         defer { sqlite3_close(db) }
         var st: OpaquePointer?
         let sql = "SELECT r.rec_id, a.identifier, r.data, r.delivered_date FROM record r LEFT JOIN app a ON r.app_id = a.app_id ORDER BY r.delivered_date DESC LIMIT ?"
-        guard sqlite3_prepare_v2(db, sql, -1, &st, nil) == SQLITE_OK else { return nil }
+        guard sqlite3_prepare_v2(db, sql, -1, &st, nil) == SQLITE_OK else { return .failed }
         defer { sqlite3_finalize(st) }
         sqlite3_bind_int(st, 1, Int32(limit))
         var out: [NotificationItem] = []
@@ -108,9 +123,9 @@ enum NotificationReader {
             guard let p = parse(data) else { continue }
             let ident = sqlite3_column_text(st, 1).map { String(cString: $0) } ?? p.app
             out.append(NotificationItem(id: sqlite3_column_int64(st, 0), app: ident, title: p.title, body: p.body,
-                                        date: Date(timeIntervalSinceReferenceDate: sqlite3_column_double(st, 3))))
+                                        date: Date(timeIntervalSinceReferenceDate: sqlite3_column_double(st, 3)), sender: p.sender))
         }
-        return out
+        return .items(out)
     }
 }
 
@@ -118,10 +133,20 @@ enum NotificationReader {
 final class NotificationMirror: ObservableObject {
     static let shared = NotificationMirror()
     @Published private(set) var items: [NotificationItem]?
+    /// The database opened but could not be read: a different problem from missing Full Disk Access.
+    @Published private(set) var queryFailed = false
     func refresh() {
         DispatchQueue.global(qos: .utility).async {
-            let r = NotificationReader.read()
-            DispatchQueue.main.async { MainActor.assumeIsolated { self.items = r } }
+            let result = NotificationReader.load()
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    switch result {
+                    case .items(let found): self.items = found; self.queryFailed = false
+                    case .noAccess: self.items = nil; self.queryFailed = false
+                    case .failed: self.items = nil; self.queryFailed = true
+                    }
+                }
+            }
         }
     }
 }
@@ -132,7 +157,7 @@ final class NotificationMirror: ObservableObject {
 @MainActor
 final class CallMonitor: ObservableObject {
     static let shared = CallMonitor()
-    static let apps = ["us.zoom.xos": "Zoom", "com.microsoft.teams2": "Teams", "com.microsoft.teams": "Teams", "com.apple.FaceTime": "FaceTime",
+    nonisolated static let apps = ["us.zoom.xos": "Zoom", "com.microsoft.teams2": "Teams", "com.microsoft.teams": "Teams", "com.apple.FaceTime": "FaceTime",
                        "net.whatsapp.WhatsApp": "WhatsApp", "com.tinyspeck.slackmacgap": "Slack", "com.hnc.Discord": "Discord", "com.skype.skype": "Skype"]
     @Published private(set) var call: (name: String, since: Date)?
     private var timer: Timer?
@@ -147,12 +172,15 @@ final class CallMonitor: ObservableObject {
 
     private func poll() {
         let running = NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier)
-        let name = UserDefaults.standard.object(forKey: "callIsland") as? Bool ?? true ? Self.detect(micLive: PrivacyService.shared.micLive, running: running) : nil
+        let name = Defaults.bool("callIsland", default: true) ? Self.detect(micLive: PrivacyService.shared.micLive, running: running) : nil
         switch (call, name) {
         case (nil, let n?):
             call = (n, Date())
-            NotchModel.shared.show(Activity(symbol: "phone.fill", title: "In a call", subtitle: n, tint: .green, duration: 3, priority: .high))
-        case (let c?, nil) where c.name != "": call = nil
+            NotchModel.shared.show(Activity(symbol: "phone.fill", title: L("In a call"), subtitle: n, tint: .green, duration: 3, priority: .high))
+        case (let c?, let n?) where c.name != n:
+            // A call that moves to another app keeps its start time, under the new name.
+            call = (n, c.since)
+        case (_?, nil): call = nil
         default: break
         }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)

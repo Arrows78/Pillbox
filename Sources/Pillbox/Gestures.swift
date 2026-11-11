@@ -35,8 +35,8 @@ final class DoubleTapKey {
 @MainActor
 final class SnapZones: ObservableObject {
     static let shared = SnapZones()
-    static let zones: [SnapZone] = [.left, .right, .full, .center]
-    static let tile = CGSize(width: 96, height: 56), gap: CGFloat = 10, margin: CGFloat = 12
+    nonisolated static let zones: [SnapZone] = [.left, .right, .full, .center]
+    nonisolated static let tile = CGSize(width: 96, height: 56), gap: CGFloat = 10, margin: CGFloat = 12
     static var panelSize: CGSize {
         CGSize(width: CGFloat(zones.count) * tile.width + CGFloat(zones.count - 1) * gap + margin * 2, height: tile.height + margin * 2)
     }

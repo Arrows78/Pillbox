@@ -40,6 +40,12 @@ final class RecordingSink: NSObject, SCStreamOutput, SCStreamDelegate, @unchecke
         return status == .complete
     }
 
+    /// Gives up a recording that never started: the writer is cancelled and the partial file removed.
+    func cancel() {
+        writer.cancelWriting()
+        try? FileManager.default.removeItem(at: url)
+    }
+
     /// True when at least one frame was written and the file was closed cleanly.
     func finish() async -> Bool {
         await withCheckedContinuation { (c: CheckedContinuation<Bool, Never>) in
@@ -93,6 +99,7 @@ final class ScreenRecorder: ObservableObject {
         NotchModel.shared.collapse()
         Task {
             defer { starting = false }
+            var pending: RecordingSink?   // the writer, until the stream is running
             do {
                 let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
                 let mouse = NSEvent.mouseLocation
@@ -110,14 +117,17 @@ final class ScreenRecorder: ObservableObject {
                 cfg.showsCursor = true; cfg.queueDepth = 6
                 let desktop = FileManager.default.urls(for: .desktopDirectory, in: .userDomainMask)[0]
                 let sink = try RecordingSink(url: ShelfService.uniqueURL(desktop.appendingPathComponent(Self.fileName(at: Date()))), width: size.width, height: size.height)
+                pending = sink
                 sink.onStop = { _ in DispatchQueue.main.async { MainActor.assumeIsolated { ScreenRecorder.shared.stop(failed: true) } } }
                 let s = SCStream(filter: filter, configuration: cfg, delegate: sink)
                 try s.addStreamOutput(sink, type: .screen, sampleHandlerQueue: sink.queue)
                 try await s.startCapture()
-                stream = s; self.sink = sink; since = Date()
+                stream = s; self.sink = sink; since = Date(); pending = nil
                 NotificationCenter.default.post(name: .notchStateChanged, object: nil)
             } catch {
-                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Could not start recording", subtitle: error.localizedDescription, tint: .orange, duration: 5))
+                // A failed start must not leave a partial .mov on the Desktop.
+                pending?.cancel()
+                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not start recording"), subtitle: error.localizedDescription, tint: .orange, duration: 5))
             }
         }
     }
@@ -131,11 +141,11 @@ final class ScreenRecorder: ObservableObject {
             let ok = await sink.finish()
             if ok {
                 ShelfService.shared.add([sink.url])
-                NotchModel.shared.show(Activity(symbol: "record.circle", title: "Recording saved", subtitle: sink.url.lastPathComponent, tint: .red,
-                                                actionTitle: "Reveal", action: { NSWorkspace.shared.activateFileViewerSelecting([sink.url]) }, duration: 6))
+                NotchModel.shared.show(Activity(symbol: "record.circle", title: L("Recording saved"), subtitle: sink.url.lastPathComponent, tint: .red,
+                                                actionTitle: L("Reveal"), action: { NSWorkspace.shared.activateFileViewerSelecting([sink.url]) }, duration: 6))
             } else {
                 try? FileManager.default.removeItem(at: sink.url)
-                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Recording failed", tint: .orange))
+                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Recording failed"), tint: .orange))
             }
         }
     }
@@ -164,9 +174,12 @@ struct RecordingStopButton: View {
 
 enum QRReader {
     /// Payloads of the QR codes and barcodes in the picture, without duplicates, in reading order.
-    nonisolated static func decode(_ image: CGImage) -> [String] {
+    nonisolated static func decode(_ image: CGImage) -> [String] { (try? scan(image)) ?? [] }
+
+    /// Like `decode`, but a Vision failure throws, so it is not reported as "no code on screen".
+    nonisolated static func scan(_ image: CGImage) throws -> [String] {
         let req = VNDetectBarcodesRequest()
-        try? VNImageRequestHandler(cgImage: image).perform([req])
+        try VNImageRequestHandler(cgImage: image).perform([req])
         let found = (req.results ?? []).sorted { ($0.boundingBox.maxY, -$0.boundingBox.minX) > ($1.boundingBox.maxY, -$1.boundingBox.minX) }
         var out: [String] = []
         for o in found { if let p = o.payloadStringValue, !p.isEmpty, !out.contains(p) { out.append(p) } }
@@ -193,19 +206,23 @@ enum QRReader {
                     let scale = NSScreen.screens.first { ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID) == d.displayID }?.backingScaleFactor ?? 2
                     cfg.width = Int(CGFloat(d.width) * scale); cfg.height = Int(CGFloat(d.height) * scale); cfg.showsCursor = false
                     let img = try await SCScreenshotManager.captureImage(contentFilter: SCContentFilter(display: d, excludingApplications: mine, exceptingWindows: []), configuration: cfg)
-                    codes += await Task.detached { decode(img) }.value.filter { !codes.contains($0) }
+                    do {
+                        codes += try await Task.detached { try scan(img) }.value.filter { !codes.contains($0) }
+                    } catch {
+                        NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not read the QR code"), subtitle: error.localizedDescription, tint: .orange)); return
+                    }
                 }
             } catch {
-                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Could not capture the screen", tint: .orange)); return
+                NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: L("Could not capture the screen"), tint: .orange)); return
             }
             guard let code = codes.first else {
-                NotchModel.shared.show(Activity(symbol: "qrcode.viewfinder", title: "No QR code on screen", tint: .orange)); return
+                NotchModel.shared.show(Activity(symbol: "qrcode.viewfinder", title: L("No QR code on screen"), tint: .orange)); return
             }
             let more = codes.count > 1 ? " (+\(codes.count - 1))" : ""
             if let u = webLink(code) {
-                NotchModel.shared.show(Activity(symbol: "qrcode", title: "QR code link", subtitle: code + more, tint: .green, actionTitle: "Open link", action: { NSWorkspace.shared.open(u) }, duration: 10))
+                NotchModel.shared.show(Activity(symbol: "qrcode", title: L("QR code link"), subtitle: code + more, tint: .green, actionTitle: L("Open link"), action: { NSWorkspace.shared.open(u) }, duration: 10))
             } else {
-                NotchModel.shared.show(Activity(symbol: "qrcode", title: "QR code", subtitle: code + more, tint: .green, actionTitle: "Copy", action: {
+                NotchModel.shared.show(Activity(symbol: "qrcode", title: L("QR code"), subtitle: code + more, tint: .green, actionTitle: L("Copy"), action: {
                     NSPasteboard.general.clearContents(); NSPasteboard.general.setString(code, forType: .string)
                 }, duration: 10))
             }

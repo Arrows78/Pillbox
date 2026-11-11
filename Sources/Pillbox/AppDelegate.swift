@@ -15,6 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var hoverTask: Task<Void, Never>?
     private var leaveTask: Task<Void, Never>?
     private var monitors: [Any] = []
+    /// True while a file drag has pinned the shelf open, so the mouse-up after any other click leaves the pin alone.
+    private var shelfPinned = false
     /// The last app that was not Pillbox, so commands can act on it after a click on the status item.
     private var lastOtherApp: NSRunningApplication?
 
@@ -67,10 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if #available(macOS 14.2, *) { EqualizerService.shared.apply() }
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                HyperKey.shared.apply(); ExtraBrightness.shared.apply(); WindowDrag.shared.apply(); if #available(macOS 14.2, *) { EqualizerService.shared.apply() }; MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
-                AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
-                SettingsWindow.applyTheme(); self?.applyStatusItemVisibility()
-                self?.applyHotKeys(); ActivityCounter.shared.apply(); PointerHider.shared.apply(); TypingSounds.shared.apply()
+                self?.applyDefaultsFeatures()
                 NotificationCenter.default.post(name: .notchStateChanged, object: nil)   // the idle clock changes the pill's shape
             }
         }
@@ -175,6 +174,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         appItem.submenu = appMenu
         main.addItem(appItem)
         NSApp.mainMenu = main
+    }
+
+    /// Re-applies the settings that take effect at once. Runs on every settings change; each apply is safe to repeat.
+    /// Not called at launch: it needs the status item, which is set up later in applicationDidFinishLaunching.
+    private func applyDefaultsFeatures() {
+        HyperKey.shared.apply(); ExtraBrightness.shared.apply(); WindowDrag.shared.apply(); if #available(macOS 14.2, *) { EqualizerService.shared.apply() }
+        MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
+        AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
+        SettingsWindow.applyTheme(); applyStatusItemVisibility()
+        applyHotKeys(); ActivityCounter.shared.apply(); PointerHider.shared.apply(); TypingSounds.shared.apply()
     }
 
     private func setupStatusItem() {
@@ -352,7 +361,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                         let pb = NSPasteboard(name: .drag)
                         guard pb.canReadObject(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) else { return }
                         let shaken = UserDefaults.standard.object(forKey: "shakeToOpen") as? Bool ?? true && self.shake.add(p, at: Date())
-                        if shaken || self.controller.shapeRectOnScreen.insetBy(dx: -30, dy: -30).contains(p) { model.pinnedOpen = true; model.expand(.shelf) }
+                        if shaken || self.controller.shapeRectOnScreen.insetBy(dx: -30, dy: -30).contains(p) { model.pinnedOpen = true; self.shelfPinned = true; model.expand(.shelf) }
                     } else if UserDefaults.standard.bool(forKey: "snapZones"), !model.expanded {
                         let r = self.controller.shapeRectOnScreen
                         if SnapZones.shared.visible { SnapZones.shared.update(mouse: p) }
@@ -370,7 +379,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                     }
                 }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { MainActor.assumeIsolated { NotchModel.shared.pinnedOpen = false } }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { MainActor.assumeIsolated { if self.shelfPinned { self.shelfPinned = false; NotchModel.shared.pinnedOpen = false } } }
         } as Any)
     }
 }

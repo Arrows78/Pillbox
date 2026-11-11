@@ -1,5 +1,6 @@
 import SwiftUI
 import EventKit
+import Combine
 
 struct AgendaEvent: Identifiable, Equatable {
     let id: String
@@ -51,6 +52,7 @@ final class AgendaModel: ObservableObject {
     @Published private(set) var events: [AgendaEvent] = []
     @Published private(set) var denied = false
     private var observer: NSObjectProtocol?
+    private var feedChanges: AnyCancellable?
 
     func refresh() {
         denied = EKEventStore.authorizationStatus(for: .event) != .fullAccess && ICSFeeds.shared.feeds.isEmpty
@@ -58,6 +60,12 @@ final class AgendaModel: ObservableObject {
         events = (own + ICSFeeds.shared.events).sorted { ($0.allDay ? 0 : 1, $0.start) < ($1.allDay ? 0 : 1, $1.start) }
         if observer == nil {
             observer = NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.refresh() }
+            }
+        }
+        // Adding or removing a feed changes the events too, not only the next fetch.
+        if feedChanges == nil {
+            feedChanges = ICSFeeds.shared.$feeds.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
                 MainActor.assumeIsolated { self?.refresh() }
             }
         }
@@ -70,7 +78,8 @@ struct CalendarTab: View {
 
     private var days: [(label: String, events: [AgendaEvent])] {
         let cal = Calendar.current
-        let today = model.events.filter { cal.isDateInToday($0.start) || ($0.allDay && $0.start <= Date() && $0.end > Date()) }
+        // An event still running counts as today, even when it started yesterday.
+        let today = model.events.filter { cal.isDateInToday($0.start) || ($0.start <= Date() && $0.end > Date()) }
         let ids = Set(today.map(\.id))
         let rest = model.events.filter { !ids.contains($0.id) }
         return [(L("Today"), today), (L("Tomorrow"), rest)].filter { !$0.1.isEmpty }

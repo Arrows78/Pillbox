@@ -14,10 +14,12 @@ enum DeviceBatteries {
         guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("AppleDeviceManagementHIDEventService"), &iterator) == KERN_SUCCESS else { return [] }
         defer { IOObjectRelease(iterator) }
         var found: [String: Int] = [:]
-        while case let svc = IOIteratorNext(iterator), svc != 0 {
-            defer { IOObjectRelease(svc) }
-            guard let pct = IORegistryEntryCreateCFProperty(svc, "BatteryPercent" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? Int,
-                  let name = IORegistryEntryCreateCFProperty(svc, "Product" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? String else { continue }
+        var service = IOIteratorNext(iterator)
+        while service != 0 {
+            // Each service is released, and the next one fetched, however the loop body leaves.
+            defer { IOObjectRelease(service); service = IOIteratorNext(iterator) }
+            guard let pct = IORegistryEntryCreateCFProperty(service, "BatteryPercent" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? Int,
+                  let name = IORegistryEntryCreateCFProperty(service, "Product" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? String else { continue }
             found[name] = pct
         }
         return found.map { DeviceBattery(name: $0.key, percent: $0.value) }.sorted { $0.name < $1.name }
@@ -43,7 +45,7 @@ enum NetworkRate {
     static func rate(from a: [String: (rx: UInt32, tx: UInt32)], to b: [String: (rx: UInt32, tx: UInt32)], seconds: Double) -> (down: Double, up: Double) {
         guard seconds > 0 else { return (0, 0) }
         var rx = 0.0, tx = 0.0
-        for (k, new) in b { if let old = a[k] { rx += Double(new.rx &- old.rx); tx += Double(new.tx &- old.tx) } }
+        for (name, now) in b { if let before = a[name] { rx += Double(now.rx &- before.rx); tx += Double(now.tx &- before.tx) } }
         return (rx / seconds, tx / seconds)
     }
 

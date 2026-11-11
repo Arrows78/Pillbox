@@ -23,18 +23,22 @@ enum ExternalBrightness {
         return body + [checksum]
     }
 
-    /// Writes the brightness to every external display; false when none answered.
-    static func set(_ percent: Int) -> Bool {
-        guard let create, let write else { return false }
+    /// What a brightness write found: a display took the command, displays were found but rejected it, or there were none.
+    enum WriteResult { case written, rejected, noDisplay }
+
+    /// Writes the brightness to every external display.
+    static func set(_ percent: Int) -> WriteResult {
+        guard let create, let write else { return .noDisplay }
         var iterator: io_iterator_t = 0
-        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("DCPAVServiceProxy"), &iterator) == KERN_SUCCESS else { return false }
+        guard IOServiceGetMatchingServices(kIOMainPortDefault, IOServiceMatching("DCPAVServiceProxy"), &iterator) == KERN_SUCCESS else { return .noDisplay }
         defer { IOObjectRelease(iterator) }
-        var wrote = false
+        var found = false, wrote = false
         var entry = IOIteratorNext(iterator)
         while entry != 0 {
             defer { IOObjectRelease(entry); entry = IOIteratorNext(iterator) }
             let location = IORegistryEntryCreateCFProperty(entry, "Location" as CFString, kCFAllocatorDefault, 0)?.takeRetainedValue() as? String
             guard location == "External", let service = create(kCFAllocatorDefault, entry)?.takeRetainedValue() else { continue }
+            found = true
             var data = packet(percent: percent)
             // Monitors drop a command sent too soon after the last one: DDC/CI asks for a short pause between them.
             for _ in 0..<2 {
@@ -42,17 +46,21 @@ enum ExternalBrightness {
                 if write(service, 0x37, 0x51, &data, UInt32(data.count)) == 0 { wrote = true }
             }
         }
-        return wrote
+        return wrote ? .written : (found ? .rejected : .noDisplay)
     }
 
     /// Moves the stored level by `delta` percent and writes it to the external displays, showing it on the island.
+    /// The new level is stored only when a display accepted it.
     static func step(_ delta: Int) {
         let now = UserDefaults.standard.object(forKey: key) as? Int ?? 50
         let v = min(max(now + delta, 0), 100)
-        UserDefaults.standard.set(v, forKey: key)
-        if set(v) {
+        switch set(v) {
+        case .written:
+            UserDefaults.standard.set(v, forKey: key)
             NotchModel.shared.show(Activity(symbol: "sun.max.fill", title: L("External display brightness"), tint: .yellow, progress: Double(v) / 100, duration: 1.4))
-        } else {
+        case .rejected:
+            NotchModel.shared.show(Activity(symbol: "display", title: L("External display did not respond"), duration: 2))
+        case .noDisplay:
             NotchModel.shared.show(Activity(symbol: "display", title: L("No external display found"), duration: 2))
         }
     }

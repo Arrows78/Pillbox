@@ -3,12 +3,14 @@ import SwiftUI
 import CoreAudio
 import CoreMediaIO
 
-private func audioAddress(_ sel: AudioObjectPropertySelector, scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal,
-                          element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain) -> AudioObjectPropertyAddress {
+/// The CoreAudio property address used across the app (AppVolume reads its process list with it too).
+func audioAddress(_ sel: AudioObjectPropertySelector, scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal,
+                  element: AudioObjectPropertyElement = kAudioObjectPropertyElementMain) -> AudioObjectPropertyAddress {
     AudioObjectPropertyAddress(mSelector: sel, mScope: scope, mElement: element)
 }
 
-private func defaultDevice(input: Bool) -> AudioDeviceID? {
+/// The default input or output device, nil when there is none.
+func defaultDevice(input: Bool) -> AudioDeviceID? {
     var a = audioAddress(input ? kAudioHardwarePropertyDefaultInputDevice : kAudioHardwarePropertyDefaultOutputDevice)
     var id = AudioDeviceID(0); var size = UInt32(MemoryLayout<AudioDeviceID>.size)
     let r = AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &a, 0, nil, &size, &id)
@@ -25,7 +27,7 @@ private func readFloat(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress) ->
     return AudioObjectGetPropertyData(obj, &a, 0, nil, &size, &v) == noErr ? v : nil
 }
 
-private func writeValue<T>(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress, _ value: T) -> Bool {
+private func writeValue<T: BitwiseCopyable>(_ obj: AudioObjectID, _ a: AudioObjectPropertyAddress, _ value: T) -> Bool {
     var a = a; var v = value
     var settable: DarwinBoolean = false
     guard AudioObjectIsPropertySettable(obj, &a, &settable) == noErr, settable.boolValue else { return false }
@@ -59,8 +61,8 @@ final class PrivacyService: ObservableObject {
             micLive = false; cameraLive = false; return
         }
         let mic = defaultDevice(input: true).flatMap { readUInt32($0, audioAddress(kAudioDevicePropertyDeviceIsRunningSomewhere)) } == 1
-        if mic != micLive { micLive = mic; if mic { announce("mic.fill", "Microphone in use", .orange) } }
-        if cam != cameraLive { cameraLive = cam; if cam && !camGuard { announce("video.fill", "Camera in use", .green) } }
+        if mic != micLive { micLive = mic; if mic { announce("mic.fill", L("Microphone in use"), .orange) } }
+        if cam != cameraLive { cameraLive = cam; if cam && !camGuard { announce("video.fill", L("Camera in use"), .green) } }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
     }
 
@@ -98,6 +100,10 @@ final class AudioControl: ObservableObject {
     private var savedMicVolume: Float32 = 1
     private var listenerDevice: AudioDeviceID?
     private var lastVolume: Float32 = -1
+    /// Listeners on the current output and input device, removed again when the default device changes.
+    private typealias DeviceListener = (device: AudioDeviceID, address: AudioObjectPropertyAddress, block: AudioObjectPropertyListenerBlock)
+    private var outputListeners: [DeviceListener] = []
+    private var inputListeners: [DeviceListener] = []
 
     /// Mutes the input device itself, so every app (Zoom, Meet, Teams) goes silent.
     func toggleMic() {
@@ -110,30 +116,64 @@ final class AudioControl: ObservableObject {
             ok = writeValue(dev, vol, Float32(target ? 0 : max(savedMicVolume, 0.1)))
         }
         guard ok else {
-            NotchModel.shared.show(Activity(symbol: "mic.slash", title: "This microphone can't be muted", tint: .orange)); return
+            NotchModel.shared.show(Activity(symbol: "mic.slash", title: L("This microphone can't be muted"), tint: .orange)); return
         }
         micMuted = target
-        NotchModel.shared.show(Activity(symbol: target ? "mic.slash.fill" : "mic.fill", title: target ? "Microphone muted" : "Microphone on",
+        NotchModel.shared.show(Activity(symbol: target ? "mic.slash.fill" : "mic.fill", title: target ? L("Microphone muted") : L("Microphone on"),
                                         tint: target ? .red : .green, duration: 1.8))
     }
 
+    /// The mute state of the current input device, read from the device (it can change outside Pillbox).
+    private func readMicMuted() -> Bool {
+        guard let dev = defaultDevice(input: true) else { return false }
+        var mute = audioAddress(kAudioDevicePropertyMute, scope: kAudioDevicePropertyScopeInput)
+        if AudioObjectHasProperty(dev, &mute), let m = readUInt32(dev, mute) { return m == 1 }
+        // Devices without a mute switch are muted by setting their volume to zero (see toggleMic).
+        return readFloat(dev, audioAddress(kAudioDevicePropertyVolumeScalar, scope: kAudioDevicePropertyScopeInput)) == 0
+    }
+
     func startVolumeHUD() {
-        attachVolumeListener()
+        attachVolumeListener(); attachMicListener()
         var a = audioAddress(kAudioHardwarePropertyDefaultOutputDevice)
         AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &a, .main) { [weak self] _, _ in
             MainActor.assumeIsolated { self?.attachVolumeListener() }
         }
+        var i = audioAddress(kAudioHardwarePropertyDefaultInputDevice)
+        AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &i, .main) { [weak self] _, _ in
+            MainActor.assumeIsolated { self?.attachMicListener() }
+        }
+    }
+
+    /// Adds a property listener on a device; the returned entry lets it be removed later.
+    private func listen(_ dev: AudioDeviceID, _ sel: AudioObjectPropertySelector, scope: AudioObjectPropertyScope, _ handler: @escaping () -> Void) -> DeviceListener {
+        let address = audioAddress(sel, scope: scope)
+        let block: AudioObjectPropertyListenerBlock = { _, _ in MainActor.assumeIsolated { handler() } }
+        var a = address
+        AudioObjectAddPropertyListenerBlock(dev, &a, .main, block)
+        return (dev, address, block)
+    }
+
+    private func unlisten(_ listeners: inout [DeviceListener]) {
+        for l in listeners { var a = l.address; AudioObjectRemovePropertyListenerBlock(l.device, &a, .main, l.block) }
+        listeners = []
     }
 
     private func attachVolumeListener() {
+        unlisten(&outputListeners)
         guard let dev = defaultDevice(input: false) else { return }
         listenerDevice = dev
         lastVolume = readFloat(dev, audioAddress(kAudioDevicePropertyVolumeScalar, scope: kAudioDevicePropertyScopeOutput)) ?? -1
-        for sel in [kAudioDevicePropertyVolumeScalar, kAudioDevicePropertyMute] {
-            var a = audioAddress(sel, scope: kAudioDevicePropertyScopeOutput)
-            AudioObjectAddPropertyListenerBlock(dev, &a, .main) { [weak self] _, _ in
-                MainActor.assumeIsolated { self?.volumeChanged() }
-            }
+        outputListeners = [kAudioDevicePropertyVolumeScalar, kAudioDevicePropertyMute].map { sel in
+            listen(dev, sel, scope: kAudioDevicePropertyScopeOutput) { [weak self] in self?.volumeChanged() }
+        }
+    }
+
+    private func attachMicListener() {
+        unlisten(&inputListeners)
+        micMuted = readMicMuted()
+        guard let dev = defaultDevice(input: true) else { return }
+        inputListeners = [kAudioDevicePropertyMute, kAudioDevicePropertyVolumeScalar].map { sel in
+            listen(dev, sel, scope: kAudioDevicePropertyScopeInput) { [weak self] in self?.micMuted = self?.readMicMuted() ?? false }
         }
     }
 
@@ -144,7 +184,7 @@ final class AudioControl: ObservableObject {
         guard v != lastVolume || muted else { return }
         lastVolume = v
         let symbol = muted || v == 0 ? "speaker.slash.fill" : v < 0.34 ? "speaker.wave.1.fill" : v < 0.67 ? "speaker.wave.2.fill" : "speaker.wave.3.fill"
-        NotchModel.shared.show(Activity(symbol: symbol, title: "Volume", tint: .white, progress: muted ? 0 : Double(v), duration: 1.4, priority: .low))
+        NotchModel.shared.show(Activity(symbol: symbol, title: L("Volume"), tint: .white, progress: muted ? 0 : Double(v), duration: 1.4, priority: .low))
     }
 }
 
@@ -179,7 +219,7 @@ extension AudioControl {
 
     func selectOutput(_ d: OutputDevice) {
         let ok = writeValue(AudioObjectID(kAudioObjectSystemObject), audioAddress(kAudioHardwarePropertyDefaultOutputDevice), d.id)
-        NotchModel.shared.show(Activity(symbol: ok ? "hifispeaker.fill" : "exclamationmark.triangle", title: ok ? d.name : "Could not switch the output",
+        NotchModel.shared.show(Activity(symbol: ok ? "hifispeaker.fill" : "exclamationmark.triangle", title: ok ? d.name : L("Could not switch the output"),
                                         tint: ok ? .white : .orange, duration: 2))
     }
 }

@@ -26,6 +26,15 @@ final class BlockedAppsStore: ObservableObject {
     static func name(_ id: String) -> String {
         NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).map { FileManager.default.displayName(atPath: $0.path).replacingOccurrences(of: ".app", with: "") } ?? id
     }
+    /// Kept for existing callers; the helper lives in AppIconImage.
+    static func bitmap(_ icon: NSImage?, side: Int = 48) -> NSImage? { AppIconImage.bitmap(icon, side: side) }
+    static func icon(_ id: String) -> NSImage? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).map { NSWorkspace.shared.icon(forFile: $0.path) }
+    }
+}
+
+/// Icons for the islands.
+enum AppIconImage {
     /// A small sRGB bitmap of an app icon, so the island draws it like any picture.
     static func bitmap(_ icon: NSImage?, side: Int = 48) -> NSImage? {
         guard let icon, let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: side, pixelsHigh: side, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true,
@@ -36,9 +45,6 @@ final class BlockedAppsStore: ObservableObject {
         NSGraphicsContext.restoreGraphicsState()
         let img = NSImage(size: NSSize(width: side, height: side)); img.addRepresentation(rep)
         return img
-    }
-    static func icon(_ id: String) -> NSImage? {
-        NSWorkspace.shared.urlForApplication(withBundleIdentifier: id).map { NSWorkspace.shared.icon(forFile: $0.path) }
     }
 }
 
@@ -78,7 +84,7 @@ final class FocusGuard {
         if let last = lastIsland[id], Date().timeIntervalSince(last) < 3 { return }
         lastIsland[id] = Date()
         NotchModel.shared.show(Activity(symbol: "hand.raised.fill", title: L("Blocked while focusing"), subtitle: app.localizedName ?? BlockedAppsStore.name(id),
-                                        tint: .orange, image: BlockedAppsStore.bitmap(app.icon), actionTitle: L("Allow 5 min"), action: { [weak self] in
+                                        tint: .orange, image: AppIconImage.bitmap(app.icon), actionTitle: L("Allow %d min", Int(Self.allowance / 60)), action: { [weak self] in
             self?.allowedUntil[id] = Date().addingTimeInterval(Self.allowance)
             app.unhide(); app.activate()
         }, duration: 4))
@@ -169,17 +175,19 @@ final class SpaceWatcher {
 /// An island the moment the camera turns on. macOS does not say which app opened it: the front app is a best guess,
 /// shown as such, and nothing is shown for Pillbox's own mirror.
 enum CameraGuard {
-    /// nil: no island. Otherwise the probable app, if any.
-    static func island(mirrorOpen: Bool, frontName: String?, frontBundle: String?, own: String?) -> String?? {
-        if mirrorOpen { return nil }
-        return .some(frontBundle == own ? nil : frontName)
+    /// Whether the camera island shows, and the app it names as the probable one (nil when it is not known).
+    enum Island: Equatable { case hidden, shown(probableApp: String?) }
+
+    static func island(mirrorOpen: Bool, frontName: String?, frontBundle: String?, own: String?) -> Island {
+        if mirrorOpen { return .hidden }
+        return .shown(probableApp: frontBundle == own ? nil : frontName)
     }
 
     @MainActor static func cameraStarted() {
         let front = NSWorkspace.shared.frontmostApplication
-        guard let app = island(mirrorOpen: CameraMirror.shared.isOpen, frontName: front?.localizedName, frontBundle: front?.bundleIdentifier, own: Bundle.main.bundleIdentifier) else { return }
+        guard case .shown(let app) = island(mirrorOpen: CameraMirror.shared.isOpen, frontName: front?.localizedName, frontBundle: front?.bundleIdentifier, own: Bundle.main.bundleIdentifier) else { return }
         NotchModel.shared.show(Activity(symbol: "video.fill", title: L("Camera turned on"), subtitle: app.map { L("Probably %@", $0) }, tint: .green,
-                                        image: app == nil ? nil : BlockedAppsStore.bitmap(front?.icon), duration: 4))
+                                        image: app == nil ? nil : AppIconImage.bitmap(front?.icon), duration: 4))
     }
 }
 

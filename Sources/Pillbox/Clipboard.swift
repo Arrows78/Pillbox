@@ -85,13 +85,18 @@ final class ClipboardService: ObservableObject {
             if let i = items.firstIndex(where: { $0.text == s }) { items[i].date = Date() }
             else { items.append(ClipItem(text: s)) }
             CopyStackStore.shared.noteCopy(s)
-        } else if let img = NSImage(pasteboard: pb), let png = img.pngData() {
+        } else if let img = NSImage(pasteboard: pb) {
             let name = UUID().uuidString + ".png"
-            try? png.write(to: imageDir.appendingPathComponent(name))
-            var item = ClipItem(imageFile: name)
+            let file = imageDir.appendingPathComponent(name)
+            let item = ClipItem(imageFile: name)
             let id = item.id
-            item.ocr = nil
             items.append(item)
+            // Encoding and the write are slow for a screenshot, so they run off the main thread.
+            let picture = img
+            DispatchQueue.global(qos: .utility).async {
+                guard let png = picture.pngData() else { return }
+                try? png.write(to: file)
+            }
             recognize(img) { [weak self] text in
                 guard let i = self?.items.firstIndex(where: { $0.id == id }) else { return }
                 self?.items[i].ocr = text; self?.save()
@@ -108,9 +113,8 @@ final class ClipboardService: ObservableObject {
         }
     }
 
-    private func save() { Store.save(items, "clipboard.json") }
-    /// Writes the history to disk after an import.
-    func persist() { save() }
+    /// Writes the history to disk.
+    func save() { Store.save(items, "clipboard.json") }
 
     private func recognize(_ image: NSImage, done: @escaping @MainActor (String) -> Void) {
         guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return }
@@ -133,7 +137,7 @@ final class ClipboardService: ObservableObject {
         if let t = item.text { pb.setString(t, forType: .string) }
         else if let img = image(for: item) { pb.writeObjects([img]) }
         lastChange = pb.changeCount   // our own write is not a new copy
-        if let i = items.firstIndex(of: item) { items[i].date = Date(); save() }
+        if let i = items.firstIndex(where: { $0.id == item.id }) { items[i].date = Date(); save() }
     }
 
     /// Copies the item then sends ⌘V to the frontmost app (needs Accessibility; falls back to a plain copy).
@@ -151,7 +155,7 @@ final class ClipboardService: ObservableObject {
     }
 
     func togglePin(_ item: ClipItem) {
-        if let i = items.firstIndex(of: item) { items[i].pinned.toggle(); save() }
+        if let i = items.firstIndex(where: { $0.id == item.id }) { items[i].pinned.toggle(); save() }
     }
 
     func remove(_ item: ClipItem) {
@@ -166,7 +170,8 @@ final class ClipboardService: ObservableObject {
     nonisolated static func kind(of text: String) -> SmartKind {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if let u = URL(string: t), let s = u.scheme, ["http", "https"].contains(s), u.host != nil { return .url(u) }
-        if t.range(of: #"^#?([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$"#, options: .regularExpression) != nil,
+        // A colour needs the leading #: a bare 6-digit code (an SMS code) or a word like "bad" is text.
+        if t.range(of: #"^#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})$"#, options: .regularExpression) != nil,
            let c = NSColor(hex: t) { return .color(c, t) }
         if t.range(of: #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#, options: .regularExpression) != nil { return .email(t) }
         return .plain

@@ -1,6 +1,7 @@
 import AppKit
 import CoreAudio
 import AudioToolbox
+import os
 
 /// One process the HAL knows about (an app or one of its helpers).
 struct AudioProcess: Equatable {
@@ -50,33 +51,45 @@ enum AppVolumeMath {
     }
 }
 
-enum AudioProcesses {
-    private static func address(_ sel: AudioObjectPropertySelector) -> AudioObjectPropertyAddress {
-        AudioObjectPropertyAddress(mSelector: sel, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+/// Shared by the taps: the gain, equalizer switch and "heard" flag that the audio thread reads while the main thread writes.
+/// An unfair lock keeps both sides safe; it is cheap enough for the realtime callback.
+final class AppTapState: @unchecked Sendable {
+    private let lock: OSAllocatedUnfairLock<(gain: Float, eqOn: Bool, heard: Bool)>
+    init(gain: Float) { lock = OSAllocatedUnfairLock(initialState: (gain: gain, eqOn: false, heard: false)) }
+    var gain: Float {
+        get { lock.withLock { $0.gain } }
+        set { lock.withLock { $0.gain = newValue } }
     }
+    var eqOn: Bool {
+        get { lock.withLock { $0.eqOn } }
+        set { lock.withLock { $0.eqOn = newValue } }
+    }
+    var heard: Bool { lock.withLock { $0.heard } }
+    func markHeard() { lock.withLock { $0.heard = true } }
+}
 
+enum AudioProcesses {
     /// Every process with an audio connection, from the HAL.
     static func list() -> [AudioProcess] {
-        var a = address(kAudioHardwarePropertyProcessObjectList), size: UInt32 = 0
+        var a = audioAddress(kAudioHardwarePropertyProcessObjectList), size: UInt32 = 0
         let sys = AudioObjectID(kAudioObjectSystemObject)
         guard AudioObjectGetPropertyDataSize(sys, &a, 0, nil, &size) == noErr, size > 0 else { return [] }
         var ids = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
         guard AudioObjectGetPropertyData(sys, &a, 0, nil, &size, &ids) == noErr else { return [] }
         return ids.compactMap { id in
-            var pa = address(kAudioProcessPropertyPID), pid: pid_t = 0, ps = UInt32(MemoryLayout<pid_t>.size)
+            var pa = audioAddress(kAudioProcessPropertyPID), pid: pid_t = 0, ps = UInt32(MemoryLayout<pid_t>.size)
             guard AudioObjectGetPropertyData(id, &pa, 0, nil, &ps, &pid) == noErr else { return nil }
-            var ba = address(kAudioProcessPropertyBundleID), bid: Unmanaged<CFString>?, bs = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+            var ba = audioAddress(kAudioProcessPropertyBundleID), bid: Unmanaged<CFString>?, bs = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
             let bundle = AudioObjectGetPropertyData(id, &ba, 0, nil, &bs, &bid) == noErr ? (bid?.takeRetainedValue() as String? ?? "") : ""
-            var ra = address(kAudioProcessPropertyIsRunningOutput), running: UInt32 = 0, rs = UInt32(MemoryLayout<UInt32>.size)
+            var ra = audioAddress(kAudioProcessPropertyIsRunningOutput), running: UInt32 = 0, rs = UInt32(MemoryLayout<UInt32>.size)
             _ = AudioObjectGetPropertyData(id, &ra, 0, nil, &rs, &running)
             return AudioProcess(object: id, pid: pid, bundleID: bundle, playing: running != 0)
         }
     }
 
     static func defaultOutputUID() -> String? {
-        var a = address(kAudioHardwarePropertyDefaultOutputDevice), dev = AudioDeviceID(0), s = UInt32(MemoryLayout<AudioDeviceID>.size)
-        guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &a, 0, nil, &s, &dev) == noErr, dev != 0 else { return nil }
-        var ua = address(kAudioDevicePropertyDeviceUID), uid: Unmanaged<CFString>?, us = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
+        guard let dev = defaultDevice(input: false) else { return nil }
+        var ua = audioAddress(kAudioDevicePropertyDeviceUID), uid: Unmanaged<CFString>?, us = UInt32(MemoryLayout<Unmanaged<CFString>?>.size)
         guard AudioObjectGetPropertyData(dev, &ua, 0, nil, &us, &uid) == noErr else { return nil }
         return uid?.takeRetainedValue() as String?
     }
@@ -91,19 +104,18 @@ final class AppTap {
     private var tapID = AudioObjectID(kAudioObjectUnknown)
     private var aggregateID = AudioObjectID(kAudioObjectUnknown)
     private var procID: AudioDeviceIOProcID?
-    private let gain = UnsafeMutablePointer<Float>.allocate(capacity: 1)
-    private let heardFlag = UnsafeMutablePointer<Bool>.allocate(capacity: 1)
-    private let eqOn = UnsafeMutablePointer<Bool>.allocate(capacity: 1)
+    /// Gain, equalizer switch and heard flag, shared with the audio thread.
+    private let state: AppTapState
     /// Bass, mid and treble of this app's own equalizer; flat leaves the audio untouched.
     let eq = EQProcessor()
     private var rate: Double = 48_000
     private let queue = DispatchQueue(label: "pillbox.appvolume", qos: .userInteractive)
     /// False while the tap has only delivered silence (no audio capture permission, or nothing played yet).
-    var heard: Bool { heardFlag.pointee }
+    var heard: Bool { state.heard }
 
     init?(processes: [AudioObjectID], gain g: Float, muted: Bool, bands: [Double] = [0, 0, 0]) {
         self.processes = processes; self.muted = muted
-        gain.initialize(to: g); heardFlag.initialize(to: false); eqOn.initialize(to: false)
+        state = AppTapState(gain: g)
         let desc = CATapDescription(stereoMixdownOfProcesses: processes)
         desc.name = "Pillbox Volume"; desc.isPrivate = true
         desc.muteBehavior = muted ? .muted : .mutedWhenTapped
@@ -118,13 +130,14 @@ final class AppTap {
         guard AudioHardwareCreateAggregateDevice(agg as CFDictionary, &aggregateID) == noErr else { stop(); return nil }
         rate = SystemEQ.sampleRate(aggregateID)
         setBands(bands)
-        let tapBuffers = Self.tapBufferCount(tapID), gain = self.gain, heard = self.heardFlag, eqOn = self.eqOn, eq = self.eq
+        let tapBuffers = Self.tapBufferCount(tapID), state = self.state, eq = self.eq
         let status = AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateID, queue) { _, inData, _, outData, _ in
             let ins = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: inData))
             let outs = UnsafeMutableAudioBufferListPointer(outData)
             // The output device's own inputs (a headset mic) come first, the tap's buffers last.
             let first = ins.count - tapBuffers, inputs = AppVolumeMath.channelCount(ins, from: first)
-            let g = gain.pointee
+            let g = state.gain, eqOn = state.eqOn
+            var sawSignal = false
             for j in 0..<AppVolumeMath.channelCount(outs, from: 0) {
                 guard let d = AppVolumeMath.channel(outs, from: 0, j) else { continue }
                 var n = 0
@@ -132,13 +145,14 @@ final class AppTap {
                     n = min(s.3, d.3)
                     for f in 0..<n {
                         let v = s.0[f * s.2 + s.1]
-                        if v != 0 { heard.pointee = true }
+                        if v != 0 { sawSignal = true }
                         d.0[f * d.2 + d.1] = min(max(v * g, -1), 1)
                     }
                 }
                 for f in n..<d.3 { d.0[f * d.2 + d.1] = 0 }
-                if eqOn.pointee { eq.process(d.0 + d.1, stride: d.2, frames: d.3, channel: j) }
+                if eqOn { eq.process(d.0 + d.1, stride: d.2, frames: d.3, channel: j) }
             }
+            if sawSignal { state.markHeard() }
         }
         guard status == noErr, let id = procID, AudioDeviceStart(aggregateID, id) == noErr else { stop(); return nil }
     }
@@ -147,12 +161,12 @@ final class AppTap {
     func setBands(_ bands: [Double]) {
         guard bands.count == 3 else { return }
         eq.configure(bassDB: bands[0], midDB: bands[1], trebleDB: bands[2], rate: rate)
-        eqOn.pointee = bands.contains { $0 != 0 }
+        state.eqOn = bands.contains { $0 != 0 }
     }
 
-    deinit { stop(); gain.deallocate(); heardFlag.deallocate(); eqOn.deallocate() }
+    deinit { stop() }
 
-    func setGain(_ g: Float) { gain.pointee = g }
+    func setGain(_ g: Float) { state.gain = g }
 
     /// Buffers the tap delivers: one interleaved buffer, or one per channel when planar.
     private static func tapBufferCount(_ tap: AudioObjectID) -> Int {
@@ -190,6 +204,9 @@ final class AppVolumeService: ObservableObject {
     @Published private(set) var eqBands: [String: [Double]] = UserDefaults.standard.dictionary(forKey: AppVolumeService.eqKey) as? [String: [Double]] ?? [:]
     nonisolated static let eqKey = "appEqualizer"
     private var taps: [String: AnyObject] = [:]
+    /// Apps whose audio capture was refused; not retried until the app stops or its settings change.
+    private var denied: Set<String> = []
+    private var eqSave: Timer?
     private var timer: Timer?
     private var listening = false
     /// Set by `--render`, which shows sample rows instead of the real processes.
@@ -228,11 +245,12 @@ final class AppVolumeService: ObservableObject {
         }.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         // Drop settings of apps that quit; rebuild a tap when the app gained or lost a helper.
         for id in Array(taps.keys) where !groups.keys.contains(id) { forget(id) }
-        for a in apps where taps[a.id] != nil || equalizer(a.id).contains(where: { $0 != 0 }) { apply(a.id) }
+        for a in apps where !denied.contains(a.id) && (taps[a.id] != nil || equalizer(a.id).contains(where: { $0 != 0 })) { apply(a.id) }
     }
 
     func setGain(_ g: Float, for id: String) {
         gains[id] = min(max(g, 0), AppVolumeMath.maxGain)
+        denied.remove(id)
         apply(id)
     }
 
@@ -240,16 +258,27 @@ final class AppVolumeService: ObservableObject {
 
     func setEqualizer(_ bands: [Double], for id: String) {
         eqBands[id] = bands
-        UserDefaults.standard.set(eqBands, forKey: Self.eqKey)
+        denied.remove(id)
         apply(id)
+        // Saved once the slider settles: every UserDefaults write re-runs the settings-driven updates in AppDelegate.
+        eqSave?.invalidate()
+        eqSave = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            MainActor.assumeIsolated { self?.saveEqualizer() }
+        }
+    }
+
+    private func saveEqualizer() {
+        eqSave?.invalidate(); eqSave = nil
+        UserDefaults.standard.set(eqBands, forKey: Self.eqKey)
     }
 
     func toggleMute(_ id: String) {
         if muted.contains(id) { muted.remove(id) } else { muted.insert(id) }
+        denied.remove(id)
         apply(id)
     }
 
-    private func forget(_ id: String) { drop(id); gains[id] = nil; muted.remove(id) }
+    private func forget(_ id: String) { drop(id); gains[id] = nil; muted.remove(id); denied.remove(id) }
 
     private func drop(_ id: String) {
         guard let t = taps.removeValue(forKey: id) else { return }
@@ -265,7 +294,7 @@ final class AppVolumeService: ObservableObject {
         drop(id)
         guard let t = AppTap(processes: app.processes, gain: g, muted: m, bands: bands) else {
             gains[id] = nil; muted.remove(id)
-            NotchModel.shared.show(Activity(symbol: "speaker.slash", title: "Could not change this app's volume", tint: .orange, duration: 2))
+            NotchModel.shared.show(Activity(symbol: "speaker.slash", title: L("Could not change this app's volume"), tint: .orange, duration: 2))
             return
         }
         taps[id] = t
@@ -278,8 +307,8 @@ final class AppVolumeService: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self, weak t] in
             MainActor.assumeIsolated {
                 guard let self, let t, self.taps[id] === t, !t.heard, self.apps.first(where: { $0.id == id })?.playing == true else { return }
-                self.drop(id); self.gains[id] = nil
-                NotchModel.shared.show(Activity(symbol: "waveform.slash", title: "Allow audio capture for Pillbox", subtitle: "Privacy & Security › Screen & System Audio Recording", tint: .orange, duration: 3.5))
+                self.drop(id); self.gains[id] = nil; self.denied.insert(id)
+                NotchModel.shared.show(Activity(symbol: "waveform.slash", title: L("Allow audio capture for Pillbox"), subtitle: L("Privacy & Security › Screen & System Audio Recording"), tint: .orange, duration: 3.5))
             }
         }
     }
@@ -288,7 +317,7 @@ final class AppVolumeService: ObservableObject {
     private func listenForOutputChanges() {
         guard !listening else { return }
         listening = true
-        var a = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyDefaultOutputDevice, mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+        var a = audioAddress(kAudioHardwarePropertyDefaultOutputDevice)
         AudioObjectAddPropertyListenerBlock(AudioObjectID(kAudioObjectSystemObject), &a, .main) { [weak self] _, _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
@@ -300,5 +329,6 @@ final class AppVolumeService: ObservableObject {
     func stopAll() {
         for id in Array(taps.keys) { drop(id) }
         gains = [:]; muted = []
+        if eqSave != nil { saveEqualizer() }
     }
 }

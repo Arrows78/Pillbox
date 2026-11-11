@@ -59,7 +59,7 @@ final class BreakReminder {
         guard minutes > 0 else { logic = BreakLogic(); return }
         let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)
         if logic.tick(idle: idle, now: Date(), every: Double(minutes) * 60) {
-            NotchModel.shared.show(Activity(symbol: "figure.walk", title: "Time for a break", subtitle: L("You have been working for %d min", minutes), tint: .green, duration: 8))
+            NotchModel.shared.show(Activity(symbol: "figure.walk", title: L("Time for a break"),subtitle: L("You have been working for %d min", minutes), tint: .green, duration: 8))
         }
     }
 }
@@ -73,7 +73,7 @@ enum DownloadScan {
     static func scan(_ dir: URL) -> [DownloadItem] {
         let fm = FileManager.default
         let names = (try? fm.contentsOfDirectory(atPath: dir.path)) ?? []
-        return names.filter { !$0.hasPrefix(".") && FolderWatcher.temporarySuffixes.contains(($0 as NSString).pathExtension.lowercased()) && ($0 as NSString).pathExtension.lowercased() != "tmp" }
+        return names.filter { !$0.hasPrefix(".") && FolderWatcher.temporarySuffixes.contains(($0 as NSString).pathExtension.lowercased()) }
             .map { name in
                 let url = dir.appendingPathComponent(name)
                 var isDir: ObjCBool = false
@@ -97,7 +97,7 @@ final class DownloadProgress: ObservableObject {
     func start() {
         let dir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
-            guard UserDefaults.standard.object(forKey: "downloadAlerts") as? Bool ?? true else { return }
+            guard Defaults.bool("downloadAlerts", default: true) else { return }
             DispatchQueue.global(qos: .utility).async {
                 let found = DownloadScan.scan(dir)
                 DispatchQueue.main.async { MainActor.assumeIsolated { if self?.items != found { self?.items = found; NotificationCenter.default.post(name: .notchStateChanged, object: nil) } } }
@@ -114,7 +114,7 @@ final class DownloadProgress: ObservableObject {
 @MainActor
 final class BuildWatcher: ObservableObject {
     static let shared = BuildWatcher()
-    static let names: Set<String> = ["xcodebuild", "swift-build"]
+    nonisolated static let names: Set<String> = ["xcodebuild", "swift-build"]
     @Published private(set) var since: Date?
     private var timer: Timer?
 
@@ -134,11 +134,7 @@ final class BuildWatcher: ObservableObject {
     }
 
     private nonisolated static func ps() -> String {
-        let p = Process(); p.executableURL = URL(fileURLWithPath: "/bin/ps"); p.arguments = ["-axo", "comm="]
-        let pipe = Pipe(); p.standardOutput = pipe; p.standardError = Pipe()
-        guard (try? p.run()) != nil else { return "" }
-        let d = pipe.fileHandleForReading.readDataToEndOfFile(); p.waitUntilExit()
-        return String(decoding: d, as: UTF8.self)
+        ProcessRunner.run("/bin/ps", ["-axo", "comm="]).output
     }
 
     func update(_ building: Bool, now: Date = Date()) {
@@ -148,7 +144,7 @@ final class BuildWatcher: ObservableObject {
             since = nil
             NotificationCenter.default.post(name: .notchStateChanged, object: nil)
             let secs = Int(now.timeIntervalSince(s))
-            if secs >= 5 { NotchModel.shared.show(Activity(symbol: "hammer.fill", title: "Build finished", subtitle: L("%@", TimerService.format(Double(secs))), tint: .green, duration: 4)) }
+            if secs >= 5 { NotchModel.shared.show(Activity(symbol: "hammer.fill", title: L("Build finished"),subtitle: L("%@", TimerService.format(Double(secs))), tint: .green, duration: 4)) }
         default: break
         }
     }
@@ -175,11 +171,7 @@ enum BluetoothBattery {
     }
 
     static func read() -> [String] {
-        let p = Process(); p.executableURL = URL(fileURLWithPath: "/usr/sbin/system_profiler"); p.arguments = ["SPBluetoothDataType", "-json"]
-        let pipe = Pipe(); p.standardOutput = pipe; p.standardError = Pipe()
-        guard (try? p.run()) != nil else { return [] }
-        let d = pipe.fileHandleForReading.readDataToEndOfFile(); p.waitUntilExit()
-        return parse(d)
+        parse(Data(ProcessRunner.run("/usr/sbin/system_profiler", ["SPBluetoothDataType", "-json"]).output.utf8))
     }
 }
 
@@ -208,8 +200,8 @@ enum QuickCapture {
             let ok = MusicService.run(script) != nil
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
-                    NotchModel.shared.show(Activity(symbol: ok ? "note.text.badge.plus" : "exclamationmark.triangle", title: ok ? "Saved to Notes" : "Could not save to Notes",
-                                                    subtitle: ok ? String(text.prefix(60)) : "Allow Pillbox to control Notes", tint: ok ? .yellow : .orange))
+                    NotchModel.shared.show(Activity(symbol: ok ? "note.text.badge.plus" : "exclamationmark.triangle", title: ok ? L("Saved to Notes") : L("Could not save to Notes"),
+                                                    subtitle: ok ? String(text.prefix(60)) : L("Allow Pillbox to control Notes"), tint: ok ? .yellow : .orange))
                 }
             }
         }

@@ -74,6 +74,8 @@ final class TimerService: ObservableObject {
 
     func pause() {
         guard running else { return }
+        // The last tick may be up to 0.25 s old: read the clock now, so the pause keeps the exact time.
+        now = Date()
         if mode == .stopwatch { accumulated = seconds } else { pausedRemaining = seconds }
         running = false; timer?.invalidate()
         AmbientNoise.shared.autoStop()
@@ -113,12 +115,16 @@ final class TimerService: ObservableObject {
         return String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
     }
 
+    private static let weekdayFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE"
+        return f
+    }()
+
     /// Focus sessions per day for the last 7 days (oldest first).
     var week: [(label: String, count: Int)] {
         (0..<7).reversed().map { off in
             let d = Calendar.current.date(byAdding: .day, value: -off, to: Date())!
-            let f = DateFormatter(); f.dateFormat = "EEE"
-            return (f.string(from: d), sessions[Self.dayKey(d)] ?? 0)
+            return (Self.weekdayFormatter.string(from: d), sessions[Self.dayKey(d)] ?? 0)
         }
     }
 

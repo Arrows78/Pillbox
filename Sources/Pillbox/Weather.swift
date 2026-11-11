@@ -1,6 +1,13 @@
 import CoreLocation
 import Foundation
 
+/// One current reading, as the Home tab shows it.
+struct WeatherReading: Equatable {
+    let temperature: Int
+    let symbol: String
+    let summary: String
+}
+
 @MainActor
 final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegate {
     static let shared = WeatherService()
@@ -12,8 +19,13 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     @Published private(set) var denied = false
 
     private let manager = CLLocationManager()
+    /// Kept as a property: a geocoder released before it answers never calls back, and the city would never update.
+    private let geocoder = CLGeocoder()
     private var timer: Timer?
     private var location: CLLocation?
+    /// When the shown reading was fetched. A failed request keeps the old one, but not for longer than `staleAfter`.
+    private var readAt: Date?
+    private static let staleAfter: TimeInterval = 3600
 
     /// Read from the long-lived manager: a new manager can report a stale status.
     var authorizationStatus: CLAuthorizationStatus { manager.authorizationStatus }
@@ -39,7 +51,7 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
         Task { @MainActor in
             self.location = loc
             self.fetch(loc)
-            CLGeocoder().reverseGeocodeLocation(loc) { marks, _ in
+            self.geocoder.reverseGeocodeLocation(loc) { marks, _ in
                 let name = marks?.first?.locality ?? ""
                 DispatchQueue.main.async { MainActor.assumeIsolated { self.city = name } }
             }
@@ -60,16 +72,30 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     private func fetch(_ loc: CLLocation) {
         let fahrenheit = Locale.current.measurementSystem == .us
         let url = URL(string: "https://api.open-meteo.com/v1/forecast?latitude=\(loc.coordinate.latitude)&longitude=\(loc.coordinate.longitude)&current=temperature_2m,weather_code,is_day&temperature_unit=\(fahrenheit ? "fahrenheit" : "celsius")")!
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            guard let data, let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let cur = obj["current"] as? [String: Any], let t = cur["temperature_2m"] as? Double,
-                  let code = cur["weather_code"] as? Int else { return }
-            let day = (cur["is_day"] as? Int ?? 1) == 1
-            let (sym, text) = Self.describe(code, day: day)
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated { self.temperature = Int(t.rounded()); self.symbol = sym; self.summary = L(text) }
-            }
+        URLSession.shared.dataTask(with: url) { data, resp, _ in
+            let reading = Self.parse(data, status: (resp as? HTTPURLResponse)?.statusCode)
+            DispatchQueue.main.async { MainActor.assumeIsolated { self.apply(reading) } }
         }.resume()
+    }
+
+    /// A fresh reading replaces the shown one. A failed request keeps it, but once it is over an hour old the
+    /// temperature is dropped rather than shown as current.
+    private func apply(_ reading: WeatherReading?) {
+        if let reading {
+            temperature = reading.temperature; symbol = reading.symbol; summary = reading.summary; readAt = Date()
+        } else if let readAt, Date().timeIntervalSince(readAt) > Self.staleAfter {
+            temperature = nil; self.readAt = nil
+        }
+    }
+
+    /// The current conditions from an Open-Meteo body. Anything but HTTP 200 with those fields gives nil.
+    nonisolated static func parse(_ data: Data?, status: Int?) -> WeatherReading? {
+        guard status == 200, let data, let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let cur = obj["current"] as? [String: Any], let t = cur["temperature_2m"] as? Double,
+              let code = cur["weather_code"] as? Int else { return nil }
+        let day = (cur["is_day"] as? Int ?? 1) == 1
+        let (sym, text) = describe(code, day: day)
+        return WeatherReading(temperature: Int(t.rounded()), symbol: sym, summary: L(text))
     }
 
     /// WMO weather interpretation codes.
