@@ -98,7 +98,7 @@ extension SelfTest {
 
     static func reminders() {
         let now = Date()
-        let a = RemindersService.parse("call mum tomorrow at 9am", now: now)
+        let a = RemindersService.parse("call mum tomorrow at 9am")
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: now)!
         check("reminder: title without the date words", a.title == "call mum", a.title)
         check("reminder: due tomorrow at 9", a.due.map { Calendar.current.isDate($0, inSameDayAs: tomorrow) && Calendar.current.component(.hour, from: $0) == 9 } == true, "\(String(describing: a.due))")

@@ -31,6 +31,7 @@ enum WindowSnap {
         // The palette is non-activating, so the front app is still the user's.
         guard let app = NSWorkspace.shared.frontmostApplication, app.processIdentifier != getpid() else { return }
         let ax = AXUIElementCreateApplication(app.processIdentifier)
+        AXUIElementSetMessagingTimeout(ax, AXWindow.messagingTimeout)
         var win: CFTypeRef?
         guard AXUIElementCopyAttributeValue(ax, kAXFocusedWindowAttribute as CFString, &win) == .success, let window = win else { return }
         let w = window as! AXUIElement

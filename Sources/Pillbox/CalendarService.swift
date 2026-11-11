@@ -9,7 +9,7 @@ extension CalendarService {
     func agenda(calendars: [EKCalendar]? = nil) -> [AgendaEvent] {
         let cal = Calendar.current, start = cal.startOfDay(for: Date())
         guard let end = cal.date(byAdding: .day, value: 2, to: start) else { return [] }
-        let store = EKEventStore()
+        let store = CalendarService.eventStore
         let pred = store.predicateForEvents(withStart: start, end: end, calendars: calendars ?? CalendarChoice.visible(in: store))
         return store.events(matching: pred)
             .sorted { ($0.isAllDay ? 0 : 1, $0.startDate) < ($1.isAllDay ? 0 : 1, $1.startDate) }
@@ -25,7 +25,9 @@ extension CalendarService {
 final class CalendarService: ObservableObject {
     static let shared = CalendarService()
     @Published private(set) var next: (title: String, start: Date, end: Date)?
-    private let store = EKEventStore()
+    /// One event store for the whole app: EventKit caches per store, so a second one sees stale data.
+    static let eventStore = EKEventStore()
+    private var store: EKEventStore { CalendarService.eventStore }
     private var timer: Timer?
     private var watchdog: Timer?
 

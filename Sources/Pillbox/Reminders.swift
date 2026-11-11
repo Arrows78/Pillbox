@@ -59,7 +59,7 @@ final class RemindersService: ObservableObject {
     }
 
     /// "call mum tomorrow at 9am" becomes the title "call mum" due tomorrow at 9:00.
-    nonisolated static func parse(_ text: String, now: Date = Date()) -> (title: String, due: Date?) {
+    nonisolated static func parse(_ text: String) -> (title: String, due: Date?) {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let det = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.date.rawValue),
               let m = det.matches(in: t, range: NSRange(t.startIndex..., in: t)).last, let date = m.date, let r = Range(m.range, in: t) else { return (t, nil) }

@@ -113,7 +113,7 @@ final class NotchModel: ObservableObject {
     /// User-chosen scale of the open panel (0.8 to 1.3).
     static var scale: CGFloat { CGFloat(min(max(UserDefaults.standard.object(forKey: "panelScale") as? Double ?? 1, 0.8), 1.3)) }
     /// Every tab opens at the same size, so the panel does not jump when switching tabs.
-    static func baseExpanded(_ tab: Tab) -> CGSize { expandedSize }
+    static func baseExpanded() -> CGSize { expandedSize }
 
     @Published var expanded = false
     @Published var tab: Tab = .home
@@ -129,7 +129,7 @@ final class NotchModel: ObservableObject {
     /// Size of the visible black shape for the current state.
     func size(hasWings: Bool) -> CGSize {
         if approval != nil { return CGSize(width: 520, height: geometry.height + 92) }
-        if expanded { let b = Self.baseExpanded(tab); return CGSize(width: b.width * Self.scale, height: b.height * Self.scale) }
+        if expanded { let b = Self.baseExpanded(); return CGSize(width: b.width * Self.scale, height: b.height * Self.scale) }
         if activity != nil || DictationService.shared.active { return CGSize(width: max(geometry.width + 150, 330), height: geometry.height + 34) }
         let extra = hasWings ? Self.wing * 2 : 0
         return CGSize(width: geometry.width + extra, height: geometry.height)

@@ -8,7 +8,7 @@ import Vision
 enum ConvertTarget: String, CaseIterable, Identifiable {
     case png = "PNG", jpeg = "JPEG", heic = "HEIC", tiff = "TIFF", pdf = "PDF"
     case cutout = "Remove background"
-    case mp4 = "MP4", hevc = "HEVC", m4a = "Audio only (M4A)", wav = "WAV", aiff = "AIFF"
+    case mp4 = "MP4", hevc = "HEVC", m4a = "Audio only (M4A)", aac = "AAC", wav = "WAV", aiff = "AIFF"
     var id: String { rawValue }
 
     var ext: String {
@@ -19,7 +19,7 @@ enum ConvertTarget: String, CaseIterable, Identifiable {
         case .tiff: "tiff"
         case .pdf: "pdf"
         case .mp4, .hevc: "mp4"
-        case .m4a: "m4a"
+        case .m4a, .aac: "m4a"
         case .wav: "wav"
         case .aiff: "aiff"
         }
@@ -39,7 +39,7 @@ enum ConvertTarget: String, CaseIterable, Identifiable {
         guard let t = UTType(filenameExtension: url.pathExtension) else { return [] }
         if t.conforms(to: .image) { return [.png, .jpeg, .heic, .tiff, .pdf, .cutout] }
         if t.conforms(to: .movie) || t.conforms(to: .video) { return [.mp4, .hevc, .m4a] }
-        if t.conforms(to: .audio) { return [.m4a, .wav, .aiff] }
+        if t.conforms(to: .audio) { return [.aac, .wav, .aiff] }
         return []
     }
 }
@@ -62,7 +62,7 @@ enum Converter {
         case .cutout: try cutout(src, to: out)
         case .mp4: try await export(src, to: out, preset: AVAssetExportPresetHighestQuality, type: .mp4)
         case .hevc: try await export(src, to: out, preset: AVAssetExportPresetHEVCHighestQuality, type: .mp4)
-        case .m4a: try await export(src, to: out, preset: AVAssetExportPresetAppleM4A, type: .m4a)
+        case .m4a, .aac: try await export(src, to: out, preset: AVAssetExportPresetAppleM4A, type: .m4a)
         case .wav, .aiff: try pcm(src, to: out, wav: target == .wav)
         }
         return out

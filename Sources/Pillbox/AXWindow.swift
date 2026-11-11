@@ -14,11 +14,16 @@ enum AXWindow {
         return (pos, size)
     }
 
+    /// Accessibility calls run on the main thread, so a hung app must not hold it for long: each call waits at most a second.
+    static let messagingTimeout: Float = 1
+
     /// The window under an AppKit point, or nil when there is none.
     static func window(at point: CGPoint) -> AXUIElement? {
         let ax = flipped(point)
         var element: AXUIElement?
-        guard AXUIElementCopyElementAtPosition(AXUIElementCreateSystemWide(), Float(ax.x), Float(ax.y), &element) == .success,
+        let system = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(system, messagingTimeout)
+        guard AXUIElementCopyElementAtPosition(system, Float(ax.x), Float(ax.y), &element) == .success,
               let under = element else { return nil }
         var winRef: CFTypeRef?
         guard AXUIElementCopyAttributeValue(under, kAXWindowAttribute as CFString, &winRef) == .success, let w = winRef else { return nil }

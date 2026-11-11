@@ -77,7 +77,7 @@ enum ViewRenderer {
         model.geometry = NotchGeometry(width: 185, height: 32, notch: true)
         for tab in Tab.allCases where tab != .terminal {
             model.tab = tab; model.expanded = true
-            let size = NotchModel.baseExpanded(tab)
+            let size = NotchModel.baseExpanded()
             save("tab-\(tab.rawValue)", island(ExpandedView(), size), size: size)
         }
         let mixer = AppVolumeService.shared

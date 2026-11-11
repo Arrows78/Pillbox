@@ -87,7 +87,7 @@ extension SelfTest {
         check("double tap: slow presses do not count, and it resets", !d.press(at: t0.addingTimeInterval(2)) && !d.press(at: t0.addingTimeInterval(3)))
         let first = CGPoint(x: SnapZones.margin + 5, y: SnapZones.margin + 5)
         check("snap zones: tile hit testing", SnapZones.zone(at: first) == .left && SnapZones.zone(at: CGPoint(x: 1, y: 1)) == nil
-              && SnapZones.zone(at: CGPoint(x: SnapZones.margin + 2 * (SnapZones.tile.width + SnapZones.gap) + 5, y: SnapZones.margin + 5)) == .full)
+              && SnapZones.zone(at: CGPoint(x: SnapZones.margin + CGFloat(SnapZones.zones.firstIndex(of: .full)!) * (SnapZones.tile.width + SnapZones.gap) + 5, y: SnapZones.margin + 5)) == .full)
         let noon = Date(timeIntervalSince1970: 1_794_052_800)   // 2026-11-07 12:00 UTC
         check("world clock: each zone shows its own time", DesktopWidgetView.time(noon, zone: "Asia/Tokyo") == "21:00" && DesktopWidgetView.time(noon, zone: "America/New_York") == "07:00" && DesktopWidgetView.time(noon, zone: "Europe/London") == "12:00",
               "\(DesktopWidgetView.time(noon, zone: "Asia/Tokyo")) \(DesktopWidgetView.time(noon, zone: "America/New_York"))")
@@ -188,7 +188,7 @@ extension SelfTest {
         check("panel: the scale is clamped", NotchModel.scale == 1.3)
         UserDefaults.standard.set(0.1, forKey: "panelScale")
         check("panel: ... on both sides", NotchModel.scale == 0.8)
-        check("panel: the largest panel fits its window", NotchModel.baseExpanded(.terminal).width * 1.3 <= NotchModel.windowSize.width && NotchModel.baseExpanded(.terminal).height * 1.3 <= NotchModel.windowSize.height)
+        check("panel: the largest panel fits its window", NotchModel.baseExpanded().width * 1.3 <= NotchModel.windowSize.width && NotchModel.baseExpanded().height * 1.3 <= NotchModel.windowSize.height)
     }
 
     static func idleCollapse() {

@@ -6,8 +6,9 @@ import SwiftUI
 @MainActor
 final class SnapZones: ObservableObject {
     static let shared = SnapZones()
-    nonisolated static let zones: [SnapZone] = [.left, .right, .full, .center]
-    nonisolated static let tile = CGSize(width: 96, height: 56), gap: CGFloat = 10, margin: CGFloat = 12
+    /// Every zone, so the drag panel offers the same placements the window snapping supports.
+    nonisolated static let zones: [SnapZone] = SnapZone.allCases
+    nonisolated static let tile = CGSize(width: 72, height: 56), gap: CGFloat = 8, margin: CGFloat = 12
     static var panelSize: CGSize {
         CGSize(width: CGFloat(zones.count) * tile.width + CGFloat(zones.count - 1) * gap + margin * 2, height: tile.height + margin * 2)
     }

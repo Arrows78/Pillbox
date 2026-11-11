@@ -157,7 +157,7 @@ struct CalendarsSettings: View {
     @State private var name = ""
     @State private var link = ""
     @State private var invalid = false
-    private let store = EKEventStore()
+    private let store = CalendarService.eventStore
 
     var body: some View {
         SettingsCard(title: "Calendars") {
