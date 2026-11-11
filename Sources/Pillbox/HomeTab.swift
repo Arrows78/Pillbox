@@ -16,6 +16,7 @@ struct HomeTab: View {
     @State private var batteryChart = false
     @AppStorage(HomeLayout.cardsKey) private var cardsRaw = ""
     @AppStorage(HomeLayout.tilesKey) private var tilesRaw = ""
+    @AppStorage(HomeLayout.gaugesKey) private var gaugesRaw = ""
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
@@ -53,11 +54,9 @@ struct HomeTab: View {
 
             VStack(spacing: 8) {
                 HStack(spacing: 8) {
-                    gauge("CPU", stats.cpu, .green)
-                    gauge("RAM", stats.memory, .blue)
-                    gauge("Batt", Double(battery.level) / 100, battery.level < 20 ? .red : .yellow, icon: battery.pluggedIn ? "bolt.fill" : nil, detail: batteryLog.remaining)
-                        .contentShape(Rectangle()).onTapGesture { batteryChart = true }.hoverTip(localized("Battery history"))
-                        .accessibilityAddTraits(.isButton).accessibilityAction { batteryChart = true }
+                    ForEach(Array(HomeLayout.gauges(gaugesRaw).enumerated()), id: \.offset) { _, item in
+                        gaugeView(item)
+                    }
                 }
                 .opacity(batteryChart ? 0 : 1)
                 .overlay {   // same footprint as the gauges, so the column never grows
@@ -80,6 +79,19 @@ struct HomeTab: View {
         }
         .onAppear { stats.start() }
         .onDisappear { stats.stop() }
+    }
+
+    /// One gauge of the row; the battery keeps its tap for the history chart.
+    @ViewBuilder private func gaugeView(_ item: HomeLayout.Gauge) -> some View {
+        switch item {
+        case .cpu: gauge("CPU", stats.cpu, .green)
+        case .memory: gauge("RAM", stats.memory, .blue)
+        case .disk: gauge("Disk", HomeLayout.diskUsed, .orange, detail: HomeLayout.diskFree)
+        case .battery:
+            gauge("Batt", Double(battery.level) / 100, battery.level < 20 ? .red : .yellow, icon: battery.pluggedIn ? "bolt.fill" : nil, detail: batteryLog.remaining)
+                .contentShape(Rectangle()).onTapGesture { batteryChart = true }.hoverTip(localized("Battery history"))
+                .accessibilityAddTraits(.isButton).accessibilityAction { batteryChart = true }
+        }
     }
 
     private func gauge(_ name: LocalizedStringKey, _ fraction: Double, _ tint: Color, icon: String? = nil, detail: String? = nil) -> some View {

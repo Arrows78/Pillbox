@@ -207,6 +207,9 @@ extension SelfTest {
     static func homeLayout() {
         check("home layout: nothing stored gives the defaults", HomeLayout.parse(nil, slots: 6, defaults: HomeLayout.defaultTiles) == HomeLayout.defaultTiles)
         check("home layout: a stored choice is kept", HomeLayout.parse("record,lyrics", slots: 2, defaults: HomeLayout.defaultCards.map { _ in HomeLayout.Tile.awake }) == [.record, .lyrics])
+        check("home layout: rings default to CPU, memory and battery", HomeLayout.gauges(nil) == [.cpu, .memory, .battery])
+        check("home layout: a ring can be the disk", HomeLayout.gauges("disk,cpu,battery") == [.disk, .cpu, .battery])
+        check("home layout: the disk reading is a fraction", (0...1).contains(HomeLayout.diskUsed))
         check("home layout: unknown names are skipped, missing slots take the defaults",
               HomeLayout.parse("recentIslands,bogus", slots: 2, defaults: HomeLayout.defaultCards) == [.recentIslands, .upNext])
     }

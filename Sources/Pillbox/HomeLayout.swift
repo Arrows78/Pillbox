@@ -2,8 +2,41 @@ import SwiftUI
 
 /// What Home shows in its middle column and its quick tiles, chosen in Settings › Tabs and menu bar.
 enum HomeLayout {
-    static let cardsKey = "homeCards", tilesKey = "homeTiles"
-    static let cardSlots = 2, tileSlots = 6
+    static let cardsKey = "homeCards", tilesKey = "homeTiles", gaugesKey = "homeGauges"
+    static let cardSlots = 2, tileSlots = 6, gaugeSlots = 3
+
+    /// A ring in the gauge row.
+    enum Gauge: String, CaseIterable, Identifiable {
+        case cpu, memory, disk, battery
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .cpu: localized("CPU")
+            case .memory: localized("Memory")
+            case .disk: localized("Disk")
+            case .battery: localized("Battery")
+            }
+        }
+    }
+
+    static let defaultGauges: [Gauge] = [.cpu, .memory, .battery]
+
+    static func gauges(_ stored: String?) -> [Gauge] {
+        parse(stored, slots: gaugeSlots, defaults: defaultGauges)
+    }
+
+    /// The boot disk's used share and its free space, read when Home draws. Nil when the system will not say.
+    static var diskUsed: Double {
+        guard let v = try? URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeTotalCapacityKey, .volumeAvailableCapacityForImportantUsageKey]),
+              let total = v.volumeTotalCapacity, let free = v.volumeAvailableCapacityForImportantUsage, total > 0 else { return 0 }
+        return 1 - Double(free) / Double(total)
+    }
+
+    static var diskFree: String {
+        guard let v = try? URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
+              let free = v.volumeAvailableCapacityForImportantUsage else { return "" }
+        return ByteCountFormatter.string(fromByteCount: free, countStyle: .file)
+    }
 
     /// A card of the middle column.
     enum Card: String, CaseIterable, Identifiable {
@@ -81,13 +114,23 @@ enum HomeLayout {
 struct HomeLayoutSettings: View {
     @AppStorage(HomeLayout.cardsKey) private var cardsRaw = ""
     @AppStorage(HomeLayout.tilesKey) private var tilesRaw = ""
+    @AppStorage(HomeLayout.gaugesKey) private var gaugesRaw = ""
 
     var body: some View {
         let cards = HomeLayout.parse(cardsRaw, slots: HomeLayout.cardSlots, defaults: HomeLayout.defaultCards)
         let tiles = HomeLayout.parse(tilesRaw, slots: HomeLayout.tileSlots, defaults: HomeLayout.defaultTiles)
+        let gauges = HomeLayout.gauges(gaugesRaw)
         SettingsCard(title: "Home") {
-            SettingsRow(title: "Cards and tiles", subtitle: "What the Home tab shows in its middle column and its quick tiles.") {
-                Button("Reset") { cardsRaw = ""; tilesRaw = "" }.controlSize(.small).disabled(cardsRaw.isEmpty && tilesRaw.isEmpty)
+            SettingsRow(title: "Cards, gauges and tiles", subtitle: "What the Home tab shows in its middle column, its rings and its quick tiles.") {
+                Button("Reset") { cardsRaw = ""; tilesRaw = ""; gaugesRaw = "" }.controlSize(.small)
+                    .disabled(cardsRaw.isEmpty && tilesRaw.isEmpty && gaugesRaw.isEmpty)
+            }
+            ForEach(0..<HomeLayout.gaugeSlots, id: \.self) { i in
+                SettingsRow(title: LocalizedStringKey(localized("Ring %d", i + 1))) {
+                    Picker("", selection: Binding(get: { gauges[i] }, set: { var g = gauges; g[i] = $0; gaugesRaw = g.map(\.rawValue).joined(separator: ",") })) {
+                        ForEach(HomeLayout.Gauge.allCases) { Text(verbatim: $0.title).tag($0) }
+                    }.labelsHidden().frame(width: 170)
+                }
             }
             ForEach(0..<HomeLayout.cardSlots, id: \.self) { i in
                 SettingsRow(title: LocalizedStringKey(localized("Card %d", i + 1))) {

@@ -196,6 +196,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         more.submenu = actionsMenu(PaletteModel().commands)
         menu.addItem(more)
         menu.addItem(recentIslandsItem())
+        menu.addItem(recentClipboardItem())
 
         menu.addItem(.separator())
         toggleMenuItems().forEach(menu.addItem)
@@ -215,6 +216,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(connect)
 
         menu.addItem(.separator())
+        _ = add("Check for updates…", "arrow.down.circle", #selector(checkForUpdates))
         _ = add("Settings…", "gearshape", #selector(settings), key: ",", mods: .command)
         _ = add("Quit Pillbox", "power", #selector(NSApplication.terminate(_:)), key: "q", mods: .command, target: NSApp)
     }
@@ -243,6 +245,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
     @objc private func palette() { PaletteController.shared.toggle() }
     @objc private func settings() { SettingsWindow.show() }
+    @objc private func checkForUpdates() { UpdateCheck.run() }
     @objc private func openTab(_ sender: NSMenuItem) {
         guard let raw = sender.representedObject as? String, let tab = Tab(rawValue: raw) else { return }
         NotchModel.shared.expand(tab)

@@ -850,7 +850,6 @@
 "Recent islands" = "Letzte Inseln";
 "No island yet" = "Noch keine Insel";
 "Cards and tiles" = "Karten und Kacheln";
-"What the Home tab shows in its middle column and its quick tiles." = "Was der Start-Tab in seiner mittleren Spalte und seinen Schnellkacheln zeigt.";
 "Card %d" = "Karte %d";
 "Tile %d" = "Kachel %d";
 "Now playing" = "Läuft gerade";
@@ -861,3 +860,12 @@
 "Move the tabs with the arrows and turn off the ones you never open. Home always stays first." = "Verschiebe die Tabs mit den Pfeilen und schalte die aus, die du nie öffnest. Start bleibt immer zuerst.";
 "Default order" = "Standardreihenfolge";
 "Removed from favorites" = "Aus Favoriten entfernt";
+"Disk" = "Speicher";
+"Memory" = "Speicher (RAM)";
+"Battery" = "Akku";
+"CPU" = "Prozessor";
+"Recent clipboard" = "Letzte Zwischenablage";
+"Nothing copied yet" = "Noch nichts kopiert";
+"Ring %d" = "Ring %d";
+"Cards, gauges and tiles" = "Karten, Ringe und Kacheln";
+"What the Home tab shows in its middle column, its rings and its quick tiles." = "Was der Start-Tab in seiner mittleren Spalte, seinen Ringen und Schnellkacheln zeigt.";

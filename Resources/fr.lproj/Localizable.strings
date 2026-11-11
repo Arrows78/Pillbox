@@ -901,7 +901,6 @@
 "Recent islands" = "Îles récentes";
 "No island yet" = "Aucune île pour l'instant";
 "Cards and tiles" = "Cartes et tuiles";
-"What the Home tab shows in its middle column and its quick tiles." = "Ce que l'onglet Accueil affiche dans sa colonne centrale et ses tuiles rapides.";
 "Card %d" = "Carte %d";
 "Tile %d" = "Tuile %d";
 "Now playing" = "Lecture en cours";
@@ -912,3 +911,12 @@
 "Move the tabs with the arrows and turn off the ones you never open. Home always stays first." = "Déplacez les onglets avec les flèches et désactivez ceux que vous n'ouvrez jamais. Accueil reste toujours en premier.";
 "Default order" = "Ordre par défaut";
 "Removed from favorites" = "Retiré des favoris";
+"Disk" = "Disque";
+"Memory" = "Mémoire";
+"Battery" = "Batterie";
+"CPU" = "Processeur";
+"Recent clipboard" = "Presse-papiers récent";
+"Nothing copied yet" = "Rien de copié pour l'instant";
+"Ring %d" = "Anneau %d";
+"Cards, gauges and tiles" = "Cartes, anneaux et tuiles";
+"What the Home tab shows in its middle column, its rings and its quick tiles." = "Ce que l'onglet Accueil affiche dans sa colonne centrale, ses anneaux et ses tuiles rapides.";

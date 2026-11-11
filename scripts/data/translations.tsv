@@ -848,7 +848,6 @@ Stop	Detener	Stoppen
 Recent islands	Islas recientes	Letzte Inseln
 No island yet	Aún no hay islas	Noch keine Insel
 Cards and tiles	Tarjetas y botones	Karten und Kacheln
-What the Home tab shows in its middle column and its quick tiles.	Lo que muestra la pestaña Inicio en su columna central y sus botones rápidos.	Was der Start-Tab in seiner mittleren Spalte und seinen Schnellkacheln zeigt.
 Card %d	Tarjeta %d	Karte %d
 Tile %d	Botón %d	Kachel %d
 Now playing	Reproduciendo	Läuft gerade
@@ -859,3 +858,12 @@ Lyrics	Letras	Songtexte
 Move the tabs with the arrows and turn off the ones you never open. Home always stays first.	Mueve las pestañas con las flechas y desactiva las que nunca abres. Inicio siempre va primero.	Verschiebe die Tabs mit den Pfeilen und schalte die aus, die du nie öffnest. Start bleibt immer zuerst.
 Default order	Orden predeterminado	Standardreihenfolge
 Removed from favorites	Quitado de favoritos	Aus Favoriten entfernt
+Disk	Disco	Speicher
+Memory	Memoria	Speicher (RAM)
+Battery	Batería	Akku
+CPU	CPU	Prozessor
+Recent clipboard	Portapapeles reciente	Letzte Zwischenablage
+Nothing copied yet	Nada copiado todavía	Noch nichts kopiert
+Ring %d	Anillo %d	Ring %d
+Cards, gauges and tiles	Tarjetas, anillos y botones	Karten, Ringe und Kacheln
+What the Home tab shows in its middle column, its rings and its quick tiles.	Lo que muestra la pestaña Inicio en su columna central, sus anillos y sus botones rápidos.	Was der Start-Tab in seiner mittleren Spalte, seinen Ringen und Schnellkacheln zeigt.

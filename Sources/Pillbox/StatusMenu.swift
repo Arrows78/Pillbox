@@ -85,6 +85,21 @@ extension AppDelegate {
         ]
     }
 
+    /// The last five things copied. Clicking one copies it again, ready to paste where the cursor is.
+    func recentClipboardItem() -> NSMenuItem {
+        let sub = NSMenu()
+        let items = ClipboardService.shared.items.prefix(5)
+        for item in items {
+            let text = item.text.map { String($0.replacingOccurrences(of: "\n", with: " ").prefix(60)) } ?? localized("Image")
+            sub.addItem(menuItem(text, item.text == nil ? "photo" : "doc.text") { ClipboardService.shared.copy(item) })
+        }
+        if items.isEmpty { sub.addItem(NSMenuItem(title: localized("Nothing copied yet"), action: nil, keyEquivalent: "")) }
+        let entry = NSMenuItem(title: localized("Recent clipboard"), action: nil, keyEquivalent: "")
+        entry.image = Self.menuIcon("doc.on.clipboard")
+        entry.submenu = sub
+        return entry
+    }
+
     /// The latest islands, newest first. Clicking one shows it again.
     func recentIslandsItem() -> NSMenuItem {
         let sub = NSMenu()
