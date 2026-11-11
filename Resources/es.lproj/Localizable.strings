@@ -934,3 +934,13 @@
 "New terminal session" = "Nueva sesión de terminal";
 "Close this session" = "Cerrar esta sesión";
 "Session %lld" = "Sesión %lld";
+"Two days" = "Dos días";
+"Week" = "Semana";
+"New event" = "Nuevo evento";
+"Event title" = "Título del evento";
+"%d min" = "%d min";
+"No events this week" = "Ningún evento esta semana";
+"Meeting in %d min" = "Reunión en %d min";
+"Meeting alert" = "Alerta de reunión";
+"Shows the next timed event in the island before it starts. Needs Calendars access." = "Muestra en la isla el próximo evento con hora antes de que empiece. Necesita acceso a Calendario.";
+"Minutes before a timed event" = "Minutos antes de un evento con hora";

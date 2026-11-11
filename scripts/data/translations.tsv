@@ -932,3 +932,13 @@ Open in Terminal.app	Abrir en Terminal.app	In Terminal.app öffnen
 New terminal session	Nueva sesión de terminal	Neue Terminal-Sitzung
 Close this session	Cerrar esta sesión	Diese Sitzung schließen
 Session %lld	Sesión %lld	Sitzung %lld
+Two days	Dos días	Zwei Tage
+Week	Semana	Woche
+New event	Nuevo evento	Neuer Termin
+Event title	Título del evento	Titel des Termins
+%d min	%d min	%d Min.
+No events this week	Ningún evento esta semana	Keine Termine diese Woche
+Meeting in %d min	Reunión en %d min	Besprechung in %d Min.
+Meeting alert	Alerta de reunión	Besprechungswarnung
+Shows the next timed event in the island before it starts. Needs Calendars access.	Muestra en la isla el próximo evento con hora antes de que empiece. Necesita acceso a Calendario.	Zeigt das nächste Ereignis mit Uhrzeit vor Beginn in der Insel an. Benötigt Zugriff auf Kalender.
+Minutes before a timed event	Minutos antes de un evento con hora	Minuten vor einem Termin mit Uhrzeit

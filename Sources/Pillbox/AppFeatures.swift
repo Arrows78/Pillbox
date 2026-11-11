@@ -53,7 +53,7 @@ enum AppFeatures {
         AppFeature(name: "battery", start: { BatteryService.shared.start() }),
         AppFeature(name: "battery log", start: { BatteryLog.shared.start() }),
         AppFeature(name: "bluetooth islands", apply: { BluetoothIslands.shared.apply() }),
-        AppFeature(name: "calendar", start: { CalendarService.shared.watch() }),
+        AppFeature(name: "calendar", start: { CalendarService.shared.watch(); MeetingAlert.shared.start() }),
         AppFeature(name: "downloads", start: { DownloadsWatcher.shared.start() }),
         AppFeature(name: "screenshots", start: { ScreenshotWatcher.shared.start() }),
         AppFeature(name: "drives", start: { DriveWatcher.shared.start() }),

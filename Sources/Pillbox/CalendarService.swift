@@ -4,11 +4,19 @@ import SwiftUI
 import EventKit
 import Combine
 
+/// Why a new event was not saved; `message` is the text shown to the person.
+enum CalendarAddError: Error, Equatable {
+    case accessNeeded, saveFailed
+
+    var message: String { self == .accessNeeded ? localized("Calendar access needed") : localized("Could not add the event") }
+}
+
 extension CalendarService {
-    /// Events from the start of today to the end of tomorrow, all-day ones first.
+    /// Events from the start of today to the end of the seventh day, all-day ones first. The Calendar tab shows
+    /// today and tomorrow or the whole week from this list.
     func agenda(calendars: [EKCalendar]? = nil) -> [AgendaEvent] {
         let cal = Calendar.current, start = cal.startOfDay(for: Date())
-        guard let end = cal.date(byAdding: .day, value: 2, to: start) else { return [] }
+        guard let end = cal.date(byAdding: .day, value: 7, to: start) else { return [] }
         let store = CalendarService.eventStore
         let pred = store.predicateForEvents(withStart: start, end: end, calendars: calendars ?? CalendarChoice.visible(in: store))
         return store.events(matching: pred)
@@ -60,20 +68,29 @@ final class CalendarService: ObservableObject {
         watchdog?.invalidate(); watchdog = nil
     }
 
-    /// Adds a one-hour event (starting at the next full hour when no time was given) to the default calendar.
-    func addEvent(title: String, start: Date?) {
-        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess, let cal = store.defaultCalendarForNewEvents else {
-            NotchModel.shared.show(Activity(symbol: "calendar.badge.exclamationmark", title: localized("Calendar access needed"), subtitle: localized("Allow it in Settings › Permissions"), tint: .orange)); return
-        }
+    /// Saves an event to the default calendar and shows it on the island. Throws when Calendars access is missing or the save fails.
+    func createEvent(title: String, start: Date, duration: TimeInterval = 3600) throws {
+        guard EKEventStore.authorizationStatus(for: .event) == .fullAccess, let cal = store.defaultCalendarForNewEvents else { throw CalendarAddError.accessNeeded }
         let event = EKEvent(eventStore: store)
         event.title = title; event.calendar = cal
-        event.startDate = start ?? Calendar.current.nextDate(after: Date(), matching: DateComponents(minute: 0), matchingPolicy: .nextTime) ?? Date()
-        event.endDate = event.startDate.addingTimeInterval(3600)
+        event.startDate = start
+        event.endDate = start.addingTimeInterval(duration)
+        do { try store.save(event, span: .thisEvent) } catch { throw CalendarAddError.saveFailed }
+        refresh()
+        AgendaModel.shared.refresh()
+        NotchModel.shared.show(Activity(symbol: "calendar.badge.plus", title: localized("Event added"), subtitle: title, tint: .green))
+    }
+
+    /// Adds a one-hour event (starting at the next full hour when no time was given) for the command palette.
+    func addEvent(title: String, start: Date?) {
         do {
-            try store.save(event, span: .thisEvent)
-            refresh()
-            NotchModel.shared.show(Activity(symbol: "calendar.badge.plus", title: localized("Event added"), subtitle: title, tint: .green))
-        } catch { NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not add the event"), tint: .orange)) }
+            try createEvent(title: title, start: start ?? AgendaGrouping.nextHour(after: Date()))
+        } catch {
+            let failure = error as? CalendarAddError ?? .saveFailed
+            let access = failure == .accessNeeded
+            NotchModel.shared.show(Activity(symbol: access ? "calendar.badge.exclamationmark" : "exclamationmark.triangle", title: failure.message,
+                                            subtitle: access ? localized("Allow it in Settings › Permissions") : nil, tint: .orange))
+        }
     }
 
     func refresh() {

@@ -124,9 +124,9 @@ final class ICSFeeds: ObservableObject {
         }
     }
 
-    /// Today's and tomorrow's events of every feed, as agenda rows (teal, so they stand apart from macOS calendars).
+    /// The events of every feed from today to the end of the week, as agenda rows (teal, so they stand apart from macOS calendars).
     private func rebuild() {
-        let cal = Calendar.current, start = cal.startOfDay(for: Date()), end = cal.date(byAdding: .day, value: 2, to: start) ?? start
+        let cal = Calendar.current, start = cal.startOfDay(for: Date()), end = cal.date(byAdding: .day, value: 7, to: start) ?? start
         var out: [AgendaEvent] = []
         for f in feeds {
             for e in fetched[f.id] ?? [] where e.end > start && e.start < end {

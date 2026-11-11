@@ -95,6 +95,8 @@ enum Preferences {
     static let menuBarAutoHide = Preference<Int>("menuBarAutoHide", 0)
     /// Hours ahead within which the next event shows in the menu bar; 0 shows it always.
     static let menuBarCalendarHours = Preference<Int>("menuBarCalendarHours", 0)
+    /// Minutes before a timed event starts that the island announces it (5, 10 or 15); 0 is off.
+    static let meetingAlert = Preference<Int>(MeetingAlertRule.key, 0)
     /// The hour the quiet period starts (0 to 23), or -1 for none. Islands that are not urgent wait during it.
     static let quietFrom = Preference<Int>("quietFrom", -1)
     /// The hour the quiet period ends (0 to 23).

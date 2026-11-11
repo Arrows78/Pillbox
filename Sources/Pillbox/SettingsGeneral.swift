@@ -7,6 +7,7 @@ struct SettingsGeneralPane: View {
     @AppStorage(Preferences.searchEngine.key) private var searchEngine = Preferences.searchEngine.defaultValue
     @AppStorage(Preferences.appearance.key) private var appearance = Preferences.appearance.defaultValue
     @AppStorage(Preferences.showMenuBarIcon.key) private var showMenuBarIcon = Preferences.showMenuBarIcon.defaultValue
+    @AppStorage(Preferences.meetingAlert.key) private var meetingAlert = Preferences.meetingAlert.defaultValue
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     private func setLaunchAtLogin(_ on: Bool) {
@@ -74,6 +75,14 @@ struct SettingsGeneralPane: View {
             SettingsCard(title: "Command palette") {
                 SettingsRow(title: "Search engine", subtitle: "Used for text that is not a command. Start with a prefix such as yt or gh to pick another one.") {
                     Picker("", selection: $searchEngine) { ForEach(WebSearch.engines) { Text(verbatim: $0.name).tag($0.key) } }.labelsHidden().frame(width: 170)
+                }
+            }
+            SettingsCard(title: "Meeting alert") {
+                SettingsRow(title: "Minutes before a timed event", subtitle: "Shows the next timed event in the island before it starts. Needs Calendars access.") {
+                    Picker("", selection: $meetingAlert) {
+                        Text("Off").tag(0)
+                        ForEach(MeetingAlertRule.minutes, id: \.self) { m in Text(verbatim: localized("%d min", m)).tag(m) }
+                    }.labelsHidden().frame(width: 170)
                 }
             }
             CalendarsSettings()
