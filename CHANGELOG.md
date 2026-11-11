@@ -4,6 +4,17 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.10.0] - 2026-11-11
+
+### Added
+
+- **palette**: Rank by fuzzy match, keep recent commands, and read prefixes
+- **menu bar**: Auto-hide the revealed icons, list today's events, detach every tab that fits
+- **island**: Quiet hours hold the islands that are not urgent
+- **app**: Mute an app's islands, age out the shelf, and pick rows with ⌘1–9
+- **music**: Show music playing in a browser tab
+- **clipboard**: Excluded apps, secret expiry and paste as plain text
+
 ## [0.9.0] - 2026-11-11
 
 ### Added
@@ -208,6 +219,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.10.0]: https://github.com/Arrows78/Pillbox/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/Arrows78/Pillbox/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Arrows78/Pillbox/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Arrows78/Pillbox/compare/v0.7.0...v0.7.1
