@@ -21,6 +21,7 @@ final class DoubleTapKey {
     func apply() {
         let on = UserDefaults.standard.bool(forKey: "doubleTapOpen")
         if on, monitor == nil {
+            PermissionsCenter.shared.checkInputMonitoring(for: "Double-press Control")
             monitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { e in
                 guard e.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control else { return }
                 DispatchQueue.main.async { MainActor.assumeIsolated { if DoubleTapKey.shared.detector.press(at: Date()) { NotchModel.shared.toggle() } } }

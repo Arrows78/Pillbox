@@ -78,6 +78,7 @@ final class ActivityCounter: ObservableObject {
     private var last: CGPoint?
     private var displays: [(bounds: CGRect, mmPerPoint: Double)] = []
     private var warned = false
+    private var retry: Timer?
     private var screensObserver: Any?
     private var flushes = 0
 
@@ -115,8 +116,13 @@ final class ActivityCounter: ObservableObject {
                 NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: "Input Monitoring needed", subtitle: "Allow Pillbox to count your activity", tint: .orange,
                                                 actionTitle: "Settings", action: { PermissionsCenter.shared.openSettings(.inputMonitoring) }, duration: 6))
             }
+            // Keeps trying, so the counter starts once Input Monitoring is granted in System Settings.
+            if retry == nil {
+                retry = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.start() } }
+            }
             return
         }
+        retry?.invalidate(); retry = nil
         tap = t; source = CFMachPortCreateRunLoopSource(nil, t, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: t, enable: true)
@@ -129,6 +135,7 @@ final class ActivityCounter: ObservableObject {
 
     private func stop() {
         warned = false
+        retry?.invalidate(); retry = nil
         guard let t = tap else { return }
         CGEvent.tapEnable(tap: t, enable: false)
         if let s = source { CFRunLoopRemoveSource(CFRunLoopGetMain(), s, .commonModes) }

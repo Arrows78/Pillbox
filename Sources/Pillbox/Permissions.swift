@@ -59,8 +59,15 @@ enum PermissionState { case granted, denied, notDetermined, unavailable }
 final class PermissionsCenter: ObservableObject {
     static let shared = PermissionsCenter()
     @Published private(set) var states: [PermissionKind: PermissionState] = [:]
+    private var warnedFeatures: Set<String> = []
 
     func refresh() { for k in PermissionKind.allCases { states[k] = state(of: k) } }
+
+    /// Global key monitors receive nothing without Input Monitoring, so the feature would look dead. Says so once per feature.
+    func checkInputMonitoring(for feature: String) {
+        guard !CGPreflightListenEventAccess(), warnedFeatures.insert(feature).inserted else { return }
+        NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: L("%@ needs Input Monitoring", L(feature)), tint: .orange))
+    }
 
     func state(of k: PermissionKind) -> PermissionState {
         switch k {
