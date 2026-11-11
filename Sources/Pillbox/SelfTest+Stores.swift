@@ -185,6 +185,13 @@ extension SelfTest {
         check("notifications: unmuting brings the app back", !NotificationMute.isMuted("com.apple.mail"))
     }
 
+    /// The focus export writes a header and one sorted row per day, and the timer's sound is one of the offered ones.
+    static func focusExport() {
+        check("focus export: a header, then one row per day, oldest first", FocusExport.csv(["2026-11-02": 3, "2026-11-01": 1]) == "date,focus_sessions\n2026-11-01,1\n2026-11-02,3\n")
+        check("focus export: no sessions gives the header only", FocusExport.csv([:]) == "date,focus_sessions\n")
+        check("timer sound: the default is one of the offered sounds", FocusExport.sounds.contains(Preferences.timerSound.defaultValue))
+    }
+
     /// The pomodoro cycle makes every n-th break the long one; 0 turns it off.
     static func pomodoroCycle() {
         check("pomodoro: the fourth focus session gives the long break", Pomodoro.longBreakDue(focusDone: 4, every: 4))

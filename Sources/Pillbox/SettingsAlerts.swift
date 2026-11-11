@@ -20,6 +20,7 @@ struct SettingsAlertsPane: View {
     @AppStorage(Preferences.breakReminder.key) private var breakReminder = Preferences.breakReminder.defaultValue
     @AppStorage(Preferences.pomodoroEvery.key) private var pomodoroEvery = Preferences.pomodoroEvery.defaultValue
     @AppStorage(Preferences.pomodoroLongBreak.key) private var pomodoroLongBreak = Preferences.pomodoroLongBreak.defaultValue
+    @AppStorage(Preferences.timerSound.key) private var timerSound = Preferences.timerSound.defaultValue
     @AppStorage(Preferences.buildIsland.key) private var buildIsland = Preferences.buildIsland.defaultValue
     @AppStorage(Preferences.screenshotShelf.key) private var screenshotShelf = Preferences.screenshotShelf.defaultValue
     @AppStorage(Preferences.driveEject.key) private var driveEject = Preferences.driveEject.defaultValue
@@ -88,6 +89,16 @@ struct SettingsAlertsPane: View {
                     Picker("", selection: $pomodoroEvery) {
                         Text("Off").tag(0); Text("2 sessions").tag(2); Text("3 sessions").tag(3); Text("4 sessions").tag(4); Text("5 sessions").tag(5)
                     }.labelsHidden().frame(width: 170)
+                }
+                SettingsRow(title: "Timer sound", subtitle: "Plays when a timer or a focus session ends.") {
+                    HStack(spacing: 8) {
+                        Picker("", selection: $timerSound) { ForEach(FocusExport.sounds, id: \.self) { Text(verbatim: $0).tag($0) } }
+                            .labelsHidden().frame(width: 130)
+                        Button("Try") { NSSound(named: timerSound)?.play() }.controlSize(.small)
+                    }
+                }
+                SettingsRow(title: "Export focus sessions…", subtitle: "A CSV file with the focus sessions of each day, for a spreadsheet.") {
+                    Button("Export…") { FocusExport.save(TimerService.shared.sessions) }.controlSize(.small)
                 }
                 if pomodoroEvery > 0 {
                     SettingsRow(title: "Long break length") {

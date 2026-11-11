@@ -97,7 +97,7 @@ final class TimerService: ObservableObject {
     private func finish() {
         let finished = mode
         reset()
-        NSSound(named: "Glass")?.play()
+        NSSound(named: Preferences.timerSound.value)?.play()
         if finished == .focus {
             let k = Self.dayKey(Date()); sessions[k, default: 0] += 1; Store.save(sessions, "sessions.json")
             focusInCycle += 1

@@ -983,3 +983,9 @@ Long break length	Duración de la pausa larga	Länge der langen Pause
 15 min	15 min	15 Min.
 20 min	20 min	20 Min.
 30 min	30 min	30 Min.
+Timer sound	Sonido de fin del temporizador	Timer-Ton
+Plays when a timer or a focus session ends.	Suena cuando termina un temporizador o una sesión de concentración.	Wird abgespielt, wenn ein Timer oder eine Fokus-Sitzung endet.
+Export focus sessions…	Exportar sesiones de concentración…	Fokus-Sitzungen exportieren…
+A CSV file with the focus sessions of each day, for a spreadsheet.	Un archivo CSV con las sesiones de concentración de cada día, para una hoja de cálculo.	Eine CSV-Datei mit den Fokus-Sitzungen jedes Tages, für eine Tabellenkalkulation.
+Focus sessions exported	Sesiones de concentración exportadas	Fokus-Sitzungen exportiert
+Could not export the focus sessions	No se pudieron exportar las sesiones de concentración	Fokus-Sitzungen konnten nicht exportiert werden

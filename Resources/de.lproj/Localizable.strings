@@ -984,3 +984,9 @@
 "15 min" = "15 Min.";
 "20 min" = "20 Min.";
 "30 min" = "30 Min.";
+"Timer sound" = "Timer-Ton";
+"Plays when a timer or a focus session ends." = "Wird abgespielt, wenn ein Timer oder eine Fokus-Sitzung endet.";
+"Export focus sessions…" = "Fokus-Sitzungen exportieren…";
+"A CSV file with the focus sessions of each day, for a spreadsheet." = "Eine CSV-Datei mit den Fokus-Sitzungen jedes Tages, für eine Tabellenkalkulation.";
+"Focus sessions exported" = "Fokus-Sitzungen exportiert";
+"Could not export the focus sessions" = "Fokus-Sitzungen konnten nicht exportiert werden";
