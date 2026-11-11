@@ -147,7 +147,7 @@ extension SelfTest {
         let bar = NotchModel.expandedSize.width - 44 - 10 - 26 - 10 - 20
         let fits = Tab.allCases.allSatisfy { sel in
             let s = TabBarMetrics.split(Tab.allCases, selected: sel, available: bar)
-            let w = s.shown.reduce(-TabBarMetrics.spacing) { $0 + TabBarMetrics.spacing + TabBarMetrics.width($1, selected: $1 == sel) } + (s.more.isEmpty ? 0 : TabBarMetrics.spacing + TabBarMetrics.more)
+            let w = TabBarMetrics.rowWidth(s.shown, selected: sel) + (s.more.isEmpty ? 0 : TabBarMetrics.spacing + TabBarMetrics.more)
             return w <= bar && s.shown.contains(sel) && s.shown.count + s.more.count == Tab.allCases.count
         }
         check("tab bar: fits the panel for every selected tab, the rest in the menu", fits)

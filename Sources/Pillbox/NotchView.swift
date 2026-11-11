@@ -179,10 +179,9 @@ struct ExpandedView: View {
                     ForEach(AudioControl.outputDevices()) { d in
                         Button { AudioControl.shared.selectOutput(d) } label: { Text(verbatim: (d.id == current ? "✓ " : "") + d.name) }
                     }
-                } label: { Image(systemName: "hifispeaker.fill").foregroundStyle(.white.opacity(0.5)) }
+                } label: { HeaderGlyph(symbol: "hifispeaker.fill") }
                     .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().hoverTip(localized("Sound output")).accessibilityLabel("Sound output")
-                Button { SettingsWindow.show() } label: { Image(systemName: "gearshape.fill").foregroundStyle(.white.opacity(0.5)) }.hoverTip(localized("Settings")).accessibilityLabel("Settings")
-                    .buttonStyle(.plain)
+                HeaderButton(symbol: "gearshape.fill", label: localized("Settings")) { SettingsWindow.show() }
             }
             .padding(.horizontal, 22)
             .padding(.top, model.geometry.notch ? model.geometry.height + 6 : max(model.geometry.height - 6, 8))

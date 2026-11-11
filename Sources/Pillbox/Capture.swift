@@ -165,6 +165,7 @@ struct RecordingStopButton: View {
                     Image(systemName: "stop.fill").font(.system(size: 8))
                     Text(s, style: .timer).font(.system(size: 10, weight: .semibold, design: .monospaced)).lineLimit(1)
                 }.foregroundStyle(.white).padding(.horizontal, 6).padding(.vertical, 3).background(.red, in: Capsule()).fixedSize()
+                    .frame(height: 26).contentShape(Rectangle())
             }.buttonStyle(.plain).hoverTip(localized("Stop recording")).accessibilityLabel("Stop recording")
         }
     }

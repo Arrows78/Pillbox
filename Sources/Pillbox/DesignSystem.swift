@@ -152,6 +152,37 @@ struct IconButton: View {
     }
 }
 
+/// Look of a header control: the symbol in a 26pt hit area, brighter with a soft disc under the pointer.
+/// `HeaderButton` wraps it in a `Button`; a header `Menu` uses it as its label.
+struct HeaderGlyph: View {
+    let symbol: String
+    var tint: Color = .white
+    @State private var hovering = false
+
+    var body: some View {
+        Image(systemName: symbol).font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(hovering ? tint : tint.opacity(0.5))
+            .frame(width: 26, height: 26)
+            .background(.white.opacity(hovering ? 0.1 : 0), in: Circle())
+            .contentShape(Circle())
+            .onHover { hovering = $0 }
+            .animation(.easeOut(duration: 0.12), value: hovering)
+    }
+}
+
+/// Button of the island's header row; `label` is already localized (`localized`), shown as the hover tip and read by VoiceOver.
+struct HeaderButton: View {
+    let symbol: String
+    let label: String
+    var tint: Color = .white
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) { HeaderGlyph(symbol: symbol, tint: tint) }
+            .buttonStyle(.plain).hoverTip(label).accessibilityLabel(Text(verbatim: label))
+    }
+}
+
 /// Capsule filter: icon only, tinted when selected.
 struct FilterChip: View {
     let symbol: String
@@ -196,9 +227,26 @@ extension Tab {
     }
 }
 
+/// Group of related tabs; the bar draws a hairline between two neighbours of different families.
+enum TabFamily {
+    case daily, work, tools
+}
+
+extension Tab {
+    var family: TabFamily {
+        switch self {
+        case .home, .music, .timer, .calendar, .reminders, .notifications, .notes: .daily
+        case .stocks, .ai, .pulls, .clipboard, .shelf: .work
+        case .launcher, .terminal, .prompter: .tools
+        }
+    }
+}
+
 /// Widths of the tab bar, shared by the buttons and the layout that decides which tabs fit.
 enum TabBarMetrics {
     static let icon: CGFloat = 34, spacing: CGFloat = 4, more: CGFloat = 30
+    /// Hairline between two families: a 1pt line with 3pt of air on each side (the HStack spacing comes on top).
+    static let separator: CGFloat = 7
     static let labelFont = NSFont.systemFont(ofSize: 12, weight: .semibold)
 
     /// Icon only, or 12 + 18 (icon) + 5 + label + 12 for the selected tab.
@@ -207,16 +255,27 @@ enum TabBarMetrics {
         return 47 + ceil((tab.title as NSString).size(withAttributes: [.font: labelFont]).width)
     }
 
+    /// Whether the bar draws a hairline between two neighbouring tabs.
+    static func separated(_ a: Tab, _ b: Tab) -> Bool { a.family != b.family }
+
+    /// Hairlines drawn in a row of tabs.
+    static func separators(in tabs: [Tab]) -> Int { zip(tabs, tabs.dropFirst()).filter { separated($0, $1) }.count }
+
+    /// Width of a row of tabs with its hairlines, without the "…" menu.
+    static func rowWidth(_ tabs: [Tab], selected: Tab) -> CGFloat {
+        let tabsWidth = tabs.reduce(-spacing) { $0 + spacing + width($1, selected: $1 == selected) }
+        return tabsWidth + CGFloat(separators(in: tabs)) * (spacing + separator)
+    }
+
     /// The tabs that fit in `available` points, in their usual order, and the rest for the "…" menu.
     /// The selected tab is always shown; the others are kept from the start of the list.
     static func split(_ tabs: [Tab], selected: Tab, available: CGFloat) -> (shown: [Tab], more: [Tab]) {
-        let all = tabs.reduce(-spacing) { $0 + spacing + width($1, selected: $1 == selected) }
-        if all <= available { return (tabs, []) }
-        var used = width(selected, selected: true) + spacing + more
+        if rowWidth(tabs, selected: selected) <= available { return (tabs, []) }
         var keep: Set<Tab> = tabs.contains(selected) ? [selected] : []
         for t in tabs where t != selected {
-            guard used + icon + spacing <= available else { break }
-            used += icon + spacing; keep.insert(t)
+            let next = tabs.filter { keep.contains($0) || $0 == t }
+            guard rowWidth(next, selected: selected) + spacing + more <= available else { break }
+            keep.insert(t)
         }
         return (tabs.filter(keep.contains), tabs.filter { !keep.contains($0) })
     }
@@ -233,7 +292,11 @@ struct TabStrip: View {
         GeometryReader { g in
             let split = TabBarMetrics.split(Tab.visible, selected: model.tab, available: g.size.width)
             HStack(spacing: TabBarMetrics.spacing) {
-                ForEach(split.shown) { tab in
+                ForEach(Array(split.shown.enumerated()), id: \.element) { i, tab in
+                    if i > 0, TabBarMetrics.separated(split.shown[i - 1], tab) {
+                        Rectangle().fill(Design.hairline).frame(width: 1, height: 12)
+                            .frame(width: TabBarMetrics.separator).accessibilityHidden(true)
+                    }
                     TabBarButton(tab: tab, selected: model.tab == tab) { select(tab) }
                 }
                 if !split.more.isEmpty {
