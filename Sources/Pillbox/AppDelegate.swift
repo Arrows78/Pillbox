@@ -16,6 +16,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var interaction: IslandInteraction!
     /// The last app that was not Pillbox, so commands can act on it after a click on the status item.
     private var lastOtherApp: NSRunningApplication?
+    /// Features that re-apply their settings on a change, and only when one of their keys changed.
+    private lazy var features = SettingsFeatureRouter(SettingsFeatures.all + [
+        SettingsFeature(name: "menu bar icon", keys: [Preferences.showMenuBarIcon.key]) { [weak self] in self?.applyStatusItemVisibility() },
+        SettingsFeature(name: "shortcuts", keys: GlobalShortcut.allCases.compactMap(\.setting)) { [weak self] in self?.applyHotKeys() },
+    ])
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller = NotchWindowController()
@@ -64,7 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if #available(macOS 14.2, *) { EqualizerService.shared.apply() }
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
-                self?.applyDefaultsFeatures()
+                self?.features.applyChanged()
                 NotificationCenter.default.post(name: .notchStateChanged, object: nil)   // the idle clock changes the pill's shape
             }
         }
@@ -109,6 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         interaction = IslandInteraction(controller: controller)
         interaction.start()
         applyHotKeys()
+        features.prime()
         // ⌘1–9 switches tabs while the notch is open.
         monitors.append(NSEvent.addLocalMonitorForEvents(matching: .keyDown) { e in
             guard NotchModel.shared.expanded, e.modifierFlags.contains(.command),
@@ -180,16 +186,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         editItem.submenu = editMenu
         main.addItem(editItem)
         NSApp.mainMenu = main
-    }
-
-    /// Re-applies the settings that take effect at once. Runs on every settings change; each apply is safe to repeat.
-    /// Not called at launch: it needs the status item, which is set up later in applicationDidFinishLaunching.
-    private func applyDefaultsFeatures() {
-        HyperKey.shared.apply(); ExtraBrightness.shared.apply(); WindowDrag.shared.apply(); if #available(macOS 14.2, *) { EqualizerService.shared.apply() }
-        MenuBarHider.shared.apply(); MenuBarDetach.shared.apply(); MenuBarCalendar.shared.apply()
-        AudioSpectrum.shared.apply(); DoubleTapKey.shared.apply(); DesktopWidgets.shared.apply()
-        SettingsWindow.applyTheme(); applyStatusItemVisibility()
-        applyHotKeys(); ActivityCounter.shared.apply(); PointerHider.shared.apply(); TypingSounds.shared.apply()
     }
 
     private func setupStatusItem() {

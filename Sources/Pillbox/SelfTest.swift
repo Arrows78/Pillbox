@@ -17,7 +17,7 @@ enum SelfTest {
     }
 
     static func run() -> Int32 {
-        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders()
+        lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); settingsRouter(); shelf(); palette(); snippets(); watchers(); converter(); reminders()
         shortcutsAndSearch(); networkAndAudioDevices(); teleprompterAndPrompterVoice(); tabBar(); prompterSpeeds(); teleprompterEnd()
         hyperKeyAndMenuBar(); focusCallsAndNotifications(); screenAskAndKeychain(); spectrum(); gesturesAndWorldClock()
         shakeAndBreaks(); downloadsAndBuild(); bluetoothBatteries(); quickCapture(); displayOptions()

@@ -138,4 +138,20 @@ extension SelfTest {
         check("shortcuts: every global shortcut has its own id and key", Set(GlobalShortcut.allCases.map(\.rawValue)).count == GlobalShortcut.allCases.count && GlobalShortcut.palette.keycaps == "⌃⌥K")
         check("diagnostics: no home folder or user name", !Diagnostics.text.contains(NSHomeDirectory()) && !Diagnostics.text.contains(NSUserName()))
     }
+
+    /// A feature is applied only when one of its keys changed since it was last applied.
+    static func settingsRouter() {
+        let key = "selfTestRouterKey"
+        UserDefaults.standard.removeObject(forKey: key); defer { UserDefaults.standard.removeObject(forKey: key) }
+        var runs = 0
+        let router = SettingsFeatureRouter([SettingsFeature(name: "self test", keys: [key]) { runs += 1 }])
+        router.prime()
+        router.applyChanged()
+        check("settings router: no change, no apply", runs == 0)
+        UserDefaults.standard.set(true, forKey: key)
+        router.applyChanged()
+        check("settings router: a changed key applies", runs == 1)
+        router.applyChanged()
+        check("settings router: applies once per change", runs == 1)
+    }
 }
