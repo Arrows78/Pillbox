@@ -38,6 +38,8 @@ enum SettingsBackup {
         k["breakReminder"] = .number(0...240)
         k["playerSize"] = .number(160...400)
         k["lottieSpeed"] = .number(0.1...4)
+        k[Preferences.terminalFontSize.key] = .number(10...18)
+        k[Preferences.terminalTheme.key] = .text(TerminalTheme.allCases.map(\.rawValue))
         k["searchEngine"] = .text(WebSearch.engines.map(\.key))
         k["hudStyle"] = .text(["notch", "edge", "circle"])
         k["islandTheme"] = .text(IslandTheme.allCases.map(\.rawValue))

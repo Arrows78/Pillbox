@@ -978,3 +978,10 @@
 "Copies made while one of these apps is in front are not kept. Adds the app you used last, before Settings." = "Les copies faites pendant qu'une de ces apps est au premier plan ne sont pas gardées. Ajoute l'app utilisée en dernier, avant Réglages.";
 "Remove secrets after" = "Supprimer les secrets après";
 "Secrets are API keys, tokens and card numbers. Pinned items stay." = "Les secrets sont les clés d'API, jetons et numéros de carte. Les éléments épinglés restent.";
+"Font size" = "Taille de police";
+"In points, from 10 to 18. Applies to every terminal session." = "En points, de 10 à 18. S'applique à chaque session du terminal.";
+"Colors of every terminal session." = "Couleurs de chaque session du terminal.";
+"Open in Terminal.app" = "Ouvrir dans Terminal.app";
+"New terminal session" = "Nouvelle session de terminal";
+"Close this session" = "Fermer cette session";
+"Session %lld" = "Session %lld";

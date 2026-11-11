@@ -105,4 +105,8 @@ enum Preferences {
     static let clipboardSecretMinutes = Preference<Int>("clipboardSecretMinutes", 5)
     /// Show the music or video playing in a browser tab on the Music tab. Off by default: it asks the browser for its tab.
     static let browserMusic = Preference<Bool>("browserMusic", false)
+    /// Point size of the Terminal tab's text, 10 to 18. Clamped at the reader.
+    static let terminalFontSize = Preference<Int>("terminalFontSize", TerminalLook.defaultFontSize)
+    /// Colors of the Terminal tab: "dark" (the default) or "light".
+    static let terminalTheme = Preference<String>("terminalTheme", TerminalTheme.dark.rawValue)
 }

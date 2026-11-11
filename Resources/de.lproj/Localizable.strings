@@ -927,3 +927,10 @@
 "Copies made while one of these apps is in front are not kept. Adds the app you used last, before Settings." = "Kopien, die entstehen, während eine dieser Apps im Vordergrund ist, werden nicht gespeichert. Fügt die App hinzu, die du zuletzt vor den Einstellungen benutzt hast.";
 "Remove secrets after" = "Geheimnisse entfernen nach";
 "Secrets are API keys, tokens and card numbers. Pinned items stay." = "Geheimnisse sind API-Schlüssel, Tokens und Kartennummern. Angeheftete Einträge bleiben.";
+"Font size" = "Schriftgröße";
+"In points, from 10 to 18. Applies to every terminal session." = "In Punkt, von 10 bis 18. Gilt für jede Terminal-Sitzung.";
+"Colors of every terminal session." = "Farben aller Terminal-Sitzungen.";
+"Open in Terminal.app" = "In Terminal.app öffnen";
+"New terminal session" = "Neue Terminal-Sitzung";
+"Close this session" = "Diese Sitzung schließen";
+"Session %lld" = "Sitzung %lld";

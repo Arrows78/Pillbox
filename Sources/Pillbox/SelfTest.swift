@@ -23,7 +23,7 @@ enum SelfTest {
         shakeAndBreaks(); downloadsAndBuild(); bluetoothBatteries(); quickCapture(); displayOptions()
         activityQueue(); shellActions(); notificationFeed(); pillAndTheme()
         usageAlert(); githubPRs(); edgeBar()
-        mcpProtocol(); agentActions(); turnTokens(); panelSize(); playerAndLyrics(); terminalEnvironment(); equalizer(); copyStackAndHistory()
+        mcpProtocol(); agentActions(); turnTokens(); panelSize(); playerAndLyrics(); terminalEnvironment(); terminalLook(); equalizer(); copyStackAndHistory()
         paletteMath(); settingsBackup(); updateVersions(); shortcutsAndDiagnostics()
         awareness(); recordingQRAnnotate(); dictationAndActivity()
         appVolume()

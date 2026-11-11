@@ -223,7 +223,7 @@ final class BrewUpdates {
 
     /// Types into the shell once its process is running, rather than after a fixed delay. After about 2 s it types anyway.
     private static func typeWhenRunning(_ text: String, attempts: Int = 40) {
-        let view = TerminalSession.shared.view
+        guard let view = TerminalSessions.shared.selected?.view else { return }
         if view.process?.running == true || attempts == 0 { view.send(txt: text); return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { MainActor.assumeIsolated { typeWhenRunning(text, attempts: attempts - 1) } }
     }

@@ -7,6 +7,8 @@ struct SettingsIntegrationsPane: View {
     @State private var apiKey = ""
     @State private var keySaved = Keychain.get(AskModel.keyService) != nil
     @AppStorage(Preferences.devAPI.key) private var devAPI = Preferences.devAPI.defaultValue
+    @AppStorage(Preferences.terminalFontSize.key) private var terminalFontSize = Preferences.terminalFontSize.defaultValue
+    @AppStorage(Preferences.terminalTheme.key) private var terminalTheme = Preferences.terminalTheme.defaultValue
 
     /// Stores the typed key. Save and Enter both call it; the field clears and the row says "saved" only when the Keychain accepted the key.
     private func saveKey() {
@@ -54,6 +56,21 @@ struct SettingsIntegrationsPane: View {
                 }
             }
             SettingsNote("Only the text recognised in the area you pick is sent to Anthropic, never the picture. Needs Screen Recording.")
+            SettingsCard(title: "Terminal") {
+                SettingsRow(title: "Font size", subtitle: "In points, from 10 to 18. Applies to every terminal session.") {
+                    HStack(spacing: 8) {
+                        Text(verbatim: "\(terminalFontSize) pt").font(.system(size: 12)).monospacedDigit().foregroundStyle(SettingsStyle.dim)
+                        Stepper("", value: $terminalFontSize, in: TerminalLook.fontSizes).labelsHidden()
+                    }
+                }
+                .onChange(of: terminalFontSize) { _, _ in TerminalSessions.lookChanged() }
+                SettingsRow(title: "Theme", subtitle: "Colors of every terminal session.") {
+                    Picker("", selection: $terminalTheme) {
+                        Text("Dark").tag(TerminalTheme.dark.rawValue); Text("Light").tag(TerminalTheme.light.rawValue)
+                    }.labelsHidden().frame(width: 170)
+                }
+                .onChange(of: terminalTheme) { _, _ in TerminalSessions.lookChanged() }
+            }
             SettingsCard(title: "Developer API") {
                 SettingsToggle("Enable local API", "Scripts and AI apps on this Mac can then reach Pillbox, with a private token.", isOn: $devAPI)
                     .onChange(of: devAPI) { _, _ in DevAPI.shared.apply() }

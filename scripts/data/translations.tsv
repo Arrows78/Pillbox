@@ -925,3 +925,10 @@ Add frontmost app	Añadir la app en primer plano	Im Vordergrund liegende App hin
 Copies made while one of these apps is in front are not kept. Adds the app you used last, before Settings.	Las copias hechas mientras una de estas apps está delante no se guardan. Añade la app que usaste por última, antes de Ajustes.	Kopien, die entstehen, während eine dieser Apps im Vordergrund ist, werden nicht gespeichert. Fügt die App hinzu, die du zuletzt vor den Einstellungen benutzt hast.
 Remove secrets after	Quitar los secretos después de	Geheimnisse entfernen nach
 Secrets are API keys, tokens and card numbers. Pinned items stay.	Los secretos son claves de API, tokens y números de tarjeta. Los fijados se quedan.	Geheimnisse sind API-Schlüssel, Tokens und Kartennummern. Angeheftete Einträge bleiben.
+Font size	Tamaño de fuente	Schriftgröße
+In points, from 10 to 18. Applies to every terminal session.	En puntos, de 10 a 18. Se aplica a cada sesión de la terminal.	In Punkt, von 10 bis 18. Gilt für jede Terminal-Sitzung.
+Colors of every terminal session.	Colores de cada sesión de la terminal.	Farben aller Terminal-Sitzungen.
+Open in Terminal.app	Abrir en Terminal.app	In Terminal.app öffnen
+New terminal session	Nueva sesión de terminal	Neue Terminal-Sitzung
+Close this session	Cerrar esta sesión	Diese Sitzung schließen
+Session %lld	Sesión %lld	Sitzung %lld
