@@ -1058,3 +1058,9 @@
 "Rain expected soon" = "Pluie bientôt";
 "An island when the forecast gives 60% or more chance of rain in the next hours." = "Une île quand la prévision annonce 60 % de chances de pluie ou plus dans les prochaines heures.";
 "Rain expected in %d h" = "Pluie prévue dans %d h";
+"Checks passing" = "Vérifications réussies";
+"Checks failing" = "Vérifications en échec";
+"Checks running" = "Vérifications en cours";
+"Review approved" = "Relecture approuvée";
+"Changes requested" = "Modifications demandées";
+"Review requested" = "Relecture demandée";

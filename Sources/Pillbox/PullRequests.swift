@@ -2,6 +2,12 @@ import Foundation
 import AppKit
 import SwiftUI
 
+/// The state of a pull request's checks (CI): none when there are no checks.
+enum PRChecks: Equatable { case none, passing, pending, failing }
+
+/// The review state of a pull request, from GitHub's review decision.
+enum PRReview: Equatable { case none, required, approved, changes }
+
 struct PullRequest: Identifiable, Equatable {
     var id: String { url }
     let title: String
@@ -9,6 +15,8 @@ struct PullRequest: Identifiable, Equatable {
     let number: Int
     let url: String
     let draft: Bool
+    var checks: PRChecks = .none
+    var review: PRReview = .none
 }
 
 enum GitHubPRs {
@@ -25,6 +33,49 @@ enum GitHubPRs {
     }
 
     /// `kind` is "--author" or "--review-requested"; always for the logged-in user.
+    /// The checks and the review state from `gh pr view --json statusCheckRollup,reviewDecision`. Each check is a run
+    /// (status and conclusion) or a commit status (state); any failure wins over pending, pending over passing.
+    static func summarize(_ data: Data) -> (checks: PRChecks, review: PRReview)? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        let rollup = obj["statusCheckRollup"] as? [[String: Any]] ?? []
+        let failing: Set<String> = ["FAILURE", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE", "ERROR"]
+        let pending: Set<String> = ["IN_PROGRESS", "QUEUED", "PENDING", "WAITING", "REQUESTED", "EXPECTED"]
+        var checks = PRChecks.none
+        if !rollup.isEmpty {
+            let states = rollup.map { c -> (String, String) in
+                let conclusion = (c["conclusion"] as? String) ?? ""
+                let status = (c["status"] as? String) ?? (c["state"] as? String) ?? ""
+                return (conclusion, status)
+            }
+            if states.contains(where: { failing.contains($0.0) || failing.contains($0.1) }) { checks = .failing }
+            else if states.contains(where: { pending.contains($0.1) || ($0.0.isEmpty && $0.1.isEmpty) }) { checks = .pending }
+            else { checks = .passing }
+        }
+        let review: PRReview
+        switch obj["reviewDecision"] as? String ?? "" {
+        case "APPROVED": review = .approved
+        case "CHANGES_REQUESTED": review = .changes
+        case "REVIEW_REQUIRED": review = .required
+        default: review = .none
+        }
+        return (checks, review)
+    }
+
+    /// Reads the checks and review state of each listed pull request, a few at a time, and returns the list with them.
+    static func withDetails(_ list: [PullRequest], limit: Int = 12) -> [PullRequest] {
+        guard let gh = tool else { return list }
+        var out = list
+        let indices = Array(out.indices.prefix(limit))
+        let lock = NSLock()
+        DispatchQueue.concurrentPerform(iterations: indices.count) { k in
+            let i = indices[k]
+            let r = ProcessRunner.run(gh, ["pr", "view", list[i].url, "--json", "statusCheckRollup,reviewDecision"], timeout: 30)
+            guard r.status == 0, let s = summarize(Data(r.output.utf8)) else { return }
+            lock.lock(); out[i].checks = s.checks; out[i].review = s.review; lock.unlock()
+        }
+        return out
+    }
+
     static func fetch(_ kind: String) -> [PullRequest]? {
         guard let gh = tool else { return nil }
         // Stopped after 30 seconds, so a hung network call or a keychain prompt cannot keep the tab loading forever.
@@ -79,10 +130,13 @@ final class PullRequestsService: ObservableObject {
             } else {
                 m = GitHubPRs.fetch("--author"); r = GitHubPRs.fetch("--review-requested")
             }
+            // GitHub's state per pull request; GitLab's is not read yet.
+            let withState: ([PullRequest]?, [PullRequest]?) = provider == "gitlab" ? (m, r)
+                : (m.map { GitHubPRs.withDetails($0) }, r.map { GitHubPRs.withDetails($0) })
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     self.loading = false; self.failed = m == nil || r == nil
-                    self.mine = m ?? []; self.review = r ?? []
+                    self.mine = withState.0 ?? []; self.review = withState.1 ?? []
                 }
             }
         }
@@ -130,7 +184,10 @@ struct PullRequestsTab: View {
                         Button { if let u = URL(string: pr.url) { NSWorkspace.shared.open(u) } } label: {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(verbatim: pr.title).font(.system(size: 12)).lineLimit(1)
-                                Text(verbatim: "\(pr.repo) #\(pr.number)" + (pr.draft ? " · draft" : "")).font(.system(size: 9)).foregroundStyle(.secondary)
+                                HStack(spacing: 6) {
+                                    Text(verbatim: "\(pr.repo) #\(pr.number)" + (pr.draft ? " · draft" : "")).font(.system(size: 9)).foregroundStyle(.secondary)
+                                    PRStateChips(checks: pr.checks, review: pr.review)
+                                }
                             }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 5)
                             .rowCard()
                         }.buttonStyle(.plain)
@@ -146,3 +203,27 @@ struct PullRequestsTab: View {
 }
 
 // MARK: Edge volume and brightness bar
+
+/// The checks and review state of a pull request, as two small symbols. Nothing is drawn for a state that is not known.
+struct PRStateChips: View {
+    let checks: PRChecks
+    let review: PRReview
+
+    var body: some View {
+        HStack(spacing: 4) {
+            switch checks {
+            case .passing: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+            case .failing: Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+            case .pending: Image(systemName: "clock.fill").foregroundStyle(.orange)
+            case .none: EmptyView()
+            }
+            switch review {
+            case .approved: Image(systemName: "checkmark.seal.fill").foregroundStyle(.green)
+            case .changes: Image(systemName: "exclamationmark.bubble.fill").foregroundStyle(.red)
+            case .required: Image(systemName: "eye.fill").foregroundStyle(.secondary)
+            case .none: EmptyView()
+            }
+        }
+        .font(.system(size: 9))
+    }
+}

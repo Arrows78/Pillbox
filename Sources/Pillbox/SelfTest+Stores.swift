@@ -244,6 +244,18 @@ extension SelfTest {
         check("music volume: kept between 0 and 100", MusicService.clampVolume(-5) == 0 && MusicService.clampVolume(130) == 100 && MusicService.clampVolume(40) == 40)
     }
 
+    /// A pull request's checks and review are read from gh's JSON: a failure wins, then pending, then passing.
+    static func pullRequestState() {
+        func sum(_ json: String) -> (checks: PRChecks, review: PRReview)? { GitHubPRs.summarize(Data(json.utf8)) }
+        let failing = sum(#"{"reviewDecision":"APPROVED","statusCheckRollup":[{"conclusion":"SUCCESS","status":"COMPLETED"},{"conclusion":"FAILURE","status":"COMPLETED"}]}"#)
+        check("pull requests: a failed check wins over the others", failing?.checks == .failing && failing?.review == .approved)
+        let running = sum(#"{"reviewDecision":"REVIEW_REQUIRED","statusCheckRollup":[{"conclusion":"","status":"IN_PROGRESS"},{"conclusion":"SUCCESS","status":"COMPLETED"}]}"#)
+        check("pull requests: a running check is pending, and a review asked is required", running?.checks == .pending && running?.review == .required)
+        let status = sum(#"{"reviewDecision":"","statusCheckRollup":[{"state":"SUCCESS"}]}"#)
+        check("pull requests: a commit status counts, and no review decision is none", status?.checks == .passing && status?.review == PRReview.none)
+        check("pull requests: no checks at all is none", sum(#"{"reviewDecision":"CHANGES_REQUESTED","statusCheckRollup":[]}"#)?.checks == PRChecks.none)
+    }
+
     /// Copying a shelf item puts its file on the pasteboard, not its path text.
     static func shelfCopyFile() {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("shelf-copy-\(UUID().uuidString).txt")
