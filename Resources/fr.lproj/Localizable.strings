@@ -793,3 +793,7 @@
 "Send reply" = "Envoyer la réponse";
 "No number or address for this sender" = "Aucun numéro ni adresse pour cet expéditeur";
 "Messages could not send it" = "Messages n'a pas pu l'envoyer";
+"External display brightness up" = "Luminosité de l'écran externe plus forte";
+"External display brightness down" = "Luminosité de l'écran externe plus faible";
+"External display brightness" = "Luminosité de l'écran externe";
+"No external display found" = "Aucun écran externe détecté";

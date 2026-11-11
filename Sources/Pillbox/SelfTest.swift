@@ -1013,6 +1013,10 @@ extension SelfTest {
         let movedTo = WindowDrag.moved(CGPoint(x: 100, y: 100), by: 10, 20), resizedTo = WindowDrag.resized(CGSize(width: 300, height: 200), by: -500, 10)
         check("window drag: moving up on screen lowers the top-left origin, sizes keep a minimum",
               movedTo == CGPoint(x: 110, y: 80) && resizedTo == CGSize(width: 200, height: 210), "\(movedTo) \(resizedTo)")
+        let ddc = ExternalBrightness.packet(percent: 50)
+        let checksum: UInt8 = 0x6E ^ 0x51 ^ 0x84 ^ 0x03 ^ 0x10 ^ 0x00 ^ 50
+        check("ddc: brightness packet is 0x84 0x03 0x10 with the value and a checksum over both addresses",
+              ddc == [0x84, 0x03, 0x10, 0x00, 50, checksum] && ExternalBrightness.packet(percent: 250)[4] == 100, "\(ddc)")
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]

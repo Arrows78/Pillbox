@@ -35,6 +35,8 @@ final class PaletteModel: ObservableObject {
             PaletteCommand(title: "Video speed 1×", symbol: "speedometer") { VideoSpeed.set(1) },
             PaletteCommand(title: "Video speed 1.5×", symbol: "speedometer") { VideoSpeed.set(1.5) },
             PaletteCommand(title: "Video speed 2×", symbol: "speedometer") { VideoSpeed.set(2) },
+            PaletteCommand(title: "External display brightness up", symbol: "sun.max.fill") { ExternalBrightness.step(10) },
+            PaletteCommand(title: "External display brightness down", symbol: "sun.min.fill") { ExternalBrightness.step(-10) },
             PaletteCommand(title: "Keyboard backlight up", symbol: "light.max") { KeyboardBacklight.step(0.25) },
             PaletteCommand(title: "Keyboard backlight down", symbol: "light.min") { KeyboardBacklight.step(-0.25) },
             PaletteCommand(title: "Turn keyboard backlight off", symbol: "light.min") { KeyboardBacklight.set(0) },
