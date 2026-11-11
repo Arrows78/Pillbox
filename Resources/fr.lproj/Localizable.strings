@@ -971,3 +971,10 @@
 "30 days" = "30 jours";
 "Show music playing in a browser" = "Afficher la musique jouée dans un navigateur";
 "Chrome, Edge, Brave, Arc, Chromium and Safari, once the browser allows JavaScript from Apple Events. Firefox is not supported." = "Chrome, Edge, Brave, Arc, Chromium et Safari, une fois que le navigateur autorise JavaScript depuis les événements Apple. Firefox n'est pas pris en charge.";
+"Paste as plain text" = "Coller en texte brut";
+"Secret item" = "Élément secret";
+"Never record copies from" = "Ne jamais enregistrer les copies depuis";
+"Add frontmost app" = "Ajouter l'app au premier plan";
+"Copies made while one of these apps is in front are not kept. Adds the app you used last, before Settings." = "Les copies faites pendant qu'une de ces apps est au premier plan ne sont pas gardées. Ajoute l'app utilisée en dernier, avant Réglages.";
+"Remove secrets after" = "Supprimer les secrets après";
+"Secrets are API keys, tokens and card numbers. Pinned items stay." = "Les secrets sont les clés d'API, jetons et numéros de carte. Les éléments épinglés restent.";

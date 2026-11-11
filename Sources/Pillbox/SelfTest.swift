@@ -29,7 +29,7 @@ enum SelfTest {
         appVolume()
         battery()
         tabsAndQueue(); calendarFeeds(); videoSpeedAndWindowDrag(); externalBrightness(); equalizerAndLyricStamps(); appEqualizerAndBoost(); extraBrightness(); windowGeometry()
-        aiUsage(); annotateSteps(); notificationApps(); copilotQuota(); verificationCodes(); updater(); brewCheck(); clipboardImport(); typingSounds(); ambientNoise(); idleCollapse()
+        aiUsage(); annotateSteps(); notificationApps(); copilotQuota(); verificationCodes(); updater(); brewCheck(); clipboardImport(); clipboardPrivacy(); typingSounds(); ambientNoise(); idleCollapse()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }

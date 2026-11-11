@@ -115,7 +115,8 @@ struct ClipCard: View {
         VStack(alignment: .leading, spacing: 6) {
             content.frame(width: 156, alignment: .topLeading).frame(maxHeight: .infinity, alignment: .topLeading).clipped()
             HStack(spacing: 5) {
-                Image(systemName: kindSymbol).foregroundStyle(Design.secondary)
+                Image(systemName: item.secret == true ? "key.fill" : kindSymbol).foregroundStyle(Design.secondary)
+                    .hoverTip(item.secret == true ? localized("Secret item") : nil)
                 if item.pinned { Image(systemName: "pin.fill").foregroundStyle(.orange) }
                 Text(item.date, style: .relative).foregroundStyle(Design.secondary).lineLimit(1)
                 Spacer(minLength: 0)
@@ -133,6 +134,7 @@ struct ClipCard: View {
         .contextMenu {
             Button("Copy") { clip.copy(item) }
             Button("Paste") { clip.paste(item) }
+            if item.text != nil { Button("Paste as plain text") { clip.pastePlainText(item) } }
             if let u = link { Button("Open link") { NSWorkspace.shared.open(u) } }
             if let t = item.text, case .email(let e) = ClipboardService.kind(of: t), let u = URL(string: "mailto:\(e)") {
                 Button("Send email") { NSWorkspace.shared.open(u) }

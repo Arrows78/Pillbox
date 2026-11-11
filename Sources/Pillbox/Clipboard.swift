@@ -8,6 +8,8 @@ struct ClipItem: Identifiable, Codable, Equatable {
     var ocr: String?
     var date = Date()
     var pinned = false
+    /// Set when the text looks like a secret. Optional so history saved before this field still loads.
+    var secret: Bool?
 
     var searchable: String { [text, ocr].compactMap { $0 }.joined(separator: " ") }
 }
@@ -74,16 +76,20 @@ final class ClipboardService: ObservableObject {
     }
 
     private func poll() {
+        purgeSecrets()
         let pb = NSPasteboard.general
         guard pb.changeCount != lastChange else { return }
         lastChange = pb.changeCount
         // Skip concealed/transient content (password managers).
         let types = pb.types?.map(\.rawValue) ?? []
         if types.contains("org.nspasteboard.ConcealedType") || types.contains("org.nspasteboard.TransientType") { return }
+        // Copies made while an excluded app is in front are not recorded.
+        if ClipboardExclusions.isExcluded(NSWorkspace.shared.frontmostApplication?.bundleIdentifier, in: ClipboardExclusions.ids) { return }
 
         if let s = pb.string(forType: .string), !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            if let i = items.firstIndex(where: { $0.text == s }) { items[i].date = Date() }
-            else { items.append(ClipItem(text: s)) }
+            let secret = ClipboardSecrets.isSecret(s)
+            if let i = items.firstIndex(where: { $0.text == s }) { items[i].date = Date(); items[i].secret = secret }
+            else { items.append(ClipItem(text: s, secret: secret)) }
             CopyStackStore.shared.noteCopy(s)
         } else if let img = NSImage(pasteboard: pb) {
             let name = UUID().uuidString + ".png"
@@ -143,6 +149,21 @@ final class ClipboardService: ObservableObject {
     /// Copies the item then sends ⌘V to the frontmost app (needs Accessibility; falls back to a plain copy).
     func paste(_ item: ClipItem) {
         copy(item)
+        sendPasteKey()
+    }
+
+    /// Pastes a text item as a plain string: only the string type goes on the pasteboard, so no formatting comes along.
+    func pastePlainText(_ item: ClipItem) {
+        guard let t = item.text else { return }
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(t, forType: .string)
+        lastChange = pb.changeCount
+        if let i = items.firstIndex(where: { $0.id == item.id }) { items[i].date = Date(); save() }
+        sendPasteKey()
+    }
+
+    private func sendPasteKey() {
         NotchModel.shared.collapse()
         guard AXIsProcessTrusted() else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
@@ -152,6 +173,15 @@ final class ClipboardService: ObservableObject {
                 e?.flags = .maskCommand; e?.post(tap: .cghidEventTap)
             }
         }
+    }
+
+    /// Removes secret items whose time is up. Runs on every poll tick; saves only when something left.
+    func purgeSecrets() {
+        let ids = Set(ClipboardSecrets.expiredIDs(items, minutes: Preferences.clipboardSecretMinutes.value, now: Date()))
+        guard !ids.isEmpty else { return }
+        for id in ids { if let f = items.first(where: { $0.id == id })?.imageFile { try? FileManager.default.removeItem(at: imageDir.appendingPathComponent(f)) } }
+        items.removeAll { ids.contains($0.id) }
+        save()
     }
 
     func togglePin(_ item: ClipItem) {

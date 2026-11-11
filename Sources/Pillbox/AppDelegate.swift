@@ -43,7 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         setupStatusItem()
         monitors.append(NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { [weak self] note in
             guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, app.bundleIdentifier != Bundle.main.bundleIdentifier else { return }
-            MainActor.assumeIsolated { self?.lastOtherApp = app }
+            MainActor.assumeIsolated { self?.lastOtherApp = app; ClipboardExclusions.lastOtherAppID = app.bundleIdentifier }
         } as Any)
         setupMainMenu()
         LaunchOptions.apply(menu: statusMenu)

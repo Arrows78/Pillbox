@@ -9,6 +9,7 @@ struct SettingsTabsPane: View {
     @AppStorage(Preferences.menuBarCalendar.key) private var menuBarCalendar = Preferences.menuBarCalendar.defaultValue
     @AppStorage(Preferences.menuBarCalendarHours.key) private var menuBarCalendarHours = Preferences.menuBarCalendarHours.defaultValue
     @AppStorage(Preferences.shelfKeepDays.key) private var shelfKeepDays = Preferences.shelfKeepDays.defaultValue
+    @AppStorage(Preferences.clipboardSecretMinutes.key) private var clipboardSecretMinutes = Preferences.clipboardSecretMinutes.defaultValue
 
     var body: some View {
         SettingsPage(pane: .tabs) {
@@ -29,6 +30,12 @@ struct SettingsTabsPane: View {
                         Button("Import") { ClipboardImport.run(s) }.controlSize(.small).disabled(!s.installed)
                     }
                 }
+                ClipboardExclusionRows()
+                SettingsRow(title: "Remove secrets after", subtitle: "Secrets are API keys, tokens and card numbers. Pinned items stay.") {
+                    Picker("", selection: $clipboardSecretMinutes) {
+                        Text("Never").tag(0); Text(verbatim: "1 min").tag(1); Text(verbatim: "5 min").tag(5); Text(verbatim: "30 min").tag(30)
+                    }.labelsHidden().frame(width: 170)
+                }
             }
             SettingsCard(title: "Menu bar") {
                 SettingsToggle("Hide menu bar icons", "Adds a divider: ⌘-drag icons to its left, then click the chevron to hide them.", isOn: $hideMenuBarIcons)
@@ -48,6 +55,24 @@ struct SettingsTabsPane: View {
                     }
                 }
                 ForEach(MenuBarDetach.detachable) { tab in DetachToggle(tab: tab) }
+            }
+        }
+    }
+}
+
+/// The apps whose copies are not recorded: one row per app with its name, and a button to add the app the user was in.
+struct ClipboardExclusionRows: View {
+    @State private var ids = ClipboardExclusions.ids
+
+    var body: some View {
+        VStack(spacing: 0) {
+            SettingsRow(title: "Never record copies from", subtitle: ids.isEmpty ? "No app yet" : "Copies made while one of these apps is in front are not kept. Adds the app you used last, before Settings.") {
+                Button("Add frontmost app") { ClipboardExclusions.addFrontmost(); ids = ClipboardExclusions.ids }.controlSize(.small)
+            }
+            ForEach(ids, id: \.self) { id in
+                SettingsRow(title: LocalizedStringKey(BlockedAppsStore.name(id))) {
+                    Button("Remove") { ClipboardExclusions.set(ClipboardExclusions.removing(id, from: ids)); ids = ClipboardExclusions.ids }.controlSize(.small)
+                }
             }
         }
     }
