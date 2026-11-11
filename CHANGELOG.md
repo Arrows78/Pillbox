@@ -4,6 +4,21 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.7.0] - 2026-11-11
+
+### Added
+
+- **api**: Keep the local API token in the Keychain, with a regenerate button
+
+### Changed
+
+- **palette**: Build the command rows when the query or the palette changes, not on every redraw
+
+### Fixed
+
+- **menu**: An Edit menu so the text fields accept copy, paste and select all
+- **ai-usage**: A list of tools instead of a segmented control, and dimming per row
+
 ## [0.6.1] - 2026-11-11
 
 ### Changed
@@ -154,6 +169,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.7.0]: https://github.com/Arrows78/Pillbox/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/Arrows78/Pillbox/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Arrows78/Pillbox/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Arrows78/Pillbox/compare/v0.4.0...v0.5.0
