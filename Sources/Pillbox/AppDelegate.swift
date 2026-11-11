@@ -17,9 +17,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// The last app that was not Pillbox, so commands can act on it after a click on the status item.
     private var lastOtherApp: NSRunningApplication?
     /// Features that re-apply their settings on a change, and only when one of their keys changed.
-    private lazy var features = SettingsFeatureRouter(SettingsFeatures.all + [
-        SettingsFeature(name: "menu bar icon", keys: [Preferences.showMenuBarIcon.key]) { [weak self] in self?.applyStatusItemVisibility() },
-        SettingsFeature(name: "shortcuts", keys: GlobalShortcut.allCases.compactMap(\.setting)) { [weak self] in self?.applyHotKeys() },
+    private lazy var features = FeatureRouter(AppFeatures.all + [
+        AppFeature(name: "menu bar icon", keys: [Preferences.showMenuBarIcon.key]) { [weak self] in self?.applyStatusItemVisibility() },
+        AppFeature(name: "shortcuts", keys: GlobalShortcut.allCases.compactMap(\.setting)) { [weak self] in self?.applyHotKeys() },
     ])
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -29,57 +29,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let term = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
         term.setEventHandler { NSApp.terminate(nil) }
         term.resume(); sigterm = term
-        MusicService.shared.start()
-        ClipboardService.shared.start()
-        BatteryService.shared.start()
-        BatteryLog.shared.start()
-        BluetoothIslands.shared.apply()
-        CalendarService.shared.watch()
-        DownloadsWatcher.shared.start()
-        ScreenshotWatcher.shared.start()
-        DriveWatcher.shared.start()
-        SystemActions.startCapsLockHUD()
-        KeystrokeHUD.shared.start()
-        BrightnessHUD.shared.start()
-        BreakReminder.shared.start()
-        NotificationFeed.shared.start()
-        DownloadProgress.shared.start()
-        BuildWatcher.shared.start()
-        FocusMonitor.shared.start()
-        CallMonitor.shared.start()
-        FocusGuard.shared.start()
-        SpaceWatcher.shared.start()
-        HyperKey.shared.apply()
-        MenuBarHider.shared.apply()
-        MenuBarDetach.shared.apply()
-        MenuBarCalendar.shared.apply()
-        AudioSpectrum.shared.apply()
-        DoubleTapKey.shared.apply()
-        DesktopWidgets.shared.apply()
-        ActivityCounter.shared.apply()
-        IdleCollapse.shared.start()
-        PointerHider.shared.apply()
-        EyeBreaks.shared.start()
-        TypingSounds.shared.apply()
-        Updater.shared.start()
-        BrewUpdates.shared.start()
-        ICSFeeds.shared.start()
-        ExtraBrightness.shared.start()
-        WindowDrag.shared.apply()
-        if #available(macOS 14.2, *) { EqualizerService.shared.apply() }
+        // Every feature starts once, in order, and applies its settings. See AppFeatures.
+        for feature in AppFeatures.all { feature.start(); feature.apply() }
         NotificationCenter.default.addObserver(forName: UserDefaults.didChangeNotification, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated {
                 self?.features.applyChanged()
                 NotificationCenter.default.post(name: .notchStateChanged, object: nil)   // the idle clock changes the pill's shape
             }
         }
-        DevAPI.shared.apply()
-        PrivacyService.shared.start()
-        WeatherService.shared.start()
-        StocksService.shared.start()
-        AIUsageService.shared.start()
-        RemindersService.shared.watch()
-        AudioControl.shared.startVolumeHUD()
         setupStatusItem()
         monitors.append(NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { [weak self] note in
             guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, app.bundleIdentifier != Bundle.main.bundleIdentifier else { return }

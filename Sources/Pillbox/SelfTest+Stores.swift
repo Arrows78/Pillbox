@@ -144,7 +144,7 @@ extension SelfTest {
         let key = "selfTestRouterKey"
         UserDefaults.standard.removeObject(forKey: key); defer { UserDefaults.standard.removeObject(forKey: key) }
         var runs = 0
-        let router = SettingsFeatureRouter([SettingsFeature(name: "self test", keys: [key]) { runs += 1 }])
+        let router = FeatureRouter([AppFeature(name: "self test", keys: [key], apply: { runs += 1 })])
         router.prime()
         router.applyChanged()
         check("settings router: no change, no apply", runs == 0)
