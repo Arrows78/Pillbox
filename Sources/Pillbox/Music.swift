@@ -98,9 +98,10 @@ final class MusicService: ObservableObject {
     }
 
     private func apply(_ d: NSAppleEventDescriptor?, player p: Player, fallback: Player?) {
+        // No answer at all from a running player means Automation refused it. A "stopped" answer is a normal state.
         guard let d, d.numberOfItems >= 6, d.atIndex(1)?.stringValue != "stopped" else {
             if let fallback { fetch(fallback, fallback: nil) } else {
-                automationDenied = running(p) ? p : nil
+                automationDenied = d == nil && running(p) ? p : nil
                 clear()
             }
             return

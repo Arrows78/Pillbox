@@ -220,8 +220,13 @@ enum Store {
         return u
     }()
     static func load<T: Decodable>(_ name: String, as: T.Type) -> T? {
-        guard let d = try? Data(contentsOf: dir.appendingPathComponent(name)) else { return nil }
-        return try? JSONDecoder().decode(T.self, from: d)
+        let url = dir.appendingPathComponent(name)
+        guard let d = try? Data(contentsOf: url) else { return nil }
+        if let value = try? JSONDecoder().decode(T.self, from: d) { return value }
+        // Unreadable file: keep a copy so the next save does not overwrite the user's data with an empty default.
+        try? FileManager.default.removeItem(at: url.appendingPathExtension("broken"))
+        try? FileManager.default.copyItem(at: url, to: url.appendingPathExtension("broken"))
+        return nil
     }
     static func save<T: Encodable>(_ value: T, _ name: String) {
         if let d = try? JSONEncoder().encode(value) { try? d.write(to: dir.appendingPathComponent(name), options: .atomic) }

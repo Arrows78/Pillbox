@@ -14,7 +14,7 @@ final class KeystrokeHUD {
 
     func start() {
         guard monitor == nil else { return }
-        PermissionsCenter.shared.checkInputMonitoring(for: "Keystroke display")
+        if enabled { PermissionsCenter.shared.checkInputMonitoring(for: "Keystroke display") }
         monitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { e in
             DispatchQueue.main.async { MainActor.assumeIsolated { KeystrokeHUD.shared.handle(e) } }
         }
