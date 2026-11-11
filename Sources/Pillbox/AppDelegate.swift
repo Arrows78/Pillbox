@@ -78,6 +78,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         RemindersService.shared.start()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
+        setupMainMenu()
         if CommandLine.arguments.contains("--open-teleprompter") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { Teleprompter.shared.show() } }
         if CommandLine.arguments.contains("--open-player") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { FloatingPlayer.shared.show() } }
         if CommandLine.arguments.contains("--open-lyrics") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { LyricsScreen.shared.show() } }
@@ -150,6 +151,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     func applyStatusItemVisibility() {
         statusItem?.isVisible = UserDefaults.standard.object(forKey: "showMenuBarIcon") as? Bool ?? true
+    }
+
+    /// A menu bar for when Pillbox is active (a Settings window is open), so ⌘, and ⌘Q work. The status item menu
+    /// only handles its own key equivalents while it is open.
+    private func setupMainMenu() {
+        let main = NSMenu()
+        let appItem = NSMenuItem()
+        let appMenu = NSMenu(title: "Pillbox")
+        let settingsItem = NSMenuItem(title: L("Settings…"), action: #selector(settings), keyEquivalent: ",")
+        settingsItem.target = self
+        appMenu.addItem(settingsItem)
+        appMenu.addItem(.separator())
+        appMenu.addItem(NSMenuItem(title: L("Quit Pillbox"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        appItem.submenu = appMenu
+        main.addItem(appItem)
+        NSApp.mainMenu = main
     }
 
     private func setupStatusItem() {
