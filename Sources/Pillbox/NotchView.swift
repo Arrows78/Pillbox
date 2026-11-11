@@ -26,10 +26,11 @@ struct NotchRootView: View {
     @ObservedObject var build = BuildWatcher.shared
     @ObservedObject var recorder = ScreenRecorder.shared
     @ObservedObject var dictation = DictationService.shared
+    @ObservedObject var stocks = StocksService.shared
     @AppStorage(IdlePill.key) private var idleClock = false
 
     /// Live content on the wings; the idle clock is the lowest priority and only fills an otherwise empty pill.
-    private var liveWings: Bool { recorder.recording || timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil }
+    private var liveWings: Bool { recorder.recording || timer.isActive || caffeine.active || (music.hasTrack && music.isPlaying) || privacy.live || cleaning.active || calls.call != nil || LiveState.lottiePath != nil || !downloads.items.isEmpty || build.since != nil || (stocks.pinned.flatMap { stocks.quotes[$0] } != nil) }
     private var wings: Bool { liveWings || idleClock }
     private var size: CGSize { model.size(hasWings: wings) }
 
