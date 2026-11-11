@@ -1055,3 +1055,6 @@
 "Needs the GitLab CLI (glab), logged in" = "Demande la CLI GitLab (glab), connectée";
 "GitLab" = "GitLab";
 "gitlab.com" = "gitlab.com";
+"Rain expected soon" = "Pluie bientôt";
+"An island when the forecast gives 60% or more chance of rain in the next hours." = "Une île quand la prévision annonce 60 % de chances de pluie ou plus dans les prochaines heures.";
+"Rain expected in %d h" = "Pluie prévue dans %d h";

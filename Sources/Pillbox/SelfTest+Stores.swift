@@ -218,6 +218,19 @@ extension SelfTest {
         check("gitlab: an empty list gives nothing", GitLabMRs.parse(Data("[]".utf8)).isEmpty)
     }
 
+    /// The hourly forecast keeps each complete hour, and the rain rule picks the first hour that is likely to be wet.
+    static func weatherHourly() {
+        let json = #"{"hourly":{"time":["2026-11-11T14:00","2026-11-11T15:00","2026-11-11T16:00"],"temperature_2m":[12.4,11.6,10.2],"precipitation_probability":[10,70,90]}}"#
+        let hours = WeatherService.parseHourly(Data(json.utf8), status: 200)
+        check("weather: each complete hour is kept, in order", hours.count == 3 && hours[0].temperature == 12 && hours[1].rainChance == 70)
+        check("weather: a failed request gives no hours", WeatherService.parseHourly(Data(json.utf8), status: 500).isEmpty)
+        let cal = Calendar(identifier: .gregorian)
+        let now = hours[0].hour
+        check("weather: the first hour at 60% or more is the rain", WeatherService.rainSoon(hours, now: now, threshold: 60)?.rainChance == 70)
+        check("weather: no rain over the threshold, nothing to warn about", WeatherService.rainSoon(hours, now: now, threshold: 95) == nil)
+        _ = cal
+    }
+
     /// Copying a shelf item puts its file on the pasteboard, not its path text.
     static func shelfCopyFile() {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("shelf-copy-\(UUID().uuidString).txt")

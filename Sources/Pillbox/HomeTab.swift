@@ -31,6 +31,7 @@ struct HomeTab: View {
                 } else if weather.denied {
                     Label("Weather needs Location access", systemImage: "location.slash").font(.system(size: 11)).foregroundStyle(.orange).lineLimit(1)
                 }
+                HourlyStrip()
                 Spacer(minLength: 4)
                 NetworkLine(down: stats.down, up: stats.up, samples: stats.netHistory)
                 ForEach(stats.bluetooth, id: \.self) { line in

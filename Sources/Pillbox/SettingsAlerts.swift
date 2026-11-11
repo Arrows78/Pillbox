@@ -21,6 +21,7 @@ struct SettingsAlertsPane: View {
     @AppStorage(Preferences.pomodoroEvery.key) private var pomodoroEvery = Preferences.pomodoroEvery.defaultValue
     @AppStorage(Preferences.pomodoroLongBreak.key) private var pomodoroLongBreak = Preferences.pomodoroLongBreak.defaultValue
     @AppStorage(Preferences.timerSound.key) private var timerSound = Preferences.timerSound.defaultValue
+    @AppStorage(Preferences.rainAlert.key) private var rainAlert = Preferences.rainAlert.defaultValue
     @AppStorage(Preferences.buildIsland.key) private var buildIsland = Preferences.buildIsland.defaultValue
     @AppStorage(Preferences.screenshotShelf.key) private var screenshotShelf = Preferences.screenshotShelf.defaultValue
     @AppStorage(Preferences.driveEject.key) private var driveEject = Preferences.driveEject.defaultValue
@@ -36,6 +37,9 @@ struct SettingsAlertsPane: View {
 
     var body: some View {
         SettingsPage(pane: .alerts) {
+            SettingsCard(title: "Weather") {
+                SettingsToggle("Rain expected soon", "An island when the forecast gives 60% or more chance of rain in the next hours.", isOn: $rainAlert)
+            }
             SettingsCard(title: "Quiet hours") {
                 SettingsRow(title: "From", subtitle: "Islands wait between these hours. Urgent ones still show.") {
                     Picker("", selection: $quietFrom) { Text("Off").tag(-1); ForEach(0..<24, id: \.self) { Text(verbatim: "\($0):00").tag($0) } }

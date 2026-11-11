@@ -1001,3 +1001,6 @@ Empty for gitlab.com. For a company server, its host name, for example gitlab.ex
 Needs the GitLab CLI (glab), logged in	Necesita la CLI de GitLab (glab), con sesión iniciada	Benötigt die GitLab-CLI (glab), angemeldet
 GitLab	GitLab	GitLab
 gitlab.com	gitlab.com	gitlab.com
+Rain expected soon	Lluvia pronto	Regen bald
+An island when the forecast gives 60% or more chance of rain in the next hours.	Una isla cuando la previsión da un 60 % o más de probabilidad de lluvia en las próximas horas.	Eine Insel, wenn die Vorhersage in den nächsten Stunden 60 % oder mehr Regenwahrscheinlichkeit angibt.
+Rain expected in %d h	Lluvia prevista en %d h	Regen erwartet in %d Std.
