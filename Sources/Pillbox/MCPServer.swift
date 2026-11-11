@@ -80,12 +80,12 @@ enum MCPServer {
     static func forward(_ name: String, _ args: [String: Any]) -> (ok: Bool, text: String) {
         // Run from inside the app bundle, the standard domain is Pillbox's own (a suite named like it does not work).
         let defaults = UserDefaults.standard
-        guard let token = defaults.string(forKey: "devAPIToken"), defaults.bool(forKey: "devAPIEnabled") else {
+        guard defaults.bool(forKey: "devAPIEnabled") else {
             return (false, "Pillbox's local API is off. Turn it on in Pillbox › Settings › Developer API.")
         }
         var req = URLRequest(url: URL(string: "http://127.0.0.1:\(DevAPI.defaultPort)/action")!)
         req.httpMethod = "POST"; req.timeoutInterval = 10
-        req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        req.setValue("Bearer \(DevAPI.storedToken())", forHTTPHeaderField: "Authorization")
         req.httpBody = try? JSONSerialization.data(withJSONObject: ["tool": name, "arguments": args])
         let answer = Answer()
         let sem = DispatchSemaphore(value: 0)

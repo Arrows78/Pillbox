@@ -254,15 +254,15 @@ struct SettingsView: View {
                 }
                 SettingsToggle("Haptic feedback when the island opens", "A light tap of the trackpad.", isOn: $hapticIsland)
                 SettingsToggle("Clock and battery on the resting pill", "Shown on the wings when nothing else is live.", isOn: $idleClock)
-                SettingsToggle("Swipe the resting pill to change desktop", "Two fingers left or right on the pill. Needs Accessibility.", isOn: $swipeSpaces)
+                SettingsToggle("Swipe the resting pill to change desktop", "Two fingers left or right on the pill. Needs Accessibility.", isOn: $swipeSpaces, needs: .accessibility)
                 SettingsRow(title: "Hide the pointer when it rests", subtitle: "In every app, handy for films. Any movement brings it back.") {
                     Picker("", selection: $hidePointer) { Text("Never").tag(0); Text("5 s").tag(5); Text("10 s").tag(10); Text("30 s").tag(30) }.labelsHidden().frame(width: 170)
                 }
                 SettingsToggle("Show a mini player when hovering during playback", isOn: $peekOnHover)
                 SettingsToggle("Shake a dragged file to open the shelf", isOn: $shakeToOpen)
-                SettingsToggle("Move and resize windows with the mouse", "Hold ⌃⌥ and drag a window to move it; add ⇧ to resize it. Needs Accessibility.", isOn: $windowDrag)
-                SettingsToggle("Snap zones when dragging a window to the notch", "Needs Accessibility. Drop the window on a zone to tile it.", isOn: $snapZones)
-                SettingsToggle("Double-press Control to open the notch", "Needs Input Monitoring.", isOn: $doubleTapOpen)
+                SettingsToggle("Move and resize windows with the mouse", "Hold ⌃⌥ and drag a window to move it; add ⇧ to resize it. Needs Accessibility.", isOn: $windowDrag, needs: .accessibility)
+                SettingsToggle("Snap zones when dragging a window to the notch", "Needs Accessibility. Drop the window on a zone to tile it.", isOn: $snapZones, needs: .accessibility)
+                SettingsToggle("Double-press Control to open the notch", "Needs Input Monitoring.", isOn: $doubleTapOpen, needs: .inputMonitoring)
                 SettingsToggle("Copy stack", "Copy several things, then paste them one by one, in order, with the Paste next shortcut.", isOn: $copyStack)
             }
             SettingsCard(title: "Tabs") {
@@ -356,11 +356,11 @@ struct SettingsView: View {
                 SettingsToggle("Microphone and camera indicator", "Shows when an app is using the microphone or the camera.", isOn: $privacyIndicator)
             }
             SettingsCard(title: "Activity") {
-                SettingsToggle("Focus mode island", "Needs Full Disk Access.", isOn: $focusIsland)
+                SettingsToggle("Focus mode island", "Needs Full Disk Access.", isOn: $focusIsland, needs: .fullDisk)
                 SettingsToggle("Call in progress island", "Shows the duration while a call app uses the microphone.", isOn: $callIsland)
                 SettingsToggle("Build island", "Shows a stopwatch while Xcode or swift build runs.", isOn: $buildIsland)
-                SettingsToggle("Show new notifications as islands", "Needs Full Disk Access.", isOn: $notificationIsland)
-                SettingsToggle("Verification codes with a Copy button", "A code in a new notification becomes an island. Needs Full Disk Access.", isOn: $codeIsland)
+                SettingsToggle("Show new notifications as islands", "Needs Full Disk Access.", isOn: $notificationIsland, needs: .fullDisk)
+                SettingsToggle("Verification codes with a Copy button", "A code in a new notification becomes an island. Needs Full Disk Access.", isOn: $codeIsland, needs: .fullDisk)
                 SettingsToggle("Homebrew updates island", "Once a day, the packages with a newer version, with Upgrade in the Terminal tab.", isOn: $brewUpdates)
                 SettingsToggle("Stage new screenshots on the shelf", isOn: $screenshotShelf)
                 SettingsRow(title: "Warn when an AI limit reaches", subtitle: "Codex and Copilot usage limits.") {
@@ -378,11 +378,11 @@ struct SettingsView: View {
             }
             AwarenessSettings()
             SettingsCard(title: "Presentations") {
-                SettingsToggle("Show keystrokes", "For demos and screen sharing. Needs Input Monitoring. Nothing is stored.", isOn: $keystrokeHUD)
+                SettingsToggle("Show keystrokes", "For demos and screen sharing. Needs Input Monitoring. Nothing is stored.", isOn: $keystrokeHUD, needs: .inputMonitoring)
                 if keystrokeHUD { SettingsToggle("Shortcuts only, never plain typing", isOn: $shortcutsOnly) }
             }
             SettingsCard(title: "Activity counter") {
-                SettingsToggle("Count clicks, keystrokes and mouse distance", "Needs Input Monitoring. Only totals per day are kept, on this Mac, for 7 days. Never which keys.", isOn: $activityCounter)
+                SettingsToggle("Count clicks, keystrokes and mouse distance", "Needs Input Monitoring. Only totals per day are kept, on this Mac, for 7 days. Never which keys.", isOn: $activityCounter, needs: .inputMonitoring)
                 if activityCounter {
                     ActivityCounterCard().overlay(alignment: .top) { Rectangle().fill(Color.primary.opacity(0.06)).frame(height: 0.5).padding(.leading, 12) }
                     SettingsRow(title: "Reset the counts") { Button("Reset", role: .destructive) { ActivityCounter.shared.reset() }.controlSize(.small) }
@@ -400,7 +400,7 @@ struct SettingsView: View {
             }
             SettingsCard(title: "Desktop and keyboard") {
                 SettingsToggle("Desktop widgets", "Clock, world clock, weather and music on the desktop.", isOn: $desktopWidgets)
-                SettingsToggle("Hyper key", "Caps Lock becomes ⌃⌥⇧⌘. Needs Accessibility.", isOn: $hyperKey)
+                SettingsToggle("Hyper key", "Caps Lock becomes ⌃⌥⇧⌘. Needs Accessibility.", isOn: $hyperKey, needs: .accessibility)
                 if hyperKey { SettingsToggle("A quick press sends Escape", isOn: $hyperEscape) }
             }
         }
@@ -434,6 +434,9 @@ struct SettingsView: View {
                 SettingsToggle("Enable local API", "Scripts and AI apps on this Mac can then reach Pillbox, with a private token.", isOn: $devAPI)
                     .onChange(of: devAPI) { _, _ in DevAPI.shared.apply() }
                 if devAPI {
+                    SettingsRow(title: "Token", subtitle: "Scripts and hooks read it from the Keychain. Regenerating it breaks the ones that hold the old token.") {
+                        Button("Regenerate") { DevAPI.regenerateToken() }.controlSize(.small)
+                    }
                     SettingsRow(title: "Address", subtitle: "Reachable from this Mac only.") {
                         Text(verbatim: "127.0.0.1:\(DevAPI.defaultPort)").font(.system(size: 12, design: .monospaced)).foregroundStyle(SettingsStyle.dim).textSelection(.enabled)
                     }
@@ -473,7 +476,7 @@ struct SettingsView: View {
     # Pillbox: show an island when a command runs longer than 15 s
     autoload -Uz add-zsh-hook
     _pillbox_pre() { _pb_cmd="$1"; _pb_t=$SECONDS }
-    _pillbox_post() { local s=$? d=$((SECONDS-${_pb_t:-$SECONDS})); [ -n "$_pb_cmd" ] && [ $d -ge 15 ] && curl -s -m 2 -X POST http://127.0.0.1:\(DevAPI.defaultPort)/notify -H "Authorization: Bearer $(defaults read dev.labs.pillbox devAPIToken)" -d "{\\"title\\":\\"Command finished (${d}s)\\",\\"message\\":\\"${_pb_cmd:0:80}\\",\\"symbol\\":\\"terminal.fill\\",\\"duration\\":5}" >/dev/null 2>&1 &!; _pb_cmd= }
+    _pillbox_post() { local s=$? d=$((SECONDS-${_pb_t:-$SECONDS})); [ -n "$_pb_cmd" ] && [ $d -ge 15 ] && curl -s -m 2 -X POST http://127.0.0.1:\(DevAPI.defaultPort)/notify -H "Authorization: Bearer $(security find-generic-password -s dev.labs.pillbox.devapi -w)" -d "{\\"title\\":\\"Command finished (${d}s)\\",\\"message\\":\\"${_pb_cmd:0:80}\\",\\"symbol\\":\\"terminal.fill\\",\\"duration\\":5}" >/dev/null 2>&1 &!; _pb_cmd= }
     add-zsh-hook preexec _pillbox_pre; add-zsh-hook precmd _pillbox_post
     """
 
@@ -534,6 +537,9 @@ struct SettingsView: View {
                 SettingsToggle("Include beta versions", "Also offers pre-releases, which may be less stable.", isOn: $betaUpdates)
                 SettingsRow(title: "Diagnostics", subtitle: "Copies the version, macOS version and permissions, to paste into a bug report. It contains no personal data.") {
                     CopyButton(text: { Diagnostics.text }, title: "Copy diagnostics")
+                }
+                SettingsRow(title: "Recent logs", subtitle: "The last hour of Pillbox's log, for a bug report. Nothing leaves the Mac.") {
+                    CopyButton(text: { Log.recentText() }, title: "Copy recent logs")
                 }
                 SettingsRow(title: "Report a problem", subtitle: "Opens a prefilled GitHub issue. Review it before sending.") {
                     Button("Report…") { ProblemReport.open() }.controlSize(.small)

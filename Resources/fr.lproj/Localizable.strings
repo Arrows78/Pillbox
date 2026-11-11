@@ -875,3 +875,15 @@
 "Redo" = "Rétablir";
 "Cut" = "Couper";
 "Select All" = "Tout sélectionner";
+"No activity in the last 7 days" = "Aucune activité ces 7 derniers jours";
+"Microphone" = "Micro";
+"Speech Recognition" = "Reconnaissance vocale";
+"Dictation and voice following." = "Dictée et suivi vocal.";
+"Turns speech into text for dictation and voice following." = "Transforme la parole en texte pour la dictée et le suivi vocal.";
+"Regenerate" = "Régénérer";
+"Needs %@ permission" = "Permission %@ requise";
+"Token" = "Jeton";
+"Scripts and hooks read it from the Keychain. Regenerating it breaks the ones that hold the old token." = "Les scripts et les crochets le lisent dans le Trousseau. Le régénérer casse ceux qui gardent l'ancien jeton.";
+"Recent logs" = "Journaux récents";
+"The last hour of Pillbox's log, for a bug report. Nothing leaves the Mac." = "La dernière heure du journal de Pillbox, pour un signalement de bug. Rien ne quitte le Mac.";
+"Copy recent logs" = "Copier les journaux récents";

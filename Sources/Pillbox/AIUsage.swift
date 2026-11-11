@@ -15,6 +15,8 @@ struct ProviderUsage: Identifiable {
     var limitPercent: Double?
     var limitWindowMinutes: Int?
     var limitResetsAt: Date?
+    /// The tool's data is on this Mac, even when it has been idle for the last week: the tab shows it greyed out.
+    var installed = false
 }
 
 /// Token usage of Claude Code (~/.claude/projects) and Codex (~/.codex/sessions), read from their local logs.
@@ -40,7 +42,11 @@ final class AIUsageService: ObservableObject {
         let copilot = UserDefaults.standard.bool(forKey: Self.copilotKey)
         let order = Self.storedList(Self.orderKey) ?? Self.allNames, hidden = Set(Self.storedList(Self.hiddenKey) ?? [])
         DispatchQueue.global(qos: .utility).async {
-            var all = [Self.scanClaude(), Self.scanCodex(), Self.scanGemini(), Self.scanOpenCode(), Self.scanCursor()].filter { $0.week > 0 || $0.lastActivity != nil }
+            var all = [Self.scanClaude(), Self.scanCodex(), Self.scanGemini(), Self.scanOpenCode(), Self.scanCursor()].map { usage -> ProviderUsage in
+                var u = usage
+                u.installed = Self.sourcePresent(u.name)
+                return u
+            }.filter { $0.week > 0 || $0.lastActivity != nil || $0.installed }
             if copilot, let c = Self.fetchCopilot() { all.append(c) }
             // Alerts watch every provider; the tab shows only the chosen ones, in the chosen order.
             let shown = Self.arranged(all, order: order, hidden: hidden)
@@ -49,6 +55,21 @@ final class AIUsageService: ObservableObject {
     }
 
     nonisolated static let copilotKey = "copilotUsage"
+
+    /// Whether the tool's local data exists on this Mac (its log folder, or Cursor's tracking database).
+    nonisolated static func sourcePresent(_ name: String) -> Bool {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let path: String
+        switch name {
+        case "Claude Code": path = home + "/.claude/projects"
+        case "Codex": path = home + "/.codex/sessions"
+        case "Gemini CLI": path = home + "/.gemini/tmp"
+        case "OpenCode": path = home + "/.local/share/opencode/storage/message"
+        case "Cursor": path = home + "/.cursor/ai-tracking/ai-code-tracking.db"
+        default: return false
+        }
+        return FileManager.default.fileExists(atPath: path)
+    }
 
     /// Every provider the tab can show, in its default order.
     static let allNames = ["Claude Code", "Codex", "Gemini CLI", "OpenCode", "Cursor", "Copilot"]

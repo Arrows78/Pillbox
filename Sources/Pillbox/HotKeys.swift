@@ -73,6 +73,7 @@ final class HotKey {
             Self.handlers[id] = handler
         } else {
             // Nothing is registered, so no handler: the key does nothing, and the user is told which one.
+            Log.app.error("Global shortcut \(id) could not be registered: another app owns it")
             ref = nil
             Self.unavailable.insert(id)
             let title = GlobalShortcut(rawValue: id).map { localized("%@ is already used by another app", $0.keycaps) } ?? localized("A shortcut is already used by another app")

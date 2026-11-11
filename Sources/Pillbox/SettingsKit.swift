@@ -118,14 +118,24 @@ struct SettingsToggle: View {
     var title: LocalizedStringKey
     var subtitle: LocalizedStringKey?
     @Binding var isOn: Bool
+    /// The permission the feature needs. While it is missing, a warning sits under the switch, so the gap is seen here
+    /// rather than discovered later through a silent feature.
+    var needs: PermissionKind?
 
-    init(_ title: LocalizedStringKey, _ subtitle: LocalizedStringKey? = nil, isOn: Binding<Bool>) {
-        self.title = title; self.subtitle = subtitle; self._isOn = isOn
+    init(_ title: LocalizedStringKey, _ subtitle: LocalizedStringKey? = nil, isOn: Binding<Bool>, needs: PermissionKind? = nil) {
+        self.title = title; self.subtitle = subtitle; self._isOn = isOn; self.needs = needs
     }
 
     var body: some View {
-        SettingsRow(title: title, subtitle: subtitle) {
-            Toggle("", isOn: $isOn).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(SettingsStyle.accent)
+        VStack(alignment: .leading, spacing: 0) {
+            SettingsRow(title: title, subtitle: subtitle) {
+                Toggle("", isOn: $isOn).labelsHidden().toggleStyle(.switch).controlSize(.small).tint(SettingsStyle.accent)
+            }
+            if let needs, PermissionsCenter.shared.state(of: needs) != .granted {
+                Label(localized("Needs %@ permission", needs.title), systemImage: "exclamationmark.triangle.fill")
+                    .font(.system(size: 11)).foregroundStyle(.orange)
+                    .padding(.horizontal, 12).padding(.bottom, 8)
+            }
         }
     }
 }

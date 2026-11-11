@@ -110,6 +110,7 @@ final class Updater {
                     self.busy = false
                     switch result {
                     case .failure(let why):
+                        Log.update.error("Update to \(r.version, privacy: .public) failed: \(why.localizedDescription, privacy: .public)")
                         try? FileManager.default.removeItem(at: dir)
                         NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: localized("Could not update"), subtitle: why.localizedDescription, tint: .orange,
                                                         actionTitle: r.page == nil ? nil : localized("Release page"), action: { if let p = r.page { NSWorkspace.shared.open(p) } }, duration: 8))

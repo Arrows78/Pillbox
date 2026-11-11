@@ -822,3 +822,15 @@ Edit	Edición	Bearbeiten
 Redo	Rehacer	Wiederholen
 Cut	Cortar	Ausschneiden
 Select All	Seleccionar todo	Alles auswählen
+No activity in the last 7 days	Sin actividad en los últimos 7 días	Keine Aktivität in den letzten 7 Tagen
+Microphone	Micrófono	Mikrofon
+Speech Recognition	Reconocimiento de voz	Spracherkennung
+Dictation and voice following.	Dictado y seguimiento por voz.	Diktat und Sprachverfolgung.
+Turns speech into text for dictation and voice following.	Convierte la voz en texto para el dictado y el seguimiento por voz.	Wandelt Sprache in Text um für Diktat und Sprachverfolgung.
+Regenerate	Regenerar	Neu erzeugen
+Needs %@ permission	Requiere el permiso %@	Berechtigung %@ erforderlich
+Token	Token	Token
+Scripts and hooks read it from the Keychain. Regenerating it breaks the ones that hold the old token.	Los scripts y los hooks lo leen del Llavero. Regenerarlo rompe los que tienen el token anterior.	Skripte und Hooks lesen ihn aus dem Schlüsselbund. Ein neuer Token bricht alle, die den alten haben.
+Recent logs	Registros recientes	Aktuelle Protokolle
+The last hour of Pillbox's log, for a bug report. Nothing leaves the Mac.	La última hora del registro de Pillbox, para un informe de error. Nada sale del Mac.	Die letzte Stunde des Pillbox-Protokolls für einen Fehlerbericht. Nichts verlässt den Mac.
+Copy recent logs	Copiar registros recientes	Aktuelle Protokolle kopieren

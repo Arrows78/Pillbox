@@ -44,8 +44,14 @@ struct AIUsageTab: View {
                         stat("Today", provider.today)
                         stat("7 days", provider.week)
                     }
+                    if unit != .requests, provider.week == 0 {
+                        Text("No activity in the last 7 days").font(.system(size: 10)).foregroundStyle(.secondary)
+                    }
                     if unit != .requests, let lastActivity = provider.lastActivity { Text("Last activity \(lastActivity, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
-                }.frame(width: 210, alignment: .leading)
+                }
+                .frame(width: 210, alignment: .leading)
+                // Installed but idle this week: the figures are zero, so the column recedes instead of looking broken.
+                .opacity(provider.week == 0 && unit != .requests ? 0.45 : 1)
                 VStack(alignment: .leading, spacing: 4) {
                     Group {
                         switch unit {

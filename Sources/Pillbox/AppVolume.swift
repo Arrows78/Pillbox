@@ -293,6 +293,7 @@ final class AppVolumeService: ObservableObject {
         if let t = taps[id] as? AppTap, t.processes == app.processes, t.muted == m { t.setGain(g); t.setBands(bands); return }
         drop(id)
         guard let t = AppTap(processes: app.processes, gain: g, muted: m, bands: bands) else {
+            Log.audio.error("Could not create the volume tap for an app")
             gains[id] = nil; muted.remove(id)
             NotchModel.shared.show(Activity(symbol: "speaker.slash", title: localized("Could not change this app's volume"), tint: .orange, duration: 2))
             return

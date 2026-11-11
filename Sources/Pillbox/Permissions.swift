@@ -4,9 +4,10 @@ import AVFoundation
 import Combine
 import CoreLocation
 import EventKit
+import Speech
 
 enum PermissionKind: String, CaseIterable, Identifiable {
-    case accessibility, inputMonitoring, screenRecording, fullDisk, calendar, reminders, location, camera, spotify, music
+    case accessibility, inputMonitoring, screenRecording, fullDisk, calendar, reminders, location, camera, spotify, music, microphone, speech
     var id: String { rawValue }
 
     var title: String {
@@ -21,6 +22,8 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         case .camera: localized("Camera")
         case .spotify: localized("Automation: Spotify")
         case .music: localized("Automation: Music")
+        case .microphone: localized("Microphone")
+        case .speech: localized("Speech Recognition")
         }
     }
 
@@ -36,6 +39,8 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         case .camera: localized("Camera mirror.")
         case .spotify: localized("Now playing and controls (open Spotify first).")
         case .music: localized("Now playing and controls (open Music first).")
+        case .microphone: localized("Dictation and voice following.")
+        case .speech: localized("Turns speech into text for dictation and voice following.")
         }
     }
 
@@ -50,6 +55,8 @@ enum PermissionKind: String, CaseIterable, Identifiable {
         case .location: "Privacy_LocationServices"
         case .camera: "Privacy_Camera"
         case .spotify, .music: "Privacy_Automation"
+        case .microphone: "Privacy_Microphone"
+        case .speech: "Privacy_SpeechRecognition"
         }
     }
 }
@@ -103,6 +110,18 @@ final class PermissionsCenter: ObservableObject {
             case .notDetermined: return .notDetermined
             default: return .denied
             }
+        case .microphone:
+            switch AVCaptureDevice.authorizationStatus(for: .audio) {
+            case .authorized: return .granted
+            case .notDetermined: return .notDetermined
+            default: return .denied
+            }
+        case .speech:
+            switch SFSpeechRecognizer.authorizationStatus() {
+            case .authorized: return .granted
+            case .notDetermined: return .notDetermined
+            default: return .denied
+            }
         case .spotify: return Self.automation(.spotify, ask: false)
         case .music: return Self.automation(.music, ask: false)
         }
@@ -122,6 +141,8 @@ final class PermissionsCenter: ObservableObject {
         case .reminders: RemindersService.shared.requestAccess()
         case .location: WeatherService.shared.requestAuthorization()
         case .camera: AVCaptureDevice.requestAccess(for: .video) { _ in }
+        case .microphone: AVCaptureDevice.requestAccess(for: .audio) { _ in }
+        case .speech: SFSpeechRecognizer.requestAuthorization { _ in }
         case .spotify: askAutomation(.spotify)
         case .music: askAutomation(.music)
         }

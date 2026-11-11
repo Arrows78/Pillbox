@@ -12,10 +12,28 @@ final class DevAPI {
     nonisolated static let defaultPort: UInt16 = 9998
     private var listener: NWListener?
 
-    static var token: String {
-        if let t = UserDefaults.standard.string(forKey: "devAPIToken") { return t }
+    /// Keychain item holding the token; the shell hooks read it with `security find-generic-password -s <this> -w`.
+    nonisolated static let tokenService = "dev.labs.pillbox.devapi"
+    /// The old place of the token, read once and then removed.
+    private nonisolated static let legacyKey = "devAPIToken"
+
+    static var token: String { storedToken() }
+
+    /// Replaces the token. Scripts and hooks read it again on their next call; anything holding the old one stops working.
+    static func regenerateToken() {
         let t = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
-        UserDefaults.standard.set(t, forKey: "devAPIToken"); return t
+        if !Keychain.set(t, tokenService) { Log.api.error("Could not store the new local API token in the Keychain") }
+    }
+
+    /// The token, from the Keychain. A token kept in UserDefaults by an older version moves there on first use.
+    /// If the Keychain refuses to store it, the token stays in UserDefaults so the API keeps working.
+    nonisolated static func storedToken() -> String {
+        if let t = Keychain.get(tokenService), !t.isEmpty { return t }
+        let legacy = UserDefaults.standard.string(forKey: legacyKey)
+        let t = legacy ?? UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
+        if Keychain.set(t, tokenService) { UserDefaults.standard.removeObject(forKey: legacyKey) }
+        else { UserDefaults.standard.set(t, forKey: legacyKey) }
+        return t
     }
 
     func apply() {
@@ -41,6 +59,7 @@ final class DevAPI {
     /// Forgets a listener that failed, so that the next `apply()` can start it again.
     private func listenerFailed(_ l: NWListener) {
         guard listener === l else { return }
+        Log.api.error("The local API listener failed; the port is probably in use")
         listener = nil; l.cancel()
         NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Local API could not start"), subtitle: localized("Port %d is in use or blocked", Int(Self.defaultPort)), tint: .orange, duration: 6))
     }
@@ -92,7 +111,7 @@ final class DevAPI {
 
     private nonisolated static func route(_ c: NWConnection, _ buf: Data, bodyStart: Int) {
         let head = String(decoding: buf[..<(bodyStart - 4)], as: UTF8.self), body = buf[bodyStart...]
-        guard authorized(head, token: UserDefaults.standard.string(forKey: "devAPIToken") ?? "") else { return reply(c, 401, "unauthorized") }
+        guard authorized(head, token: storedToken()) else { return reply(c, 401, "unauthorized") }
         let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
         if head.hasPrefix("POST /notify") { notify(c, json) }
         else if head.hasPrefix("POST /approve") { approve(c, json) }
