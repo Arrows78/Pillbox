@@ -80,6 +80,23 @@ final class ShelfService: ObservableObject {
         Pasteboard.copy(list.map(\.path).joined(separator: "\n"))
     }
 
+    /// Puts the files themselves on the pasteboard, so they paste into Finder and other apps as files.
+    func copyFiles(_ list: [ShelfItem]) {
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.writeObjects(list.map { $0.url as NSURL })
+    }
+
+    /// The system share menu for the files, shown under the key window.
+    func share(_ list: [ShelfItem]) {
+        let urls = list.map(\.url)
+        guard !urls.isEmpty, let view = NSApp.keyWindow?.contentView else {
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Select items first"), tint: .orange))
+            return
+        }
+        NSSharingServicePicker(items: urls).show(relativeTo: .zero, of: view, preferredEdge: .minY)
+    }
+
     /// "3 items · 2 selected", the shelf's header line.
     nonisolated static func summary(count: Int, selected: Int) -> String {
         let n = count == 1 ? localized("1 item") : localized("%lld items", count)

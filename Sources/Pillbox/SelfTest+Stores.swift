@@ -192,6 +192,16 @@ extension SelfTest {
         check("timer sound: the default is one of the offered sounds", FocusExport.sounds.contains(Preferences.timerSound.defaultValue))
     }
 
+    /// Copying a shelf item puts its file on the pasteboard, not its path text.
+    static func shelfCopyFile() {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("shelf-copy-\(UUID().uuidString).txt")
+        try? Data("x".utf8).write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
+        ShelfService.shared.copyFiles([ShelfItem(path: file.path)])
+        let urls = NSPasteboard.general.readObjects(forClasses: [NSURL.self], options: nil) as? [URL] ?? []
+        check("shelf: copying a file puts the file on the pasteboard", urls.map(\.path) == [file.path])
+    }
+
     /// The pomodoro cycle makes every n-th break the long one; 0 turns it off.
     static func pomodoroCycle() {
         check("pomodoro: the fourth focus session gives the long break", Pomodoro.longBreakDue(focusDone: 4, every: 4))

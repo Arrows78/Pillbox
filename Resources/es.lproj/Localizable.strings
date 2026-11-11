@@ -990,3 +990,5 @@
 "A CSV file with the focus sessions of each day, for a spreadsheet." = "Un archivo CSV con las sesiones de concentración de cada día, para una hoja de cálculo.";
 "Focus sessions exported" = "Sesiones de concentración exportadas";
 "Could not export the focus sessions" = "No se pudieron exportar las sesiones de concentración";
+"Copy file" = "Copiar archivo";
+"Share…" = "Compartir…";

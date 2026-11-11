@@ -73,6 +73,8 @@ struct ShelfCell: View {
             if Annotator.canAnnotate(item.url) { Button("Annotate") { Annotator.open(item.url) } }
             Button("AirDrop") { shelf.airDrop([item]) }
             Button("Copy path") { shelf.copyPaths([item]) }
+            Button("Copy file") { shelf.copyFiles([item]) }
+            Button("Share…") { shelf.share([item]) }
             Divider()
             Button("Remove from shelf", role: .destructive) { shelf.remove([item.id]) }
         }
