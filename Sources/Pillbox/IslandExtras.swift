@@ -75,6 +75,7 @@ final class PointerHider {
     private var timer: Timer?
     private var monitor: Any?
     private var hidden = false
+    private var warned = false
     private typealias ConnFn = @convention(c) () -> Int32
     private typealias SetFn = @convention(c) (Int32, Int32, CFString, CFTypeRef) -> Int32
     private static let handle = dlopen("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", RTLD_LAZY)
@@ -88,7 +89,11 @@ final class PointerHider {
     func apply() {
         let seconds = UserDefaults.standard.integer(forKey: Self.key)
         if seconds > 0, timer == nil {
-            guard Self.allowInBackground() else { return }
+            guard Self.allowInBackground() else {
+                // The private symbols are missing on this macOS: say so once instead of doing nothing.
+                if !warned { warned = true; NotchModel.shared.show(Activity(symbol: "cursorarrow.slash", title: L("Hiding the pointer is not supported on this Mac"), tint: .orange)) }
+                return
+            }
             timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in MainActor.assumeIsolated { PointerHider.shared.tick() } }
             monitor = NSEvent.addGlobalMonitorForEvents(matching: [.mouseMoved, .leftMouseDown, .leftMouseDragged, .scrollWheel]) { _ in
                 DispatchQueue.main.async { MainActor.assumeIsolated { PointerHider.shared.show() } }

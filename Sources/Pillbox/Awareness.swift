@@ -99,11 +99,17 @@ enum SpaceInfo {
     private typealias ConnFn = @convention(c) () -> Int32
     private typealias CopyFn = @convention(c) (Int32) -> Unmanaged<CFArray>?
     private typealias ActiveFn = @convention(c) (Int32) -> UInt64
-    private static let handle = dlopen("/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics", RTLD_LAZY)
+    /// CoreGraphics first, then SkyLight: newer macOS releases moved these symbols there.
+    private static let handles: [UnsafeMutableRawPointer] = {
+        let paths: [String] = ["/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics",
+                               "/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight"]
+        return paths.compactMap { dlopen($0, RTLD_LAZY) }
+    }()
+    private static func symbol(_ name: String) -> UnsafeMutableRawPointer? { handles.lazy.compactMap { dlsym($0, name) }.first }
 
     /// Spaces of each display and the active space id, or nil when the API is unavailable.
     static func read() -> (displays: [[String: Any]], active: UInt64)? {
-        guard let h = handle, let c = dlsym(h, "CGSMainConnectionID"), let s = dlsym(h, "CGSCopyManagedDisplaySpaces"), let a = dlsym(h, "CGSGetActiveSpace") else { return nil }
+        guard let c = symbol("CGSMainConnectionID"), let s = symbol("CGSCopyManagedDisplaySpaces"), let a = symbol("CGSGetActiveSpace") else { return nil }
         let cid = unsafeBitCast(c, to: ConnFn.self)()
         guard let arr = unsafeBitCast(s, to: CopyFn.self)(cid)?.takeRetainedValue() as? [[String: Any]] else { return nil }
         return (arr, unsafeBitCast(a, to: ActiveFn.self)(cid))
