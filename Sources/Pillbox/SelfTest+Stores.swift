@@ -155,6 +155,29 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// A data backup holds the files of the data folder with a manifest, and reading it back lists their entries.
+    static func dataBackup() {
+        let name = "backup-check.json"
+        let file = Store.dir.appendingPathComponent(name)
+        let zip = FileManager.default.temporaryDirectory.appendingPathComponent("pillbox-check-\(UUID().uuidString).zip")
+        defer { try? FileManager.default.removeItem(at: file); try? FileManager.default.removeItem(at: zip) }
+        Store.save([1, 2], name)
+        do {
+            try DataBackup.export(to: zip)
+            let folder = try DataBackup.unpack(zip)
+            defer { try? FileManager.default.removeItem(at: folder.deletingLastPathComponent()) }
+            let entries = DataBackup.entries(in: folder)
+            check("data backup: the file and its entry count are listed", entries.contains(DataBackup.Entry(name: name, items: 2)))
+            check("data backup: the manifest is not listed as data", !entries.contains { $0.name == DataBackup.manifestName })
+        } catch {
+            check("data backup: export and unpack work", false)
+        }
+        let notABackup = FileManager.default.temporaryDirectory.appendingPathComponent("pillbox-not-a-backup-\(UUID().uuidString).zip")
+        defer { try? FileManager.default.removeItem(at: notABackup) }
+        try? Data("not a zip".utf8).write(to: notABackup)
+        check("data backup: a file that is not a backup is refused", (try? DataBackup.unpack(notABackup)) == nil)
+    }
+
     /// Background work pauses while the screen is locked, the Mac sleeps or Low Power Mode is on, and resumes after.
     static func powerGate() {
         let gate = PowerGate.shared

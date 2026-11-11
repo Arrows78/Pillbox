@@ -886,3 +886,15 @@
 "Reset %@?" = "¿Restablecer %@?";
 "Its settings go back to their defaults. Your data is kept." = "Sus ajustes vuelven a sus valores predeterminados. Tus datos se conservan.";
 "Reset this pane" = "Restablecer este panel";
+"Back up my data…" = "Hacer copia de mis datos…";
+"Saves notes, clipboard history, the shelf, snippets and quick actions to one zip file. Keychain items are not included." = "Guarda notas, historial del portapapeles, estantería, fragmentos y acciones rápidas en un solo archivo zip. Los elementos del Llavero no se incluyen.";
+"Back up…" = "Copia…";
+"Restore my data…" = "Restaurar mis datos…";
+"Lists what the backup holds before anything changes. Your current data is kept beside it; restart Pillbox to use it." = "Muestra lo que contiene la copia antes de cambiar nada. Tus datos actuales se conservan junto a ella; reinicia Pillbox para usarla.";
+"Your data is backed up." = "Tus datos tienen copia.";
+"Could not back up your data" = "No se pudieron guardar tus datos";
+"This file is not a Pillbox data backup" = "Este archivo no es una copia de datos de Pillbox";
+"Restore this backup?" = "¿Restaurar esta copia?";
+"Your current data is kept in a folder beside it. Restart Pillbox to use the restored data." = "Tus datos actuales se conservan en una carpeta junto a ella. Reinicia Pillbox para usar los datos restaurados.";
+"Data restored. Restart Pillbox to use it." = "Datos restaurados. Reinicia Pillbox para usarlos.";
+"Could not restore the data" = "No se pudieron restaurar los datos";

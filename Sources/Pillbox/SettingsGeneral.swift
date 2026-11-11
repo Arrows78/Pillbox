@@ -87,6 +87,12 @@ struct SettingsGeneralPane: View {
                 SettingsRow(title: "Restore defaults…", subtitle: "Puts every preference back to its default. Your data and Launch at login are kept.") {
                     Button("Restore…", role: .destructive) { restoreDefaults() }.controlSize(.small)
                 }
+                SettingsRow(title: "Back up my data…", subtitle: "Saves notes, clipboard history, the shelf, snippets and quick actions to one zip file. Keychain items are not included.") {
+                    Button("Back up…") { DataBackupActions.backUp() }.controlSize(.small)
+                }
+                SettingsRow(title: "Restore my data…", subtitle: "Lists what the backup holds before anything changes. Your current data is kept beside it; restart Pillbox to use it.") {
+                    Button("Restore…") { DataBackupActions.restore() }.controlSize(.small)
+                }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in

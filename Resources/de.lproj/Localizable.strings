@@ -886,3 +886,15 @@
 "Reset %@?" = "%@ zurücksetzen?";
 "Its settings go back to their defaults. Your data is kept." = "Die Einstellungen werden auf ihre Standardwerte zurückgesetzt. Deine Daten bleiben erhalten.";
 "Reset this pane" = "Diesen Bereich zurücksetzen";
+"Back up my data…" = "Meine Daten sichern…";
+"Saves notes, clipboard history, the shelf, snippets and quick actions to one zip file. Keychain items are not included." = "Speichert Notizen, Zwischenablage-Verlauf, Ablage, Snippets und Schnellaktionen in einer ZIP-Datei. Schlüsselbund-Einträge sind nicht enthalten.";
+"Back up…" = "Sichern…";
+"Restore my data…" = "Meine Daten wiederherstellen…";
+"Lists what the backup holds before anything changes. Your current data is kept beside it; restart Pillbox to use it." = "Zeigt, was die Sicherung enthält, bevor etwas geändert wird. Deine aktuellen Daten bleiben daneben erhalten; starte Pillbox neu, um sie zu nutzen.";
+"Your data is backed up." = "Deine Daten wurden gesichert.";
+"Could not back up your data" = "Daten konnten nicht gesichert werden";
+"This file is not a Pillbox data backup" = "Diese Datei ist keine Pillbox-Datensicherung";
+"Restore this backup?" = "Diese Sicherung wiederherstellen?";
+"Your current data is kept in a folder beside it. Restart Pillbox to use the restored data." = "Deine aktuellen Daten bleiben in einem Ordner daneben erhalten. Starte Pillbox neu, um die wiederhergestellten Daten zu nutzen.";
+"Data restored. Restart Pillbox to use it." = "Daten wiederhergestellt. Starte Pillbox neu, um sie zu nutzen.";
+"Could not restore the data" = "Daten konnten nicht wiederhergestellt werden";
