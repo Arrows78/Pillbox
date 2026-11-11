@@ -1017,6 +1017,10 @@ extension SelfTest {
         let checksum: UInt8 = 0x6E ^ 0x51 ^ 0x84 ^ 0x03 ^ 0x10 ^ 0x00 ^ 50
         check("ddc: brightness packet is 0x84 0x03 0x10 with the value and a checksum over both addresses",
               ddc == [0x84, 0x03, 0x10, 0x00, 50, checksum] && ExternalBrightness.packet(percent: 250)[4] == 100, "\(ddc)")
+        let eqPeak = Biquad.gainDB(Biquad.peak(1_000, gainDB: 6, rate: 48_000), at: 1_000, rate: 48_000)
+        let eqShelf = Biquad.gainDB(Biquad.shelf(100, gainDB: 12, rate: 48_000, high: false), at: 20, rate: 48_000)
+        check("equalizer: a peak band gives its gain at its centre, a shelf its gain well below the corner",
+              abs(eqPeak - 6) < 0.01 && abs(eqShelf - 12) < 0.5, "\(eqPeak) \(eqShelf)")
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]

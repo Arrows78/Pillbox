@@ -25,6 +25,15 @@ struct SettingsView: View {
     @AppStorage("brightnessHUD") private var brightnessHUD = true
     @AppStorage(ExtraBrightness.key) private var extraBrightness = false
     @AppStorage(WindowDrag.key) private var windowDrag = false
+    @AppStorage(EqualizerKeys.key) private var systemEQ = false
+    @AppStorage(EqualizerKeys.bassKey) private var eqBass = 0.0
+    @AppStorage(EqualizerKeys.midKey) private var eqMid = 0.0
+    @AppStorage(EqualizerKeys.trebleKey) private var eqTreble = 0.0
+
+    /// Applies the equalizer settings; the service exists only from macOS 14.2.
+    private func refreshEqualizer() {
+        if #available(macOS 14.2, *) { EqualizerService.shared.apply() }
+    }
     @AppStorage("focusIsland") private var focusIsland = true
     @AppStorage("callIsland") private var callIsland = true
     @AppStorage("hudStyle") private var hudStyle = "notch"
@@ -249,6 +258,17 @@ struct SettingsView: View {
                     }.controlSize(.small)
                 }
                 SettingsToggle("Live audio spectrum", "The equalizer follows the real sound. Asks for audio capture.", isOn: $liveSpectrum)
+            }
+            if #available(macOS 14.2, *) {
+                SettingsCard(title: "Equalizer") {
+                    SettingsToggle("System equalizer", "Shapes everything the Mac plays. Needs System Audio Recording. Off by default.", isOn: $systemEQ)
+                        .onChange(of: systemEQ) { _, _ in refreshEqualizer() }
+                    if systemEQ {
+                        SettingsRow(title: "Bass") { Slider(value: $eqBass, in: -12...12).frame(width: 180).onChange(of: eqBass) { _, _ in refreshEqualizer() } }
+                        SettingsRow(title: "Mid") { Slider(value: $eqMid, in: -12...12).frame(width: 180).onChange(of: eqMid) { _, _ in refreshEqualizer() } }
+                        SettingsRow(title: "Treble") { Slider(value: $eqTreble, in: -12...12).frame(width: 180).onChange(of: eqTreble) { _, _ in refreshEqualizer() } }
+                    }
+                }
             }
             SettingsCard(title: "Sounds") {
                 SettingsRow(title: "Typing sounds", subtitle: "A click on every key press, made on the Mac. Needs Input Monitoring. Which keys you press is never kept.") {

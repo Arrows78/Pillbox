@@ -746,3 +746,11 @@
 "External display brightness down" = "Brillo de la pantalla externa más bajo";
 "External display brightness" = "Brillo de la pantalla externa";
 "No external display found" = "No se encontró ninguna pantalla externa";
+"Equalizer" = "Ecualizador";
+"System equalizer" = "Ecualizador del sistema";
+"Shapes everything the Mac plays. Needs System Audio Recording. Off by default." = "Modifica todo lo que reproduce el Mac. Requiere grabación de audio del sistema. Desactivado por defecto.";
+"Bass" = "Graves";
+"Mid" = "Medios";
+"Treble" = "Agudos";
+"The equalizer could not start" = "El ecualizador no pudo iniciarse";
+"Allow System Audio Recording for Pillbox." = "Permite la grabación de audio del sistema para Pillbox.";

@@ -744,3 +744,11 @@ External display brightness up	Brillo de la pantalla externa más alto	Helligkei
 External display brightness down	Brillo de la pantalla externa más bajo	Helligkeit des externen Displays dunkler
 External display brightness	Brillo de la pantalla externa	Helligkeit des externen Displays
 No external display found	No se encontró ninguna pantalla externa	Kein externes Display gefunden
+Equalizer	Ecualizador	Equalizer
+System equalizer	Ecualizador del sistema	Systementzerrer
+Shapes everything the Mac plays. Needs System Audio Recording. Off by default.	Modifica todo lo que reproduce el Mac. Requiere grabación de audio del sistema. Desactivado por defecto.	Verändert alles, was der Mac wiedergibt. Benötigt Systemaudioaufnahme. Standardmäßig aus.
+Bass	Graves	Bässe
+Mid	Medios	Mitten
+Treble	Agudos	Höhen
+The equalizer could not start	El ecualizador no pudo iniciarse	Der Equalizer konnte nicht starten
+Allow System Audio Recording for Pillbox.	Permite la grabación de audio del sistema para Pillbox.	Systemaudioaufnahme für Pillbox erlauben.

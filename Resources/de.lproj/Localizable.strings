@@ -746,3 +746,11 @@
 "External display brightness down" = "Helligkeit des externen Displays dunkler";
 "External display brightness" = "Helligkeit des externen Displays";
 "No external display found" = "Kein externes Display gefunden";
+"Equalizer" = "Equalizer";
+"System equalizer" = "Systementzerrer";
+"Shapes everything the Mac plays. Needs System Audio Recording. Off by default." = "Verändert alles, was der Mac wiedergibt. Benötigt Systemaudioaufnahme. Standardmäßig aus.";
+"Bass" = "Bässe";
+"Mid" = "Mitten";
+"Treble" = "Höhen";
+"The equalizer could not start" = "Der Equalizer konnte nicht starten";
+"Allow System Audio Recording for Pillbox." = "Systemaudioaufnahme für Pillbox erlauben.";
