@@ -29,7 +29,10 @@ final class CleaningLock: ObservableObject {
             NotchModel.shared.show(Activity(symbol: "lock.open", title: "Accessibility needed", subtitle: "Allow Pillbox, then try again", tint: .orange)); return
         }
         let mask: CGEventMask = [CGEventType.keyDown, .keyUp, .flagsChanged].reduce(0) { $0 | (1 << $1.rawValue) } | (1 << 14)
-        guard let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask, callback: cleaningTap, userInfo: nil) else { return }
+        guard let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask, callback: cleaningTap, userInfo: nil) else {
+            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: "Could not lock the keyboard", subtitle: "Allow Pillbox in Privacy & Security › Accessibility", tint: .orange))
+            return
+        }
         tap = t; source = CFMachPortCreateRunLoopSource(nil, t, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: t, enable: true)

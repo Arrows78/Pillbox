@@ -55,7 +55,11 @@ final class HyperKey {
             UserDefaults.standard.set(false, forKey: "hyperKey"); return
         }
         let mask: CGEventMask = (1 << CGEventType.keyDown.rawValue) | (1 << CGEventType.keyUp.rawValue)
-        guard let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask, callback: hyperTap, userInfo: nil) else { return }
+        guard let t = CGEvent.tapCreate(tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap, eventsOfInterest: mask, callback: hyperTap, userInfo: nil) else {
+            NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: "Could not turn Hyper on", subtitle: "Allow Pillbox in Privacy & Security › Accessibility", tint: .orange))
+            UserDefaults.standard.set(false, forKey: "hyperKey")
+            return
+        }
         tap = t; source = CFMachPortCreateRunLoopSource(nil, t, 0)
         CFRunLoopAddSource(CFRunLoopGetMain(), source, .commonModes)
         CGEvent.tapEnable(tap: t, enable: true)
