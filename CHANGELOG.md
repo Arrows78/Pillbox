@@ -4,6 +4,19 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.9.0] - 2026-11-11
+
+### Added
+
+- **settings,updates,notifications**: Warn when both hides are on, name betas, search notifications
+- **settings**: Reset one pane to its defaults
+- **store**: Write each file with its schema version
+- **backup**: Back up and restore the data, listing what a backup holds first
+
+### Changed
+
+- **app**: Pause background polling while the screen is hidden
+
 ## [0.8.0] - 2026-11-11
 
 ### Added
@@ -195,6 +208,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.9.0]: https://github.com/Arrows78/Pillbox/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Arrows78/Pillbox/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Arrows78/Pillbox/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Arrows78/Pillbox/compare/v0.6.1...v0.7.0
