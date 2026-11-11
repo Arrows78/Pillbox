@@ -723,3 +723,8 @@
 "Copy code %@" = "Copiar el código %@";
 "Include beta versions" = "Incluir versiones beta";
 "Also offers pre-releases, which may be less stable." = "Ofrece también preversiones, que pueden ser menos estables.";
+"Keyboard backlight" = "Retroiluminación del teclado";
+"Keyboard backlight not available" = "Retroiluminación del teclado no disponible";
+"Keyboard backlight up" = "Retroiluminación del teclado más alta";
+"Keyboard backlight down" = "Retroiluminación del teclado más baja";
+"Turn keyboard backlight off" = "Apagar la retroiluminación del teclado";

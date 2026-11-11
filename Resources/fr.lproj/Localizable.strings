@@ -774,3 +774,8 @@
 "Copy code %@" = "Copier le code %@";
 "Include beta versions" = "Inclure les versions bêta";
 "Also offers pre-releases, which may be less stable." = "Propose aussi les préversions, potentiellement moins stables.";
+"Keyboard backlight" = "Rétroéclairage du clavier";
+"Keyboard backlight not available" = "Rétroéclairage du clavier indisponible";
+"Keyboard backlight up" = "Rétroéclairage du clavier plus fort";
+"Keyboard backlight down" = "Rétroéclairage du clavier plus faible";
+"Turn keyboard backlight off" = "Éteindre le rétroéclairage du clavier";

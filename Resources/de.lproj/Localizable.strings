@@ -723,3 +723,8 @@
 "Copy code %@" = "Code %@ kopieren";
 "Include beta versions" = "Beta-Versionen einbeziehen";
 "Also offers pre-releases, which may be less stable." = "Bietet auch Vorabversionen an, die weniger stabil sein können.";
+"Keyboard backlight" = "Tastaturbeleuchtung";
+"Keyboard backlight not available" = "Tastaturbeleuchtung nicht verfügbar";
+"Keyboard backlight up" = "Tastaturbeleuchtung heller";
+"Keyboard backlight down" = "Tastaturbeleuchtung dunkler";
+"Turn keyboard backlight off" = "Tastaturbeleuchtung ausschalten";
