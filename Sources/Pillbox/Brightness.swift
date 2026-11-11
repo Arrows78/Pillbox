@@ -11,7 +11,16 @@ enum DisplayBrightness {
     static func current() -> Float? {
         guard let h = handle, let sym = dlsym(h, "DisplayServicesGetBrightness") else { return nil }
         var v: Float = 0
-        return unsafeBitCast(sym, to: GetFn.self)(CGMainDisplayID(), &v) == 0 ? v : nil
+        return unsafeBitCast(sym, to: GetFn.self)(builtinDisplay(), &v) == 0 ? v : nil
+    }
+
+    /// The laptop's own screen when it is connected: the brightness keys change it even when an external display is the
+    /// main one, and the query fails on the external display. Falls back to the main display.
+    static func builtinDisplay() -> CGDirectDisplayID {
+        var ids = [CGDirectDisplayID](repeating: 0, count: 16)
+        var count: UInt32 = 0
+        CGGetOnlineDisplayList(16, &ids, &count)
+        return ids.prefix(Int(count)).first { CGDisplayIsBuiltin($0) != 0 } ?? CGMainDisplayID()
     }
 }
 
