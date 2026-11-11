@@ -67,6 +67,8 @@ enum Tab: String, CaseIterable, Identifiable {
 struct Activity: Identifiable {
     let id = UUID()
     var symbol: String
+    /// Already in the user's language: built with `localized(...)` where the island is made, or data such as a file name.
+    /// The island shows it as it is, so it is never looked up a second time.
     var title: String
     var subtitle: String? = nil
     var tint: Color = .white

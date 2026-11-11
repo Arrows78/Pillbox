@@ -21,7 +21,7 @@ enum SelfTest {
         shortcutsAndSearch(); networkAndAudioDevices(); teleprompterAndPrompterVoice(); tabBar(); prompterSpeeds(); teleprompterEnd()
         hyperKeyAndMenuBar(); focusCallsAndNotifications(); screenAskAndKeychain(); spectrum(); gesturesAndWorldClock()
         shakeAndBreaks(); downloadsAndBuild(); bluetoothBatteries(); quickCapture(); displayOptions()
-        activityQueue(); shellActions(); notificationFeed(); pillAndTheme()
+        activityQueue(); activityTitleDisplay(); shellActions(); notificationFeed(); pillAndTheme()
         usageAlert(); githubPRs(); edgeBar()
         mcpProtocol(); agentActions(); turnTokens(); panelSize(); playerAndLyrics(); terminalEnvironment(); terminalLook(); equalizer(); copyStackAndHistory()
         paletteMath(); settingsBackup(); updateVersions(); shortcutsAndDiagnostics()

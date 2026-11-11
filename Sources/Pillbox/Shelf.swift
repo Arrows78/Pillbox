@@ -60,7 +60,7 @@ final class ShelfService: ObservableObject {
             return
         }
         guard let svc = NSSharingService(named: .sendViaAirDrop), svc.canPerform(withItems: urls) else {
-            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "AirDrop unavailable", tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("AirDrop unavailable"), tint: .orange))
             return
         }
         svc.perform(withItems: urls)
@@ -128,13 +128,13 @@ final class ShelfService: ObservableObject {
                             self.add([out])
                             NotchModel.shared.show(Activity(symbol: "archivebox.fill", title: out.lastPathComponent, tint: .green))
                         } else {
-                            NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: "Archive failed", tint: .red))
+                            NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: localized("Archive failed"), tint: .red))
                         }
                     }
                 }
             }
             planned.insert(out.path)
-            do { try p.run() } catch { NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: "Archive failed", tint: .red)) }
+            do { try p.run() } catch { NotchModel.shared.show(Activity(symbol: "xmark.octagon", title: localized("Archive failed"), tint: .red)) }
         }
     }
 }

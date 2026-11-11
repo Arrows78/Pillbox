@@ -185,7 +185,7 @@ struct ActivityView: View {
             if let cg = activity.image?.cgImage(forProposedRect: nil, context: nil, hints: nil) { Image(decorative: cg, scale: 2).resizable().frame(width: 24, height: 24) }
             else { Image(systemName: activity.symbol).font(.system(size: 18, weight: .semibold)).foregroundStyle(activity.tint) }
             VStack(alignment: .leading, spacing: 1) {
-                Text(LocalizedStringKey(activity.title)).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+                Text(verbatim: activity.title).font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 if let s = activity.subtitle { Text(LocalizedStringKey(s)).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(1) }
             }
             Spacer(minLength: 0)
