@@ -20,10 +20,17 @@ struct PaletteCommand: Identifiable {
 
 @MainActor
 final class PaletteModel: ObservableObject {
-    @Published var query = ""
+    /// Changing the query rebuilds the rows; so does opening the palette, so live labels (keep awake, microphone) are current.
+    @Published var query = "" { didSet { refresh() } }
     @Published var selection = 0
+    /// The rows for the current query. Built when the query changes or the palette opens, not on every redraw.
+    private(set) var commands: [PaletteCommand] = []
 
-    var commands: [PaletteCommand] {
+    init() { refresh() }
+
+    func refresh() { commands = buildCommands() }
+
+    private func buildCommands() -> [PaletteCommand] {
         let notch = NotchModel.shared, timers = TimerService.shared
         var list = Tab.visible.enumerated().map { i, tab in
             PaletteCommand(localized: localized("Go to %@", tab.title) + (i < 9 ? "  ⌘\(i + 1)" : ""), symbol: tab.symbol) { notch.expand(tab) }
@@ -170,7 +177,7 @@ final class PaletteController {
     func toggle() { panel?.isVisible == true ? hide() : show() }
 
     func show() {
-        model.query = ""; model.selection = 0
+        model.query = ""; model.selection = 0; model.refresh()
         let p = panel ?? {
             let p = NotchPanel(contentRect: NSRect(origin: .zero, size: Self.size), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
             p.styleAsOverlay(level: .floating)
