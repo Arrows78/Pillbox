@@ -17,6 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var monitors: [Any] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Settings shows these as on by default, so the readers need the same default until the user touches them.
+        UserDefaults.standard.register(defaults: ["hyperEscape": true])
         controller = NotchWindowController()
         // pkill and install.sh send SIGTERM, which skips applicationWillTerminate: route it there so Caps Lock is restored.
         signal(SIGTERM, SIG_IGN)
@@ -28,7 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         BatteryService.shared.start()
         BatteryLog.shared.start()
         BluetoothIslands.shared.apply()
-        if PermissionsCenter.shared.state(of: .calendar) == .granted { CalendarService.shared.start() }
+        CalendarService.shared.watch()
         DownloadsWatcher.shared.start()
         ScreenshotWatcher.shared.start()
         DriveWatcher.shared.start()
@@ -75,7 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         WeatherService.shared.start()
         StocksService.shared.start()
         AIUsageService.shared.start()
-        RemindersService.shared.start()
+        RemindersService.shared.watch()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
         setupMainMenu()

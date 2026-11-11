@@ -81,7 +81,7 @@ struct CalendarTab: View {
                 VStack(spacing: 8) {
                     Image(systemName: "calendar.badge.exclamationmark").font(.system(size: 26)).foregroundStyle(.white.opacity(0.3))
                     Text("Calendar access is off").foregroundStyle(.secondary)
-                    Button("Allow Calendar Access") { PermissionsCenter.shared.request(.calendar); CalendarService.shared.start() }.buttonStyle(PillButtonStyle(tint: .red))
+                    Button("Allow Calendar Access") { PermissionsCenter.shared.request(.calendar) }.buttonStyle(PillButtonStyle(tint: .red))
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if model.events.isEmpty {
                 VStack(spacing: 6) {

@@ -344,19 +344,32 @@ final class CalendarService: ObservableObject {
     @Published private(set) var next: (title: String, start: Date, end: Date)?
     private let store = EKEventStore()
     private var timer: Timer?
+    private var watchdog: Timer?
 
+    /// Asks for access (the Allow buttons), with the system prompt when there is one.
     func start() {
         store.requestFullAccessToEvents { [weak self] ok, _ in
             guard ok else { return }
-            DispatchQueue.main.async {
-                MainActor.assumeIsolated {
-                    self?.refresh()
-                    self?.timer?.invalidate()   // start() runs again when access is granted later
-                    self?.timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
-                        MainActor.assumeIsolated { self?.refresh() }
-                    }
-                }
-            }
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.begin() } }
+        }
+    }
+
+    /// Called at launch. It never prompts, and a timer picks up access granted later in System Settings.
+    func watch() {
+        begin()
+        guard watchdog == nil else { return }
+        watchdog = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.begin() }
+        }
+    }
+
+    /// Starts the refresh once access exists, and only once.
+    private func begin() {
+        guard timer == nil, EKEventStore.authorizationStatus(for: .event) == .fullAccess else { return }
+        refresh()
+        AgendaModel.shared.refresh()
+        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
         }
     }
 

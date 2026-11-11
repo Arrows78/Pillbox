@@ -18,11 +18,25 @@ final class RemindersService: ObservableObject {
 
     var authorized: Bool { EKEventStore.authorizationStatus(for: .reminder) == .fullAccess }
 
+    private var observing = false
+    private var watchdog: Timer?
+
+    /// Starts once access exists, and only once. It never prompts.
     func start() {
-        guard authorized else { return }
+        guard !observing, authorized else { return }
+        observing = true
         refresh()
         NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: store, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
+        }
+    }
+
+    /// Called at launch. A timer picks up access granted later in System Settings.
+    func watch() {
+        start()
+        guard watchdog == nil else { return }
+        watchdog = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.start() }
         }
     }
 
