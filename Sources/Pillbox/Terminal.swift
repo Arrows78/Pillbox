@@ -186,7 +186,7 @@ struct TerminalTab: View {
                 .buttonStyle(.plain).font(Design.label).foregroundStyle(.white.opacity(0.8))
             }
             TerminalHost(view: store.selected?.view)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: Design.rowRadius))
         }
     }
 
@@ -200,7 +200,7 @@ struct TerminalTab: View {
             }
         }
         .padding(.horizontal, 9).padding(.vertical, 4)
-        .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(selected ? 0.18 : 0.06)))
+        .background(RoundedRectangle(cornerRadius: Design.chipRadius).fill(Color.white.opacity(selected ? 0.18 : 0.06)))
         .contentShape(Rectangle())
         .onTapGesture { store.select(session.id) }
     }

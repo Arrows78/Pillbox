@@ -9,7 +9,7 @@ struct ShelfTab: View {
         Group {
         if shelf.items.isEmpty {
             EmptyState(symbol: "tray.and.arrow.down", title: "Drop files on the notch to stash them", message: "They stay here, ready to drag out or send",
-                       actionTitle: "Add files…", tint: .cyan) { shelf.browse() }
+                       actionTitle: "Add files…", tint: Tab.shelf.tint) { shelf.browse() }
         } else {
             VStack(spacing: Design.gap) {
                 ScrollView(showsIndicators: false) {
@@ -18,12 +18,12 @@ struct ShelfTab: View {
                         Button { shelf.browse() } label: {
                             Image(systemName: "plus").font(.system(size: 16, weight: .medium)).foregroundStyle(Design.secondary)
                                 .frame(maxWidth: .infinity).frame(height: ShelfCell.height)
-                        }.buttonStyle(.plain).rowCard(radius: 10).hoverTip(localized("Add files…")).accessibilityLabel("Add files…")
+                        }.buttonStyle(.plain).rowCard(radius: Design.tileRadius).hoverTip(localized("Add files…")).accessibilityLabel("Add files…")
                     }
                 }
                 HStack(spacing: 6) {
                     let target = shelf.selection.isEmpty ? shelf.items : shelf.selected
-                    Button { shelf.airDrop(target) } label: { Label("AirDrop", systemImage: "dot.radiowaves.left.and.right") }.buttonStyle(PillButtonStyle(tint: .cyan.opacity(0.55)))
+                    Button { shelf.airDrop(target) } label: { Label("AirDrop", systemImage: "dot.radiowaves.left.and.right") }.buttonStyle(PillButtonStyle(tint: Tab.shelf.tint.opacity(0.55)))
                     Button("Zip / Unzip") { shelf.zipOrUnzip(target) }.buttonStyle(PillButtonStyle())
                     let kinds = Array(Set(target.flatMap { ConvertTarget.targets(for: $0.url) })).sorted { $0.rawValue < $1.rawValue }
                     if !kinds.isEmpty {
@@ -60,7 +60,7 @@ struct ShelfCell: View {
                 .frame(height: 28, alignment: .top)
         }
         .padding(.horizontal, 6).frame(maxWidth: .infinity).frame(height: Self.height)
-        .rowCard(radius: 10, selected: selected ? Color.cyan.opacity(0.3) : nil)
+        .rowCard(radius: Design.tileRadius, selected: selected ? Tab.shelf.tint.opacity(0.3) : nil)
         .overlay(alignment: .topTrailing) {
             if selected { Image(systemName: "checkmark.circle.fill").font(Design.body).foregroundStyle(.cyan).padding(5) }
         }

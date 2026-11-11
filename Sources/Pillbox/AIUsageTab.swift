@@ -40,19 +40,13 @@ struct AIUsageTab: View {
     private func providerRow(_ p: ProviderUsage, selected: Bool, action: @escaping () -> Void) -> some View {
         let idle = p.unit != UsageUnit.requests.rawValue && p.week == 0
         return Button(action: action) {
-            HStack(spacing: 6) {
-                Image(systemName: p.symbol).font(Design.caption).frame(width: 14)
-                Text(verbatim: p.name).font(.system(size: 11, weight: selected ? .semibold : .regular)).lineLimit(1).truncationMode(.tail)
-                Spacer(minLength: 0)
+            ListRow(title: p.name, selected: selected, dimmed: idle, accent: Tab.ai.tint) {
+                Image(systemName: p.symbol).font(Design.caption)
+            } trailing: {
                 if !idle { Text(verbatim: AIUsageService.short(p.week)).font(.system(size: 10, design: .rounded)).foregroundStyle(.secondary) }
             }
-            .foregroundStyle(.white.opacity(idle ? 0.45 : 1))
-            .padding(.horizontal, 8).padding(.vertical, 5)
-            .background(selected ? Color.purple.opacity(0.35) : Design.card, in: RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous))
-            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
     /// The selected tool: its limit, its figures and its daily chart. Full strength, even when the tool is idle.
@@ -85,13 +79,13 @@ struct AIUsageTab: View {
             Spacer(minLength: 0)
             if unit != .requests {
                 VStack(alignment: .leading, spacing: 4) {
-                    Group {
+                    SectionHeader({
                         switch unit {
                         case .edits: Text("AI-written code edits per day")
                         case .requests: Text("Monthly budget: no daily history")
                         case .tokens: Text("Tokens per day (cache reads excluded)")
                         }
-                    }.font(Design.caption).foregroundStyle(.secondary)
+                    }())
                     HStack(alignment: .bottom, spacing: 8) {
                         ForEach(Array(provider.days.enumerated()), id: \.offset) { _, day in
                             VStack(spacing: 3) {
@@ -107,8 +101,6 @@ struct AIUsageTab: View {
     }
 
     private func stat(_ name: LocalizedStringKey, _ n: Int) -> some View {
-        HStack { Text(name).foregroundStyle(.secondary); Spacer(); Text(AIUsageService.short(n)).font(.system(size: 14, weight: .semibold, design: .rounded)) }
-            .font(Design.label).padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Design.card, in: RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous))
+        StatTile(label: name, value: AIUsageService.short(n))
     }
 }

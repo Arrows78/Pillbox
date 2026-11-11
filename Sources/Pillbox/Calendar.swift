@@ -194,7 +194,7 @@ struct CalendarTab: View {
             }
         }
         .opacity(e.end < Date() && !e.allDay ? 0.4 : 1)
-        .padding(8).background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+        .padding(8).background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: Design.tileRadius))
     }
 }
 

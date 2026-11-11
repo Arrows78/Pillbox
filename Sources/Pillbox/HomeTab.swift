@@ -144,9 +144,9 @@ struct HomeTab: View {
                 Text(title).font(Design.caption).lineLimit(1).minimumScaleFactor(0.75).padding(.horizontal, 2)
             }
             .frame(maxWidth: .infinity, minHeight: 44, maxHeight: .infinity)
-            .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .background(active ? Color.orange.opacity(0.30) : card, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(active ? Color.orange.opacity(0.6) : Design.hairline, lineWidth: 0.5))
+            .contentShape(RoundedRectangle(cornerRadius: Design.tileRadius, style: .continuous))
+            .background(active ? Color.orange.opacity(0.30) : card, in: RoundedRectangle(cornerRadius: Design.tileRadius, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Design.tileRadius, style: .continuous).strokeBorder(active ? Color.orange.opacity(0.6) : Design.hairline, lineWidth: 0.5))
         }.buttonStyle(.plain)
     }
 }
@@ -161,7 +161,7 @@ struct HomeNowPlaying: View {
                 if let a = music.artwork { Image(nsImage: a).resizable() }
                 else { Rectangle().fill(.white.opacity(0.08)).overlay(Image(systemName: "music.note").foregroundStyle(.secondary)) }
             }
-            .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .frame(width: 64, height: 64).clipShape(RoundedRectangle(cornerRadius: Design.tileRadius, style: .continuous))
             VStack(alignment: .leading, spacing: 3) {
                 Text(verbatim: music.hasTrack ? music.title : localized(music.automationDenied == nil ? "Nothing playing" : "Music is open")).font(Design.titleStrong).lineLimit(1).minimumScaleFactor(music.hasTrack ? 1 : 0.8)
                 Text(verbatim: music.hasTrack ? music.artist : (music.automationDenied.map { localized("Allow Automation for %@ in Settings", $0.rawValue) } ?? localized("Start Spotify or Apple Music"))).font(Design.label).foregroundStyle(.secondary).lineLimit(music.hasTrack ? 1 : 2)

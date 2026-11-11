@@ -19,7 +19,7 @@ struct LauncherTab: View {
     @State private var page = LauncherPage.apps
     var body: some View {
         VStack(spacing: Design.gap) {
-            PillSegmented(options: [LauncherPage.apps, .shortcuts, .actions], selection: $page, tint: .indigo) { $0.title }.frame(width: 300)
+            PillSegmented(options: [LauncherPage.apps, .shortcuts, .actions], selection: $page, tint: Tab.launcher.tint) { $0.title }.frame(width: 300)
             switch page {
             case .apps: AppsGrid()
             case .shortcuts: ShortcutsGrid()
@@ -67,7 +67,7 @@ struct AppsGrid: View {
                             .font(Design.caption).lineLimit(1).minimumScaleFactor(0.75).truncationMode(.middle).padding(.horizontal, 4)
                     }
                     .frame(maxWidth: .infinity).frame(height: 78)
-                    .rowCard(radius: 10)
+                    .rowCard(radius: Design.tileRadius)
                     .onTapGesture { store.launch(path) }
                     .onDrag { dragging = path; return NSItemProvider(object: path as NSString) }
                     .onDrop(of: [.text], isTargeted: nil) { _ in
@@ -81,7 +81,7 @@ struct AppsGrid: View {
                 }
                 Button { store.add() } label: {
                     Image(systemName: "plus").font(.system(size: 15, weight: .medium)).foregroundStyle(Design.secondary).frame(maxWidth: .infinity).frame(height: 78)
-                }.buttonStyle(.plain).rowCard(radius: 10).hoverTip(localized("Add an app")).accessibilityLabel("Add an app")
+                }.buttonStyle(.plain).rowCard(radius: Design.tileRadius).hoverTip(localized("Add an app")).accessibilityLabel("Add an app")
             }
         }
     }

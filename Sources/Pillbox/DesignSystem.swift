@@ -8,6 +8,13 @@ enum Design {
     static let radius: CGFloat = 12
     static let cardHover = Color.white.opacity(0.12)
     static let rowRadius: CGFloat = 8
+    // Radius scale: chip < row < tile < card < artwork. A tab picks a role, never a number.
+    /// Swatches, small chips inside a row.
+    static let chipRadius: CGFloat = 6
+    /// Tiles in a grid: apps, shortcuts, quick actions.
+    static let tileRadius: CGFloat = 10
+    /// Album art and other pictures.
+    static let artworkRadius: CGFloat = 14
     static let gap: CGFloat = 8
     static let secondary = Color.white.opacity(0.55)
     static let tertiary = Color.white.opacity(0.35)
@@ -48,6 +55,63 @@ struct EmptyState: View {
         .multilineTextAlignment(.center).lineLimit(2).fixedSize(horizontal: false, vertical: true)
         .padding(.horizontal, 24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Small caption above a group of rows ("Today", "Tokens per day"). `Text` form for captions that change with the data.
+struct SectionHeader: View {
+    private let text: Text
+    init(_ title: LocalizedStringKey) { text = Text(title) }
+    init(_ text: Text) { self.text = text }
+
+    var body: some View {
+        text.font(Design.captionStrong).foregroundStyle(Design.secondary).textCase(.uppercase)
+            .frame(maxWidth: .infinity, alignment: .leading).accessibilityAddTraits(.isHeader)
+    }
+}
+
+/// One figure on a card: its name on the left, the value on the right, an optional detail line under the name.
+struct StatTile: View {
+    let label: LocalizedStringKey
+    let value: String
+    var detail: LocalizedStringKey?
+
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label).font(Design.label).foregroundStyle(.secondary)
+                if let detail { Text(detail).font(Design.caption).foregroundStyle(Design.tertiary) }
+            }
+            Spacer(minLength: 8)
+            Text(verbatim: value).font(.system(size: 14, weight: .semibold, design: .rounded)).monospacedDigit()
+        }
+        .padding(.horizontal, 8).padding(.vertical, 3)
+        .background(Design.card, in: RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous))
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// A selectable row of a list: a leading icon, a title, and something on the right (a count, a badge). Selection uses the tab's accent.
+struct ListRow<Leading: View, Trailing: View>: View {
+    let title: String
+    var selected = false
+    var dimmed = false
+    var accent: Color = .accentColor
+    @ViewBuilder var leading: Leading
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: 6) {
+            leading.frame(width: 14)
+            Text(verbatim: title).font(.system(size: 11, weight: selected ? .semibold : .regular)).lineLimit(1).truncationMode(.tail)
+            Spacer(minLength: 0)
+            trailing
+        }
+        .foregroundStyle(.white.opacity(dimmed ? 0.45 : 1))
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(selected ? accent.opacity(0.35) : Design.card, in: RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous))
+        .contentShape(Rectangle())
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

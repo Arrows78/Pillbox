@@ -18,7 +18,7 @@ struct MusicTab: View {
                     if let a = music.artwork { Image(nsImage: a).resizable() }
                     else { Rectangle().fill(card).overlay(Image(systemName: "music.note")) }
                 }
-                .frame(width: 190, height: 190).clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(width: 190, height: 190).clipShape(RoundedRectangle(cornerRadius: Design.artworkRadius, style: .continuous))
                 .shadow(color: .black.opacity(0.6), radius: 10, y: 4)
                 .onTapGesture { music.openPlayer() }
 
@@ -123,7 +123,7 @@ struct AppVolumeRow: View {
             }
         }
         .padding(.horizontal, 8).padding(.vertical, editing ? 6 : 0)
-        .background(card, in: RoundedRectangle(cornerRadius: 7))
+        .background(card, in: RoundedRectangle(cornerRadius: Design.rowRadius))
     }
 
     /// One band of this app's equalizer; each move is stored and applied to its tap.

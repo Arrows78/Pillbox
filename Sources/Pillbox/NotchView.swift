@@ -159,7 +159,7 @@ struct TabContent: View {
         case .clipboard: ClipboardTab()
         case .shelf: ShelfTab()
         case .launcher: LauncherTab()
-        case .terminal: TerminalTab().clipShape(RoundedRectangle(cornerRadius: 8))
+        case .terminal: TerminalTab().clipShape(RoundedRectangle(cornerRadius: Design.rowRadius))
         case .prompter: PrompterTab()
         case .calendar: CalendarTab()
         }
@@ -225,7 +225,7 @@ struct ApprovalView: View {
             }
             Text(approval.detail).font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.8))
                 .lineLimit(2).frame(maxWidth: .infinity, alignment: .leading)
-                .padding(6).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+                .padding(6).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: Design.chipRadius))
             HStack {
                 Button("Ask in terminal") { model.resolveApproval("ask") }
                 Spacer()

@@ -57,7 +57,7 @@ struct ClipboardTab: View {
 struct ClipboardModePicker: View {
     @Binding var mode: ClipboardPage
     var body: some View {
-        PillSegmented(options: [ClipboardPage.history, .snippets], selection: $mode, tint: .mint.opacity(0.45)) { $0 == .history ? "History" : "Snippets" }.frame(width: 190)
+        PillSegmented(options: [ClipboardPage.history, .snippets], selection: $mode, tint: Tab.clipboard.tint.opacity(0.45)) { $0 == .history ? "History" : "Snippets" }.frame(width: 190)
     }
 }
 
@@ -73,7 +73,7 @@ struct SnippetsView: View {
                 ClipboardModePicker(mode: $mode)
                 TextField("Name", text: $store.draftName).pillField().focused($focused)
                 TextField("Text to paste", text: $store.draftText, axis: .vertical).lineLimit(2, reservesSpace: true).pillField().focused($focused)
-                Button("Save snippet") { store.add() }.buttonStyle(PillButtonStyle(tint: .mint.opacity(0.45)))
+                Button("Save snippet") { store.add() }.buttonStyle(PillButtonStyle(tint: Tab.clipboard.tint.opacity(0.45)))
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .frame(width: 220)
@@ -167,12 +167,12 @@ struct ClipCard: View {
 
     @ViewBuilder private var content: some View {
         if let img = clip.image(for: item) {
-            Image(nsImage: img).resizable().scaledToFill().frame(width: 156).frame(maxHeight: .infinity).clipShape(RoundedRectangle(cornerRadius: 6))
+            Image(nsImage: img).resizable().scaledToFill().frame(width: 156).frame(maxHeight: .infinity).clipShape(RoundedRectangle(cornerRadius: Design.chipRadius))
         } else if let t = item.text {
             switch ClipboardService.kind(of: t) {
             case .color(let swatch, let hex):
                 VStack(alignment: .leading, spacing: 4) {
-                    RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: swatch)).overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Design.hairline, lineWidth: 0.5))
+                    RoundedRectangle(cornerRadius: Design.chipRadius).fill(Color(nsColor: swatch)).overlay(RoundedRectangle(cornerRadius: Design.chipRadius).strokeBorder(Design.hairline, lineWidth: 0.5))
                         .frame(maxHeight: 96)
                     Text(hex.uppercased()).font(.system(size: 11, weight: .medium, design: .monospaced))
                     let rgb = swatch.usingColorSpace(.sRGB) ?? swatch

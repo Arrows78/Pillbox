@@ -10,11 +10,11 @@ struct RemindersTab: View {
 
     var body: some View {
         if !rem.authorized {
-            EmptyState(symbol: "checklist", title: "Pillbox needs access to your reminders", actionTitle: "Allow", tint: .blue) { PermissionsCenter.shared.request(.reminders) }
+            EmptyState(symbol: "checklist", title: "Pillbox needs access to your reminders", actionTitle: "Allow", tint: Tab.reminders.tint) { PermissionsCenter.shared.request(.reminders) }
         } else {
             VStack(spacing: Design.gap) {
                 HStack(spacing: 6) {
-                    Image(systemName: "plus.circle.fill").foregroundStyle(.blue)
+                    Image(systemName: "plus.circle.fill").foregroundStyle(Tab.reminders.tint)
                     TextField("Add a reminder, e.g. call mum tomorrow at 9am", text: $rem.draft).textFieldStyle(.plain).font(Design.body).focused($focused)
                         .onSubmit { rem.add() }
                         .keepsIslandOpen(while: focused, in: model)
@@ -24,7 +24,7 @@ struct RemindersTab: View {
                 .overlay(RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous).strokeBorder(Design.hairline, lineWidth: 0.5))
                 HStack(spacing: 4) {
                     ForEach(ReminderFilter.allCases, id: \.self) { f in
-                        FilterChip(symbol: f.symbol, label: localized(f.title), selected: filter == f, tint: .blue) { filter = f }
+                        FilterChip(symbol: f.symbol, label: localized(f.title), selected: filter == f, tint: Tab.reminders.tint) { filter = f }
                     }
                     Spacer()
                 }

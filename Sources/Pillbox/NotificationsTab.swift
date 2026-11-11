@@ -33,7 +33,7 @@ struct NotificationsTab: View {
                     if apps.count > 1 {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 4) {
-                                FilterChip(symbol: "tray.full", label: localized("All"), selected: app == nil, tint: .red) { app = nil }
+                                FilterChip(symbol: "tray.full", label: localized("All"), selected: app == nil, tint: Tab.notifications.tint) { app = nil }
                                 ForEach(apps, id: \.self) { id in
                                     Button { app = app == id ? nil : id } label: {
                                         HStack(spacing: 4) {
@@ -42,8 +42,8 @@ struct NotificationsTab: View {
                                             Text(verbatim: "\(items.filter { $0.app == id }.count)").font(.system(size: 9)).foregroundStyle(Design.secondary)
                                         }
                                         .padding(.horizontal, 8).frame(height: 22)
-                                        .foregroundStyle(app == id ? Color.red : .white.opacity(0.75))
-                                        .background(app == id ? Color.red.opacity(0.22) : .white.opacity(0.06), in: Capsule())
+                                        .foregroundStyle(app == id ? Tab.notifications.tint : .white.opacity(0.75))
+                                        .background(app == id ? Tab.notifications.tint.opacity(0.22) : .white.opacity(0.06), in: Capsule())
                                     }.buttonStyle(.plain).accessibilityAddTraits(app == id ? .isSelected : [])
                                 }
                             }
@@ -85,7 +85,7 @@ struct NotificationsTab: View {
             } else if mirror.queryFailed {
                 EmptyState(symbol: "exclamationmark.triangle", title: "Could not read notifications")
             } else {
-                EmptyState(symbol: "bell.badge", title: "Reading notifications needs Full Disk Access", actionTitle: "Open Settings", tint: .red) { PermissionsCenter.shared.openSettings(.fullDisk) }
+                EmptyState(symbol: "bell.badge", title: "Reading notifications needs Full Disk Access", actionTitle: "Open Settings", tint: Tab.notifications.tint) { PermissionsCenter.shared.openSettings(.fullDisk) }
             }
         }
         .onAppear { mirror.refresh() }
