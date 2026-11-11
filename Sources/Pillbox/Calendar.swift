@@ -66,6 +66,7 @@ final class AgendaModel: ObservableObject {
 
 struct CalendarTab: View {
     @ObservedObject var model = AgendaModel.shared
+    @ObservedObject var feeds = ICSFeeds.shared
 
     private var days: [(label: String, events: [AgendaEvent])] {
         let cal = Calendar.current
@@ -87,6 +88,9 @@ struct CalendarTab: View {
                 VStack(spacing: 6) {
                     Image(systemName: "calendar").font(.system(size: 26)).foregroundStyle(.white.opacity(0.3))
                     Text("No events today or tomorrow").foregroundStyle(.secondary)
+                    if !feeds.failed.isEmpty {
+                        Text("Some calendar links could not be loaded").font(.system(size: 11)).foregroundStyle(.orange)
+                    }
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
