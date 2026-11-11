@@ -49,7 +49,7 @@ final class NotificationFeed {
             if codes, let code = Self.verificationCode(in: n.body) ?? Self.verificationCode(in: n.title) {
                 NotchModel.shared.show(Activity(symbol: "key.fill", title: localized("Code %@", code), subtitle: n.title.isEmpty ? n.app : n.title, tint: .green,
                                                 actionTitle: "Copy", action: { TextCopy.copy(code) }, duration: 12))
-            } else if mirror {
+            } else if mirror, !NotificationMute.isMuted(n.app) {
                 NotchModel.shared.show(Activity(symbol: "bell.fill", title: n.title.isEmpty ? n.app : n.title, subtitle: n.body.isEmpty ? nil : String(n.body.prefix(90)), tint: .yellow, duration: 5))
             }
         }

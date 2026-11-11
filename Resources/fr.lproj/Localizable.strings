@@ -963,3 +963,9 @@
 "Until" = "Jusqu'à";
 "Islands wait between these hours. Urgent ones still show." = "Les îles attendent entre ces heures. Les urgentes s'affichent quand même.";
 "The islands come back at this hour." = "Les îles reviennent à cette heure.";
+"Stop islands from %@" = "Ne plus afficher les îles de %@";
+"Show islands from %@" = "Afficher les îles de %@";
+"Clear entries after" = "Retirer les entrées après";
+"Older entries leave the shelf. The files themselves stay where they are." = "Les entrées plus anciennes quittent l'étagère. Les fichiers restent à leur place.";
+"1 day" = "1 jour";
+"30 days" = "30 jours";

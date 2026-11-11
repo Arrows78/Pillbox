@@ -68,6 +68,12 @@ struct NotificationsTab: View {
                                 .rowCard()
                                 .onTapGesture { if n.app != MessageReply.app { open(n.app) } }
                                 .contextMenu {
+                                    let muted = NotificationMute.isMuted(n.app)
+                                    Button(localized(muted ? "Show islands from %@" : "Stop islands from %@", Self.name(n.app))) {
+                                        NotificationMute.setMuted(n.app, !muted)
+                                    }
+                                }
+                                .contextMenu {
                                     Button("Open the app") { open(n.app) }
                                     if let code = NotificationFeed.verificationCode(in: n.body) { Button(LocalizedStringKey(localized("Copy code %@", code))) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(code, forType: .string) } }
                                     Button("Copy text") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString([n.title, n.body].filter { !$0.isEmpty }.joined(separator: "\n"), forType: .string) }

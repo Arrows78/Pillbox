@@ -8,6 +8,7 @@ struct SettingsTabsPane: View {
     @AppStorage(Preferences.menuBarAutoHide.key) private var menuBarAutoHide = Preferences.menuBarAutoHide.defaultValue
     @AppStorage(Preferences.menuBarCalendar.key) private var menuBarCalendar = Preferences.menuBarCalendar.defaultValue
     @AppStorage(Preferences.menuBarCalendarHours.key) private var menuBarCalendarHours = Preferences.menuBarCalendarHours.defaultValue
+    @AppStorage(Preferences.shelfKeepDays.key) private var shelfKeepDays = Preferences.shelfKeepDays.defaultValue
 
     var body: some View {
         SettingsPage(pane: .tabs) {
@@ -15,6 +16,13 @@ struct SettingsTabsPane: View {
                 TabsPicker()
             }
             HomeLayoutSettings()
+            SettingsCard(title: "Shelf") {
+                SettingsRow(title: "Clear entries after", subtitle: "Older entries leave the shelf. The files themselves stay where they are.") {
+                    Picker("", selection: $shelfKeepDays) {
+                        Text("Never").tag(0); Text("1 day").tag(1); Text("7 days").tag(7); Text("30 days").tag(30)
+                    }.labelsHidden().frame(width: 170)
+                }
+            }
             SettingsCard(title: "Clipboard") {
                 ForEach(ClipboardImport.Source.allCases) { s in
                     SettingsRow(title: LocalizedStringKey(localized("Import history from %@", s.name)), subtitle: s.installed ? "Text items only. Their files are not changed." : "Not found on this Mac.") {

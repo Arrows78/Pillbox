@@ -3,9 +3,20 @@ import AppKit
 struct ShelfItem: Identifiable, Codable, Equatable {
     var id = UUID()
     var path: String
+    /// When the file was staged. Files written before this existed count as staged now.
+    var added = Date()
     var url: URL { URL(fileURLWithPath: path) }
     var name: String { url.lastPathComponent }
     var exists: Bool { FileManager.default.fileExists(atPath: path) }
+
+    init(path: String) { self.path = path }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        path = try c.decode(String.self, forKey: .path)
+        added = try c.decodeIfPresent(Date.self, forKey: .added) ?? Date()
+    }
 }
 
 @MainActor
@@ -21,12 +32,19 @@ final class ShelfService: ObservableObject {
     }
 
     /// Drops the entries whose file was moved or deleted since they were added. Runs when the tab opens, not only at launch.
-    func purgeMissing() {
+    func purgeMissing(now: Date = Date()) {
         let before = items.count
         items.removeAll { !$0.exists }
+        // Entries older than the days chosen are dropped from the shelf; the files themselves stay where they are.
+        if let cutoff = Self.cutoff(keepDays: Preferences.shelfKeepDays.value, now: now) { items.removeAll { $0.added < cutoff } }
         guard items.count != before else { return }
         selection = selection.filter { id in items.contains { $0.id == id } }
         save()
+    }
+
+    /// The date before which a shelf entry is too old, or nil when entries are kept for good (0 days).
+    nonisolated static func cutoff(keepDays: Int, now: Date) -> Date? {
+        keepDays > 0 ? now.addingTimeInterval(-TimeInterval(keepDays) * 86400) : nil
     }
 
     func remove(_ ids: Set<UUID>) { items.removeAll { ids.contains($0.id) }; selection.subtract(ids); save() }

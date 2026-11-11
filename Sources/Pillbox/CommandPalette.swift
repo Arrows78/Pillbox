@@ -171,6 +171,13 @@ struct PaletteView: View {
                 .onKeyPress(.downArrow) { model.selection = min(model.selection + 1, cmds.count - 1); return .handled }
                 .onKeyPress(.upArrow) { model.selection = max(model.selection - 1, 0); return .handled }
                 .onKeyPress(.escape) { close(); return .handled }
+                // ⌘1–9 run the row with that number, the first nine rows.
+                .onKeyPress(keys: Set((1...9).map { KeyEquivalent(Character(String($0))) })) { press in
+                    guard press.modifiers.contains(.command), let n = Int(press.characters), cmds.indices.contains(n - 1) else { return .ignored }
+                    model.selection = n - 1
+                    run(cmds)
+                    return .handled
+                }
             Divider()
             ScrollView {
                 VStack(spacing: 2) {

@@ -155,6 +155,24 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// Shelf entries age out after the days chosen, an entry from before dates still loads, and muting is per app.
+    static func shelfAndMute() {
+        let now = Date()
+        check("shelf: no cutoff when entries are kept for good", ShelfService.cutoff(keepDays: 0, now: now) == nil)
+        check("shelf: entries older than the days are cut", ShelfService.cutoff(keepDays: 7, now: now).map { now.timeIntervalSince($0) } == 7 * 86400)
+        let old = Data(#"{"id":"6B6F2C1E-0000-4000-8000-000000000001","path":"/tmp/a.txt"}"#.utf8)
+        let item = try? JSONDecoder().decode(ShelfItem.self, from: old)
+        check("shelf: an entry from before dates still loads", item?.path == "/tmp/a.txt")
+        let key = NotificationMute.key
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.removeObject(forKey: key)
+        NotificationMute.setMuted("com.apple.mail", true)
+        check("notifications: a muted app is muted", NotificationMute.isMuted("com.apple.mail") && !NotificationMute.isMuted("com.apple.Notes"))
+        NotificationMute.setMuted("com.apple.mail", false)
+        check("notifications: unmuting brings the app back", !NotificationMute.isMuted("com.apple.mail"))
+    }
+
     /// The quiet period holds between its hours, also when it crosses midnight, and is off when it has no start.
     static func quietHours() {
         check("quiet hours: inside a daytime period", QuietHours.isQuiet(hour: 14, from: 13, to: 15))

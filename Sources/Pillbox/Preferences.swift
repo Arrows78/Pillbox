@@ -99,4 +99,6 @@ enum Preferences {
     static let quietFrom = Preference<Int>("quietFrom", -1)
     /// The hour the quiet period ends (0 to 23).
     static let quietTo = Preference<Int>("quietTo", 7)
+    /// Days an entry stays on the shelf before it is dropped from it; 0 keeps entries until removed by hand.
+    static let shelfKeepDays = Preference<Int>("shelfKeepDays", 0)
 }
