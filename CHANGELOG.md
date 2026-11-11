@@ -4,6 +4,16 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.7.1] - 2026-11-11
+
+### Changed
+
+- **island**: Move the hover and drag behaviour out of AppDelegate
+- **settings**: One typed preference per key, with its default
+- **settings**: Re-apply a feature only when its keys change
+- **settings**: Ten panes, one file each, with a search
+- **app**: Start every feature from one registry
+
 ## [0.7.0] - 2026-11-11
 
 ### Added
@@ -169,6 +179,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.7.1]: https://github.com/Arrows78/Pillbox/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Arrows78/Pillbox/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/Arrows78/Pillbox/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Arrows78/Pillbox/compare/v0.5.0...v0.6.0
