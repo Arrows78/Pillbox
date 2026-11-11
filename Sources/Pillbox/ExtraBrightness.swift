@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 
 // MARK: Extra brightness on XDR and HDR displays
 
@@ -10,6 +11,12 @@ final class ExtraBrightness {
     nonisolated static let key = "extraBrightness"
     private var windows: [NSWindow] = []
     private var started = false
+    private var batteryWatch: AnyCancellable?
+
+    /// Off on its own in Low Power Mode, on a low battery, or when the Mac runs hot: the boost costs power and heat.
+    static func allowed(lowPower: Bool, batteryLevel: Int, pluggedIn: Bool, thermal: ProcessInfo.ThermalState) -> Bool {
+        !lowPower && (pluggedIn || batteryLevel > 20) && thermal.rawValue < ProcessInfo.ThermalState.serious.rawValue
+    }
 
     /// Screens whose hardware can show content above SDR white.
     static var capableScreens: [NSScreen] { NSScreen.screens.filter { $0.maximumExtendedDynamicRangeColorComponentValue > 1 } }
@@ -20,6 +27,14 @@ final class ExtraBrightness {
         NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { _ in
             MainActor.assumeIsolated { ExtraBrightness.shared.apply() }
         }
+        for name in [NSNotification.Name.NSProcessInfoPowerStateDidChange, ProcessInfo.thermalStateDidChangeNotification] {
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { _ in
+                MainActor.assumeIsolated { ExtraBrightness.shared.apply() }
+            }
+        }
+        batteryWatch = BatteryService.shared.objectWillChange.receive(on: DispatchQueue.main).sink { _ in
+            MainActor.assumeIsolated { ExtraBrightness.shared.apply() }
+        }
         apply()
     }
 
@@ -27,6 +42,9 @@ final class ExtraBrightness {
         windows.forEach { $0.orderOut(nil) }
         windows = []
         guard UserDefaults.standard.bool(forKey: Self.key) else { return }
+        let battery = BatteryService.shared
+        guard Self.allowed(lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled, batteryLevel: battery.level, pluggedIn: battery.pluggedIn,
+                           thermal: ProcessInfo.processInfo.thermalState) else { return }
         for screen in Self.capableScreens {
             let headroom = screen.maximumExtendedDynamicRangeColorComponentValue
             let w = NSWindow(contentRect: screen.frame, styleMask: .borderless, backing: .buffered, defer: false, screen: screen)

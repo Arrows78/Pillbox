@@ -1031,6 +1031,10 @@ extension SelfTest {
               AppVolumeMath.needsTap(gain: 1, muted: false, equalized: true) && !AppVolumeMath.needsTap(gain: 1, muted: false, equalized: false))
         check("app boost: above 100 % needs a tap and is capped at 150 %",
               AppVolumeMath.needsTap(gain: 1.3, muted: false) && AppVolumeMath.maxGain == 1.5)
+        check("extra brightness: off in low power, on a low battery off the charger, or when hot",
+              ExtraBrightness.allowed(lowPower: false, batteryLevel: 80, pluggedIn: false, thermal: .nominal) && !ExtraBrightness.allowed(lowPower: true, batteryLevel: 80, pluggedIn: true, thermal: .nominal)
+              && !ExtraBrightness.allowed(lowPower: false, batteryLevel: 15, pluggedIn: false, thermal: .nominal) && ExtraBrightness.allowed(lowPower: false, batteryLevel: 15, pluggedIn: true, thermal: .fair)
+              && !ExtraBrightness.allowed(lowPower: false, batteryLevel: 80, pluggedIn: true, thermal: .serious))
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]
