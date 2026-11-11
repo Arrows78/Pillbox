@@ -105,6 +105,10 @@ enum Preferences {
     static let quietTo = Preference<Int>("quietTo", 7)
     /// Days an entry stays on the shelf before it is dropped from it; 0 keeps entries until removed by hand.
     static let shelfKeepDays = Preference<Int>("shelfKeepDays", 0)
+    /// Focus sessions per pomodoro cycle; after that many, the break is the long one. 0 turns the cycle off.
+    static let pomodoroEvery = Preference<Int>("pomodoroEvery", 0)
+    /// Length in minutes of the long break.
+    static let pomodoroLongBreak = Preference<Int>("pomodoroLongBreak", 15)
     /// Minutes before a secret copy (an API key or a card number) leaves the clipboard history; 0 keeps it until removed by hand.
     static let clipboardSecretMinutes = Preference<Int>("clipboardSecretMinutes", 5)
     /// Show the music or video playing in a browser tab on the Music tab. Off by default: it asks the browser for its tab.

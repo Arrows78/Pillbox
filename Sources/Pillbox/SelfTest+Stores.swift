@@ -185,6 +185,14 @@ extension SelfTest {
         check("notifications: unmuting brings the app back", !NotificationMute.isMuted("com.apple.mail"))
     }
 
+    /// The pomodoro cycle makes every n-th break the long one; 0 turns it off.
+    static func pomodoroCycle() {
+        check("pomodoro: the fourth focus session gives the long break", Pomodoro.longBreakDue(focusDone: 4, every: 4))
+        check("pomodoro: the third focus session does not", !Pomodoro.longBreakDue(focusDone: 3, every: 4))
+        check("pomodoro: off with 0 sessions per cycle", !Pomodoro.longBreakDue(focusDone: 4, every: 0))
+        check("pomodoro: no focus session yet, no long break", !Pomodoro.longBreakDue(focusDone: 0, every: 4))
+    }
+
     /// The quiet period holds between its hours, also when it crosses midnight, and is off when it has no start.
     static func quietHours() {
         check("quiet hours: inside a daytime period", QuietHours.isQuiet(hour: 14, from: 13, to: 15))

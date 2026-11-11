@@ -973,3 +973,14 @@
 "Show content on the resting pill" = "Inhalte auf der ruhenden Pille";
 "Resting pill, left" = "Ruhende Pille, links";
 "Resting pill, right" = "Ruhende Pille, rechts";
+"Long break after" = "Lange Pause nach";
+"Pomodoro: after this many focus sessions, the break is the long one." = "Pomodoro: nach dieser Anzahl Fokus-Sitzungen ist die Pause die lange.";
+"Long break length" = "Länge der langen Pause";
+"2 sessions" = "2 Sitzungen";
+"3 sessions" = "3 Sitzungen";
+"4 sessions" = "4 Sitzungen";
+"5 sessions" = "5 Sitzungen";
+"10 min" = "10 Min.";
+"15 min" = "15 Min.";
+"20 min" = "20 Min.";
+"30 min" = "30 Min.";

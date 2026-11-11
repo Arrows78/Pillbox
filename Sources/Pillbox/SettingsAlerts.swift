@@ -18,6 +18,8 @@ struct SettingsAlertsPane: View {
     @AppStorage(Preferences.usageAlert.key) private var usageAlert = Preferences.usageAlert.defaultValue
     @AppStorage(Preferences.notificationIsland.key) private var notificationIsland = Preferences.notificationIsland.defaultValue
     @AppStorage(Preferences.breakReminder.key) private var breakReminder = Preferences.breakReminder.defaultValue
+    @AppStorage(Preferences.pomodoroEvery.key) private var pomodoroEvery = Preferences.pomodoroEvery.defaultValue
+    @AppStorage(Preferences.pomodoroLongBreak.key) private var pomodoroLongBreak = Preferences.pomodoroLongBreak.defaultValue
     @AppStorage(Preferences.buildIsland.key) private var buildIsland = Preferences.buildIsland.defaultValue
     @AppStorage(Preferences.screenshotShelf.key) private var screenshotShelf = Preferences.screenshotShelf.defaultValue
     @AppStorage(Preferences.driveEject.key) private var driveEject = Preferences.driveEject.defaultValue
@@ -81,6 +83,18 @@ struct SettingsAlertsPane: View {
                     Picker("", selection: $breakReminder) {
                         Text("Off").tag(0); Text("Every 20 min").tag(20); Text("Every 30 min").tag(30); Text("Every 45 min").tag(45); Text("Every hour").tag(60)
                     }.labelsHidden().frame(width: 170)
+                }
+                SettingsRow(title: "Long break after", subtitle: "Pomodoro: after this many focus sessions, the break is the long one.") {
+                    Picker("", selection: $pomodoroEvery) {
+                        Text("Off").tag(0); Text("2 sessions").tag(2); Text("3 sessions").tag(3); Text("4 sessions").tag(4); Text("5 sessions").tag(5)
+                    }.labelsHidden().frame(width: 170)
+                }
+                if pomodoroEvery > 0 {
+                    SettingsRow(title: "Long break length") {
+                        Picker("", selection: $pomodoroLongBreak) {
+                            Text("10 min").tag(10); Text("15 min").tag(15); Text("20 min").tag(20); Text("30 min").tag(30)
+                        }.labelsHidden().frame(width: 170)
+                    }
                 }
                 SettingsToggle("Eye breaks (20-20-20)", "Every 20 minutes at the keyboard, 20 seconds to look at something far away, counted down on the island.", isOn: $eyeBreaks)
             }

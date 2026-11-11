@@ -37,7 +37,7 @@ final class TimerService: ObservableObject {
     var total: TimeInterval {
         switch mode {
         case .focus: Double(focusMinutes * 60)
-        case .rest: Double(breakMinutes * 60)
+        case .rest: Double((longBreakNext ? Preferences.pomodoroLongBreak.value : breakMinutes) * 60)
         case .countdown: Double(countdownMinutes * 60)
         case .stopwatch: 0
         }
@@ -100,13 +100,21 @@ final class TimerService: ObservableObject {
         NSSound(named: "Glass")?.play()
         if finished == .focus {
             let k = Self.dayKey(Date()); sessions[k, default: 0] += 1; Store.save(sessions, "sessions.json")
+            focusInCycle += 1
+            longBreakNext = Pomodoro.longBreakDue(focusDone: focusInCycle, every: Preferences.pomodoroEvery.value)
+            if longBreakNext { focusInCycle = 0 }
         }
+        if finished == .rest { longBreakNext = false }
         NotchModel.shared.show(Activity(symbol: finished == .focus ? "checkmark.circle.fill" : "bell.fill",
                                         title: finished == .focus ? localized("Focus session done") : localized("%@ finished", localized(finished.rawValue)),
                                         subtitle: label.isEmpty ? nil : label, tint: .green, duration: 5))
         if chain && finished == .focus { mode = .rest; start() }
         else if chain && finished == .rest { mode = .focus; start() }
     }
+
+    /// Focus sessions finished since the last long break, and whether the next break is the long one.
+    private var focusInCycle = 0
+    private var longBreakNext = false
 
     func repeatTimer() { reset(); start() }
 
