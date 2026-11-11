@@ -107,7 +107,7 @@ enum AskAboutScreen {
             guard let r else { return }
             Task {
                 guard let img = try? await ScreenGrab.capture(r) else {
-                    NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: "Could not capture the screen", tint: .orange)); return
+                    NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle", title: localized("Could not capture the screen"), tint: .orange)); return
                 }
                 let text = await Task.detached { OCR.recognize(in: img) }.value ?? ""
                 show(text: text, near: r)

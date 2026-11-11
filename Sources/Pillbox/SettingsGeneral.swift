@@ -23,9 +23,9 @@ struct SettingsGeneralPane: View {
         do {
             guard let data = SettingsBackup.data() else { throw CocoaError(.fileWriteUnknown) }
             try data.write(to: url, options: .atomic)
-            NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings exported", tint: .green))
+            NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: localized("Settings exported"), tint: .green))
         } catch {
-            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: "Could not export the settings", subtitle: error.localizedDescription, tint: .orange))
+            NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: localized("Could not export the settings"), subtitle: error.localizedDescription, tint: .orange))
         }
     }
 
@@ -45,7 +45,7 @@ struct SettingsGeneralPane: View {
             alert.messageText = localized("This file is not a Pillbox backup")
             alert.runModal(); return
         }
-        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings imported", subtitle: localized("%d setting(s) applied", n), tint: .green))
+        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: localized("Settings imported"), subtitle: localized("%d setting(s) applied", n), tint: .green))
     }
 
     private func restoreDefaults() {
@@ -57,7 +57,7 @@ struct SettingsGeneralPane: View {
         alert.addButton(withTitle: localized("Cancel"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         SettingsBackup.resetAll()
-        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: "Settings restored", tint: .green))
+        NotchModel.shared.show(Activity(symbol: "checkmark.circle.fill", title: localized("Settings restored"), tint: .green))
     }
 
     var body: some View {

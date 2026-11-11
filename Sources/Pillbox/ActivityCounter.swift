@@ -113,7 +113,7 @@ final class ActivityCounter: ObservableObject {
             if !warned {
                 warned = true
                 _ = CGRequestListenEventAccess()
-                NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: "Input Monitoring needed", subtitle: "Allow Pillbox to count your activity", tint: .orange,
+                NotchModel.shared.show(Activity(symbol: "keyboard.badge.ellipsis", title: localized("Input Monitoring needed"), subtitle: "Allow Pillbox to count your activity", tint: .orange,
                                                 actionTitle: "Settings", action: { PermissionsCenter.shared.openSettings(.inputMonitoring) }, duration: 6))
             }
             // Keeps trying, so the counter starts once Input Monitoring is granted in System Settings.
@@ -188,7 +188,7 @@ final class ActivityCounter: ObservableObject {
 
     func showToday() {
         guard enabled else {
-            NotchModel.shared.show(Activity(symbol: "chart.bar.fill", title: "Activity counter is off", tint: .orange, actionTitle: "Turn on", action: {
+            NotchModel.shared.show(Activity(symbol: "chart.bar.fill", title: localized("Activity counter is off"), tint: .orange, actionTitle: "Turn on", action: {
                 UserDefaults.standard.set(true, forKey: "activityCounter")
             }, duration: 5))
             return

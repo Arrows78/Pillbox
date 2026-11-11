@@ -24,7 +24,7 @@ final class CopyStackStore: ObservableObject {
 
     /// Pastes the oldest copy and removes it from the stack.
     func pasteNext() {
-        guard let s = stack.pop() else { NotchModel.shared.show(Activity(symbol: "square.stack", title: "The copy stack is empty", duration: 1.5)); return }
+        guard let s = stack.pop() else { NotchModel.shared.show(Activity(symbol: "square.stack", title: localized("The copy stack is empty"), duration: 1.5)); return }
         ClipboardService.shared.paste(ClipItem(text: s))
     }
 

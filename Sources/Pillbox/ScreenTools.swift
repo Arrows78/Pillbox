@@ -60,7 +60,7 @@ final class WindowWatch: ObservableObject {
             self.timer?.invalidate()
             self.timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in MainActor.assumeIsolated { self.check() } }
             self.check()
-            NotchModel.shared.show(Activity(symbol: "eye.fill", title: "Watching this area", tint: .blue))
+            NotchModel.shared.show(Activity(symbol: "eye.fill", title: localized("Watching this area"), tint: .blue))
         }
     }
 
@@ -77,7 +77,7 @@ final class WindowWatch: ObservableObject {
             let old = lastText
             lastText = text
             if !old.isEmpty, Self.changed(old, text) {
-                NotchModel.shared.show(Activity(symbol: "eye.fill", title: "Watched area changed", subtitle: Self.normalize(text).prefix(80).description, tint: .blue, duration: 6))
+                NotchModel.shared.show(Activity(symbol: "eye.fill", title: localized("Watched area changed"), subtitle: Self.normalize(text).prefix(80).description, tint: .blue, duration: 6))
             }
         }
     }
