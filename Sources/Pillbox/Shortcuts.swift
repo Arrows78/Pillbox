@@ -27,7 +27,7 @@ final class ShortcutsService: ObservableObject {
         running = name
         NotchModel.shared.collapse()
         DispatchQueue.global(qos: .userInitiated).async {
-            let r = Self.exec(["run", name])
+            let r = Self.exec(["run", name], timeout: 120)
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     self.running = nil
@@ -38,10 +38,12 @@ final class ShortcutsService: ObservableObject {
         }
     }
 
-    private nonisolated static func exec(_ args: [String]) -> (status: Int32, output: String) {
+    /// A hung shortcut is stopped after `timeout` seconds, so the next run is not blocked behind it.
+    private nonisolated static func exec(_ args: [String], timeout: TimeInterval = 0) -> (status: Int32, output: String) {
         let p = Process(); p.executableURL = URL(fileURLWithPath: tool); p.arguments = args
         let pipe = Pipe(); p.standardOutput = pipe; p.standardError = Pipe()
         guard (try? p.run()) != nil else { return (-1, "") }
+        if timeout > 0 { DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { if p.isRunning { p.terminate() } } }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         p.waitUntilExit()
         return (p.terminationStatus, String(decoding: data, as: UTF8.self))
