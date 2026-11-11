@@ -18,7 +18,7 @@ enum SelfTest {
 
     static func run() -> Int32 {
         lyrics(); math(); formatting(); clipboard(); stocks(); snapping(); weather(); timer(); usage(); geometry(); stores(); shelf(); palette(); snippets(); watchers(); converter(); reminders()
-        shortcutsAndSearch(); networkAndAudioDevices(); teleprompterAndPrompterVoice(); tabBar(); prompterSpeeds()
+        shortcutsAndSearch(); networkAndAudioDevices(); teleprompterAndPrompterVoice(); tabBar(); prompterSpeeds(); teleprompterEnd()
         hyperKeyAndMenuBar(); focusCallsAndNotifications(); screenAskAndKeychain(); spectrum(); gesturesAndWorldClock()
         shakeAndBreaks(); downloadsAndBuild(); bluetoothBatteries(); quickCapture(); displayOptions()
         activityQueue(); shellActions(); notificationFeed(); pillAndTheme()
@@ -28,7 +28,7 @@ enum SelfTest {
         awareness(); recordingQRAnnotate(); dictationAndActivity()
         appVolume()
         battery()
-        tabsAndQueue(); calendarFeeds(); videoSpeedAndWindowDrag(); externalBrightness(); equalizerAndLyricStamps(); appEqualizerAndBoost(); extraBrightness()
+        tabsAndQueue(); calendarFeeds(); videoSpeedAndWindowDrag(); externalBrightness(); equalizerAndLyricStamps(); appEqualizerAndBoost(); extraBrightness(); windowGeometry()
         aiUsage(); annotateSteps(); notificationApps(); copilotQuota(); verificationCodes(); updater(); brewCheck(); clipboardImport(); typingSounds(); ambientNoise(); idleCollapse()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1

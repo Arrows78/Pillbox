@@ -12,6 +12,18 @@ extension SelfTest {
         check("snap right half", SnapZone.right.frame(in: r) == CGRect(x: 600, y: 0, width: 600, height: 800))
         check("snap right third", SnapZone.rightThird.frame(in: r) == CGRect(x: 800, y: 0, width: 400, height: 800))
         check("snap full", SnapZone.full.frame(in: r) == r)
+        check("snap top half", SnapZone.top.frame(in: r) == CGRect(x: 0, y: 0, width: 1200, height: 400))
+        check("snap bottom half", SnapZone.bottom.frame(in: r) == CGRect(x: 0, y: 400, width: 1200, height: 400))
+        check("snap left third", SnapZone.leftThird.frame(in: r) == CGRect(x: 0, y: 0, width: 400, height: 800))
+        let c = SnapZone.center.frame(in: r)
+        check("snap center: 70 % by 80 %, centred on the visible frame",
+              abs(c.minX - 180) < 1e-6 && abs(c.minY - 80) < 1e-6 && abs(c.width - 840) < 1e-6 && abs(c.height - 640) < 1e-6, "\(c)")
+        // Every zone follows the visible frame's origin, and stays inside it.
+        let r2 = CGRect(x: 100, y: 50, width: 1200, height: 800)
+        let inside = SnapZone.allCases.allSatisfy { r2.insetBy(dx: -1e-6, dy: -1e-6).contains($0.frame(in: r2)) }
+        check("snap zones: all eight zones stay inside a visible frame that is not at the origin",
+              SnapZone.allCases.count == 8 && inside && SnapZone.top.frame(in: r2) == CGRect(x: 100, y: 50, width: 1200, height: 400)
+              && SnapZone.leftThird.frame(in: r2) == CGRect(x: 100, y: 50, width: 400, height: 800), "\(SnapZone.allCases.map { $0.frame(in: r2) })")
     }
 
     static func hyperKeyAndMenuBar() {
@@ -39,6 +51,12 @@ extension SelfTest {
         let dnd = #"{"data":[{"storeAssertionRecords":[{"assertionDetails":{"assertionDetailsModeIdentifier":"com.apple.donotdisturb.mode.default"}}]}]}"#
         check("focus: Do Not Disturb", FocusMonitor.parse(Data(dnd.utf8)) == localized("Do Not Disturb"))
         check("focus: no record means no focus", FocusMonitor.parse(Data(#"{"data":[{"storeAssertionRecords":[]}]}"#.utf8)) == nil && FocusMonitor.parse(Data("junk".utf8)) == nil)
+        let sleep = #"{"data":[{"storeAssertionRecords":[{"assertionDetails":{"assertionDetailsModeIdentifier":"com.apple.focus.sleep"}}]}]}"#
+        let dndLegacy = #"{"data":[{"storeAssertionRecords":[{"assertionDetails":{"assertionDetailsModeIdentifier":"com.apple.donotdisturb"}}]}]}"#
+        let skipsEmpty = #"{"data":[{"storeAssertionRecords":[{"assertionDetails":{}},{"assertionDetails":{"assertionDetailsModeIdentifier":"com.apple.focus.work"}}]}]}"#
+        check("focus: a named mode is capitalised, the legacy DND id is Do Not Disturb, a record without a mode is skipped",
+              FocusMonitor.parse(Data(sleep.utf8)) == "Sleep" && FocusMonitor.parse(Data(dndLegacy.utf8)) == localized("Do Not Disturb")
+              && FocusMonitor.parse(Data(skipsEmpty.utf8)) == "Work", "\(String(describing: FocusMonitor.parse(Data(skipsEmpty.utf8))))")
 
         // Notifications: parse a real binary plist and read a real SQLite file
         let plist: [String: Any] = ["app": "com.apple.mail", "req": ["titl": "Alice", "subt": "Re: lunch", "body": "See you at 12"]]
@@ -87,8 +105,45 @@ extension SelfTest {
               VideoSpeed.Failure.classify(number: -1743, message: nil) == .automationDenied && VideoSpeed.Failure.classify(number: -600, message: nil) == .notRunning
               && VideoSpeed.Failure.classify(number: nil, message: "Executing JavaScript through AppleScript is turned off.") == .javaScriptOff
               && VideoSpeed.Failure.classify(number: -1, message: "something else") == .other)
+        // Other browsers: each listed browser gets a script that names it and reads its active tab; Safari keeps its own form.
+        let listed = VideoSpeed.browsers.map { (id: $0.key, name: $0.value, js: VideoSpeed.script(rate: 1.25, bundleID: $0.key) ?? "") }
+        let namedRight = listed.allSatisfy { $0.js.contains("tell application \"\($0.name)\"") && $0.js.contains("playbackRate = 1.25") }
+        let chromiumForm = listed.filter { $0.id != "com.apple.Safari" }.allSatisfy { $0.js.contains("active tab") && !$0.js.contains("front document") }
+        check("video speed: every listed browser gets a script that names it", listed.count == 6 && namedRight && chromiumForm && VideoSpeed.script(rate: 1, bundleID: nil) == nil,
+              "\(listed.map { ($0.id, $0.js) })")
+        check("video speed: Edge, Brave, Arc and Chromium use the active tab of the front window",
+              ["com.microsoft.edgemac", "com.brave.Browser", "company.thebrowser.Browser", "org.chromium.Chromium"].allSatisfy { (VideoSpeed.script(rate: 1, bundleID: $0) ?? "").contains("tell active tab of front window") })
+        // Each failure has its own message, and the Automation and JavaScript cases are not confused.
+        let texts = [VideoSpeed.Failure.automationDenied.text, VideoSpeed.Failure.notRunning.text, VideoSpeed.Failure.javaScriptOff.text, VideoSpeed.Failure.other.text]
+        check("video speed: each failure has its own localized message",
+              texts == [localized("Allow Pillbox to control the browser in Privacy & Security > Automation"), localized("The browser is not running"),
+                        localized("Allow JavaScript from Apple Events in the browser"), localized("Could not change the video speed")], "\(texts)")
+        check("video speed: a refused automation wins over a JavaScript message, and no number with no message is other",
+              VideoSpeed.Failure.classify(number: -1743, message: "JavaScript is off") == .automationDenied && VideoSpeed.Failure.classify(number: nil, message: nil) == .other
+              && VideoSpeed.Failure.classify(number: nil, message: "run javascript please") == .javaScriptOff)
         let movedTo = WindowDrag.moved(CGPoint(x: 100, y: 100), by: 10, 20), resizedTo = WindowDrag.resized(CGSize(width: 300, height: 200), by: -500, 10)
         check("window drag: moving up on screen lowers the top-left origin, sizes keep a minimum",
               movedTo == CGPoint(x: 110, y: 80) && resizedTo == CGSize(width: 200, height: 210), "\(movedTo) \(resizedTo)")
+    }
+
+    /// The pure geometry behind window dragging and the Accessibility coordinate flip. No window is touched.
+    static func windowGeometry() {
+        let down = WindowDrag.moved(CGPoint(x: 100, y: 100), by: 0, -30)
+        check("window drag: moving down on screen raises the top-left origin", down == CGPoint(x: 100, y: 130), "\(down)")
+        let grown = WindowDrag.resized(CGSize(width: 300, height: 200), by: 50, 30)
+        let clampedH = WindowDrag.resized(CGSize(width: 500, height: 300), by: 0, -500)
+        check("window drag: resizing grows with the pointer and clamps the height to the minimum",
+              grown == CGSize(width: 350, height: 230) && clampedH == CGSize(width: 500, height: WindowDrag.minSize.height) && WindowDrag.minSize == CGSize(width: 200, height: 120), "\(grown) \(clampedH)")
+
+        // AX and AppKit differ only by the primary screen's height, so the flip is its own inverse whatever that height is.
+        func near(_ a: CGPoint, _ b: CGPoint) -> Bool { abs(a.x - b.x) < 1e-9 && abs(a.y - b.y) < 1e-9 }
+        let p = CGPoint(x: 37, y: 91)
+        check("ax: flipping a point twice gives the same point", near(AXWindow.flipped(AXWindow.flipped(p)), p))
+        let rect = CGRect(x: 5, y: 10, width: 20, height: 30)
+        let flippedRect = AXWindow.flipped(rect)
+        let topEdge = AXWindow.flipped(CGPoint(x: 5, y: 40))   // the AppKit top edge of the rect (maxY), in AX terms
+        check("ax: a rect keeps its size, and its AX top is the flipped AppKit top edge",
+              abs(flippedRect.minY - topEdge.y) < 1e-9 && flippedRect.minX == 5 && flippedRect.width == 20 && flippedRect.height == 30, "\(flippedRect)")
+        check("ax: flipping a rect twice gives the same rect", AXWindow.flipped(AXWindow.flipped(rect)) == rect)
     }
 }

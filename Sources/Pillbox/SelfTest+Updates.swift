@@ -34,6 +34,33 @@ extension SelfTest {
               && Updater.sha256(Data("abc".utf8)) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
         check("updater: due once a day when enabled", DailyCheck.due(enabled: true, last: nil, now: Date()) && !DailyCheck.due(enabled: false, last: nil, now: Date())
               && DailyCheck.due(enabled: true, last: Date().addingTimeInterval(-90000), now: Date()) && !DailyCheck.due(enabled: true, last: Date().addingTimeInterval(-3600), now: Date()))
+        // The day is measured from the last check: exactly 24 h is due, one second less is not, and a disabled switch never is.
+        let now = Date()
+        check("updater: the daily check is due at exactly one day, not a second before, and never when disabled",
+              DailyCheck.due(enabled: true, last: now.addingTimeInterval(-86_400), now: now) && !DailyCheck.due(enabled: true, last: now.addingTimeInterval(-86_399), now: now)
+              && !DailyCheck.due(enabled: false, last: now.addingTimeInterval(-86_400 * 3), now: now))
+
+        // Release parsing: the version drops a leading v, a missing tag gives nothing, and only https github.com downloads are kept.
+        let upper = Updater.release(from: ["tag_name": "V2.0", "assets": [["name": "Pillbox-2.0.zip", "browser_download_url": "https://github.com/Arrows78/Pillbox/releases/download/V2.0/Pillbox-2.0.zip"],
+                                                                         ["name": "Pillbox-2.0.zip.sha256", "browser_download_url": "https://github.com/Arrows78/Pillbox/releases/download/V2.0/Pillbox-2.0.zip.sha256"]]])
+        check("updater: release keeps a github checksum, and strips a capital V from the version", upper?.version == "2.0" && upper?.sha?.lastPathComponent == "Pillbox-2.0.zip.sha256" && upper?.zip != nil)
+        check("updater: no tag means no release", Updater.release(from: ["assets": [[String: Any]]()]) == nil && Updater.release(from: ["tag_name": 3]) == nil)
+        let noZip = Updater.release(from: ["tag_name": "v1.0", "assets": [["name": "Pillbox-1.0.dmg", "browser_download_url": "https://github.com/x/Pillbox-1.0.dmg"]]])
+        let httpZip = Updater.release(from: ["tag_name": "v1.0", "assets": [["name": "Pillbox-1.0.zip", "browser_download_url": "http://github.com/x/Pillbox-1.0.zip"]]])
+        check("updater: a release without a zip on https github.com can only be opened, not installed", noZip?.zip == nil && noZip?.version == "1.0" && httpZip?.zip == nil && httpZip?.sha == nil)
+
+        // Each failure says what happened, in the language of the app.
+        let messages: [(UpdateError, String)] = [
+            (.download, localized("The download failed")),
+            (.checksumMissing, localized("The checksum is missing, so the update was not installed")),
+            (.checksumMismatch, localized("The checksum does not match")),
+            (.save, localized("Could not save the download")),
+            (.unpack, localized("Could not unpack the download")),
+            (.notPillbox, localized("The archive is not a Pillbox release")),
+            (.install, localized("The update could not be installed")),
+        ]
+        let wrong = messages.filter { $0.0.errorDescription != $0.1 || $0.1.isEmpty }.map { "\($0.0)" }
+        check("updater: each update error has its own localized message", wrong.isEmpty && Set(messages.map { $0.1 }).count == 7, "\(wrong)")
     }
 
     static func brewCheck() {

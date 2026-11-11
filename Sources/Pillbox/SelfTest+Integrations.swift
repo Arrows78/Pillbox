@@ -24,6 +24,39 @@ extension SelfTest {
         let body = Data(#"{"current":{"temperature_2m":12.6,"weather_code":3,"is_day":1}}"#.utf8)
         check("weather: a 200 body with current conditions parses, rounded to a whole degree", WeatherService.parse(body, status: 200) == WeatherReading(temperature: 13, symbol: "cloud.fill", summary: localized("Overcast")))
         check("weather: any other status is rejected, even with a body", WeatherService.parse(body, status: 500) == nil && WeatherService.parse(body, status: nil) == nil && WeatherService.parse(Data("junk".utf8), status: 200) == nil)
+        // Every WMO group: symbol and wording by day or night (the keys are English, shown through localized in parse).
+        let codes: [(code: Int, day: Bool, symbol: String, text: String)] = [
+            (0, false, "moon.stars.fill", "Clear sky"), (1, true, "cloud.sun.fill", "Partly cloudy"), (2, false, "cloud.moon.fill", "Partly cloudy"),
+            (3, true, "cloud.fill", "Overcast"), (45, true, "cloud.fog.fill", "Fog"), (48, false, "cloud.fog.fill", "Fog"),
+            (51, true, "cloud.drizzle.fill", "Drizzle"), (57, true, "cloud.drizzle.fill", "Drizzle"),
+            (61, true, "cloud.rain.fill", "Rain"), (67, false, "cloud.rain.fill", "Rain"), (81, true, "cloud.rain.fill", "Rain"),
+            (71, true, "cloud.snow.fill", "Snow"), (77, true, "cloud.snow.fill", "Snow"), (85, false, "cloud.snow.fill", "Snow"), (86, true, "cloud.snow.fill", "Snow"),
+            (96, true, "cloud.bolt.rain.fill", "Thunderstorm"), (99, false, "cloud.bolt.rain.fill", "Thunderstorm"),
+            (4, true, "cloud.fill", "Cloudy"), (50, false, "cloud.fill", "Cloudy"), (100, true, "cloud.fill", "Cloudy"),
+        ]
+        let wrong = codes.filter { WeatherService.describe($0.code, day: $0.day) != ($0.symbol, $0.text) }.map { $0.code }
+        check("weather: every WMO code group has its symbol and wording, unknown codes say cloudy", wrong.isEmpty, "\(wrong)")
+        let snow = WeatherService.parse(Data(#"{"current":{"temperature_2m":-3.4,"weather_code":71,"is_day":0}}"#.utf8), status: 200)
+        let noDayFlag = WeatherService.parse(Data(#"{"current":{"temperature_2m":20.4,"weather_code":0}}"#.utf8), status: 200)
+        check("weather: a night snowfall reads as localized wording, and a missing is_day counts as day",
+              snow == WeatherReading(temperature: -3, symbol: "cloud.snow.fill", summary: localized("Snow"))
+              && noDayFlag == WeatherReading(temperature: 20, symbol: "sun.max.fill", summary: localized("Clear sky")), "\(String(describing: snow)) \(String(describing: noDayFlag))")
+    }
+
+    /// The teleprompter stops by itself at the end of the script, and its offset never leaves the text.
+    /// Starts the timer through toggle(): the text height is measured from the library's script, which is only read here.
+    static func teleprompterEnd() {
+        let t = Teleprompter()
+        guard !t.voice else { print("SKIP  teleprompter: stops at the end (voice follow is on)"); return }
+        t.toggle()                                  // running now; the timer is stopped again below
+        let h = t.textHeight
+        var escaped = false
+        for _ in 0..<3 where t.running { t.tick(0.05); if t.offset < 0 || t.offset > h { escaped = true } }
+        check("teleprompter: the offset stays between the top and the end of the text", !escaped && t.offset <= h, "\(t.offset) of \(h)")
+        t.tick(1_000_000)                           // far past the end
+        check("teleprompter: stops when it reaches the end, with the offset at the end", t.offset == h && !t.running, "\(t.offset) of \(h), running \(t.running)")
+        t.tick(10)
+        check("teleprompter: a stopped teleprompter does not move past the end", t.offset == h && !t.running, "\(t.offset) of \(h)")
     }
 
     static func usage() {

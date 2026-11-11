@@ -32,7 +32,7 @@ final class EyeBreaks {
         countdown?.invalidate()
         let k = TimerService.dayKey(Date())
         taken[k, default: 0] += 1
-        taken = taken.filter { $0.key >= TimerService.dayKey(Calendar.current.date(byAdding: .day, value: -7, to: Date())!) }
+        taken = taken.filter { $0.key > TimerService.dayKey(Calendar.current.date(byAdding: .day, value: -7, to: Date())!) }
         Store.save(taken, "eyebreaks.json")
         var left = Self.rest
         var shown: UUID?      // the island this countdown last put up

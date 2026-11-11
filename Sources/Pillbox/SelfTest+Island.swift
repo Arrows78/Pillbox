@@ -141,6 +141,11 @@ extension SelfTest {
         check("camera guard: names the front app, but not Pillbox itself",
               CameraGuard.island(mirrorOpen: false, frontName: "Zoom", frontBundle: "us.zoom.xos", own: "dev.labs.pillbox") == .shown(probableApp: "Zoom")
               && CameraGuard.island(mirrorOpen: false, frontName: "Pillbox", frontBundle: "dev.labs.pillbox", own: "dev.labs.pillbox") == .shown(probableApp: nil))
+        check("camera guard: an unknown front app is not named", CameraGuard.island(mirrorOpen: false, frontName: nil, frontBundle: "us.zoom.xos", own: "dev.labs.pillbox") == .shown(probableApp: nil))
+        // App icons for the islands: no icon gives no picture, and the picture has the side asked for.
+        let icon = AppIconImage.bitmap(NSImage(size: NSSize(width: 64, height: 64)), side: 16)
+        check("app icon: none gives none, and the bitmap has the requested side", AppIconImage.bitmap(nil) == nil && icon?.representations.contains { $0.pixelsWide == 16 && $0.pixelsHigh == 16 } == true
+              && AppIconImage.bitmap(NSImage(size: NSSize(width: 64, height: 64)))?.representations.contains { $0.pixelsWide == 48 } == true)
     }
 
     static func dictationAndActivity() {

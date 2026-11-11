@@ -78,11 +78,31 @@ extension SelfTest {
         let key = KeySynth.sample(.thock, kind: .press), n = Int(key.frameLength), samples = (0..<n).map { key.floatChannelData![0][$0] }
         // Finite and audible. Its range is not checked: the synthesiser clamps every sample, so that could not fail.
         check("typing sounds: a synthesised key is finite and audible", n > 1000 && samples.allSatisfy { $0.isFinite } && (samples.map { abs($0) }.max() ?? 0) > 0.05)
+        // Every profile and key kind: a short mono clip at 44.1 kHz, with a real but bounded level.
+        var bad: [String] = []
+        for p in [TypingSounds.Profile.soft, .clicky, .thock] {
+            for k in [KeySynth.Kind.press, .release, .space, .enter] {
+                let b = KeySynth.sample(p, kind: k), len = Int(b.frameLength)
+                let peak = (0..<len).map { abs(b.floatChannelData![0][$0]) }.max() ?? 0
+                if len < 1000 || len > 6000 || peak <= 0.001 || peak > 1 || b.format.sampleRate != 44100 || b.format.channelCount != 1 { bad.append("\(p.rawValue)-\(k)") }
+            }
+        }
+        check("typing sounds: every profile and key kind is a short, audible, mono clip at 44.1 kHz", bad.isEmpty, "\(bad)")
     }
 
     static func ambientNoise() {
         let noise = NoiseState(); noise.kind = .pink
         let pink = (0..<20000).map { _ in noise.next() }; noise.kind = .brown; let brown = (0..<20000).map { _ in noise.next() }
         check("ambient noise: pink and brown stay finite and bounded", (pink + brown).allSatisfy { $0.isFinite && abs($0) < 1.5 } && (brown.map { abs($0) }.max() ?? 0) > 0.01)
+        // The bounds that hold by construction: white is a quarter of full scale, brown is at most 1 before its 3.5 gain.
+        let white = NoiseState(); white.kind = .white
+        let whiteOut = (0..<5000).map { _ in white.next() }
+        check("ambient noise: white noise is within a quarter of full scale", whiteOut.allSatisfy { abs($0) <= 0.25 } && (whiteOut.map { abs($0) }.max() ?? 0) > 0.01)
+        check("ambient noise: brown noise is within its gain, and pink within its worst case", brown.allSatisfy { abs($0) <= 3.5 } && pink.allSatisfy { abs($0) < 10 })
+        let kinds = AmbientNoise.Kind.allCases
+        let titles = [AmbientNoise.Kind.off.title, AmbientNoise.Kind.white.title, AmbientNoise.Kind.pink.title, AmbientNoise.Kind.brown.title]
+        check("ambient noise: four kinds with their own localized titles, and stored names read back",
+              kinds.count == 4 && titles == [localized("Off"), localized("White noise"), localized("Pink noise"), localized("Brown noise")]
+              && AmbientNoise.Kind(rawValue: "pink") == .pink && AmbientNoise.Kind(rawValue: "bogus") == nil, "\(titles)")
     }
 }
