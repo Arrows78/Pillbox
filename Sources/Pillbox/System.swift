@@ -378,7 +378,7 @@ final class CalendarService: ObservableObject {
 
     func refresh() {
         let now = Date()
-        let pred = store.predicateForEvents(withStart: now.addingTimeInterval(-3600), end: now.addingTimeInterval(86400), calendars: nil)
+        let pred = store.predicateForEvents(withStart: now.addingTimeInterval(-3600), end: now.addingTimeInterval(86400), calendars: CalendarChoice.visible(in: store))
         let e = store.events(matching: pred).filter { !$0.isAllDay && $0.endDate > now }.sorted { $0.startDate < $1.startDate }.first
         next = e.map { ($0.title ?? "Event", $0.startDate, $0.endDate) }
     }

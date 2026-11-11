@@ -702,3 +702,11 @@
 "Asks GitHub for the latest release. The update installs in place and relaunches Pillbox." = "Fragt GitHub nach der neuesten Version. Das Update wird an Ort und Stelle installiert und Pillbox neu gestartet.";
 "Check for updates automatically" = "Automatisch nach Updates suchen";
 "Once a day. Only the version number is asked for; nothing about you is sent." = "Einmal täglich. Nur die Versionsnummer wird abgefragt; nichts über dich wird gesendet.";
+"macOS calendars" = "macOS-Kalender";
+"Allow Calendars access to choose which ones to show." = "Erlaube den Kalenderzugriff, um auszuwählen, welche angezeigt werden.";
+"Calendar subscriptions" = "Kalender-Abonnements";
+"Could not load this link" = "Dieser Link konnte nicht geladen werden";
+"https://… or webcal://… private .ics link" = "Privater .ics-Link https://… oder webcal://…";
+"Add" = "Hinzufügen";
+"Check the link: it must start with https:// or webcal://" = "Prüfe den Link: Er muss mit https:// oder webcal:// beginnen";
+"The private address of a Google, Notion, Luma or Outlook calendar. Read every 30 minutes; recurring events show only when the feed expands them." = "Die private Adresse eines Google-, Notion-, Luma- oder Outlook-Kalenders. Alle 30 Minuten gelesen; wiederkehrende Termine erscheinen nur, wenn der Feed sie ausschreibt.";

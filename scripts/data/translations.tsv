@@ -700,3 +700,11 @@ Import	Importar	Importieren
 Asks GitHub for the latest release. The update installs in place and relaunches Pillbox.	Pide a GitHub la última versión. La actualización se instala en el sitio y relanza Pillbox.	Fragt GitHub nach der neuesten Version. Das Update wird an Ort und Stelle installiert und Pillbox neu gestartet.
 Check for updates automatically	Buscar actualizaciones automáticamente	Automatisch nach Updates suchen
 Once a day. Only the version number is asked for; nothing about you is sent.	Una vez al día. Solo se pide el número de versión; no se envía nada sobre ti.	Einmal täglich. Nur die Versionsnummer wird abgefragt; nichts über dich wird gesendet.
+macOS calendars	Calendarios de macOS	macOS-Kalender
+Allow Calendars access to choose which ones to show.	Permite el acceso a Calendarios para elegir cuáles mostrar.	Erlaube den Kalenderzugriff, um auszuwählen, welche angezeigt werden.
+Calendar subscriptions	Suscripciones a calendarios	Kalender-Abonnements
+Could not load this link	No se pudo cargar este enlace	Dieser Link konnte nicht geladen werden
+https://… or webcal://… private .ics link	Enlace .ics privado https://… o webcal://…	Privater .ics-Link https://… oder webcal://…
+Add	Añadir	Hinzufügen
+Check the link: it must start with https:// or webcal://	Comprueba el enlace: debe empezar por https:// o webcal://	Prüfe den Link: Er muss mit https:// oder webcal:// beginnen
+The private address of a Google, Notion, Luma or Outlook calendar. Read every 30 minutes; recurring events show only when the feed expands them.	La dirección privada de un calendario de Google, Notion, Luma u Outlook. Se lee cada 30 minutos; los eventos recurrentes solo aparecen si el feed los expande.	Die private Adresse eines Google-, Notion-, Luma- oder Outlook-Kalenders. Alle 30 Minuten gelesen; wiederkehrende Termine erscheinen nur, wenn der Feed sie ausschreibt.

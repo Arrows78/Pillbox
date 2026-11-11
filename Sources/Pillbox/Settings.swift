@@ -126,6 +126,7 @@ struct SettingsView: View {
                 }
             }
             SettingsCard(title: "Backup") {
+            CalendarsSettings()
                 SettingsRow(title: "Export settings…", subtitle: "Saves your preferences to a file. Notes, clipboard history, the shelf and quick actions are not included.") {
                     Button("Export…") { exportSettings() }.controlSize(.small)
                 }

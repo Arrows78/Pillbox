@@ -34,7 +34,7 @@ extension CalendarService {
         let cal = Calendar.current, start = cal.startOfDay(for: Date())
         guard let end = cal.date(byAdding: .day, value: 2, to: start) else { return [] }
         let store = EKEventStore()
-        let pred = store.predicateForEvents(withStart: start, end: end, calendars: calendars)
+        let pred = store.predicateForEvents(withStart: start, end: end, calendars: calendars ?? CalendarChoice.visible(in: store))
         return store.events(matching: pred)
             .sorted { ($0.isAllDay ? 0 : 1, $0.startDate) < ($1.isAllDay ? 0 : 1, $1.startDate) }
             .map { e in
@@ -53,8 +53,9 @@ final class AgendaModel: ObservableObject {
     private var observer: NSObjectProtocol?
 
     func refresh() {
-        denied = EKEventStore.authorizationStatus(for: .event) != .fullAccess
-        events = denied ? [] : CalendarService.shared.agenda()
+        denied = EKEventStore.authorizationStatus(for: .event) != .fullAccess && ICSFeeds.shared.feeds.isEmpty
+        let own = EKEventStore.authorizationStatus(for: .event) == .fullAccess ? CalendarService.shared.agenda() : []
+        events = (own + ICSFeeds.shared.events).sorted { ($0.allDay ? 0 : 1, $0.start) < ($1.allDay ? 0 : 1, $1.start) }
         if observer == nil {
             observer = NotificationCenter.default.addObserver(forName: .EKEventStoreChanged, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.refresh() }
