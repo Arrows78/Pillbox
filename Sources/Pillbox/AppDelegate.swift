@@ -195,6 +195,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         more.image = icon("bolt")
         more.submenu = actionsMenu(PaletteModel().commands)
         menu.addItem(more)
+        menu.addItem(recentIslandsItem())
 
         menu.addItem(.separator())
         toggleMenuItems().forEach(menu.addItem)

@@ -85,6 +85,28 @@ extension AppDelegate {
         ]
     }
 
+    /// The latest islands, newest first. Clicking one shows it again.
+    func recentIslandsItem() -> NSMenuItem {
+        let sub = NSMenu()
+        let entries = IslandHistory.shared.entries
+        for entry in entries {
+            let time = entry.date.formatted(date: .omitted, time: .shortened)
+            sub.addItem(menuItem("\(time) · \(String(entry.title.prefix(60)))", entry.symbol) {
+                NotchModel.shared.show(Activity(symbol: entry.symbol, title: entry.title, subtitle: entry.subtitle, duration: 4, inHistory: false))
+            })
+        }
+        if entries.isEmpty {
+            sub.addItem(NSMenuItem(title: localized("No island yet"), action: nil, keyEquivalent: ""))
+        } else {
+            sub.addItem(.separator())
+            sub.addItem(menuItem(localized("Clear"), "trash") { IslandHistory.shared.clear() })
+        }
+        let item = NSMenuItem(title: localized("Recent islands"), action: nil, keyEquivalent: "")
+        item.image = Self.menuIcon("clock.arrow.circlepath")
+        item.submenu = sub
+        return item
+    }
+
     /// Everything the palette does, one submenu per category, so the features are reachable without the shortcut.
     func actionsMenu(_ commands: [PaletteCommand]) -> NSMenu {
         let menu = NSMenu()

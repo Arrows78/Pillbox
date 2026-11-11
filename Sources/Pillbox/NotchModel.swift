@@ -68,6 +68,8 @@ struct Activity: Identifiable {
     /// High: goes to the front of the queue and replaces a HUD on screen (low battery, a call, a code).
     var priority: Priority = .normal
     enum Priority { case low, normal, high }
+    /// False for an island shown again from the history, so it is not added a second time.
+    var inHistory = true
 }
 
 /// A permission request from a coding agent, answered with Allow or Deny.
@@ -164,6 +166,7 @@ final class NotchModel: ObservableObject {
     private func present() {
         activityTask?.cancel()
         guard let a = queue.current else { return }
+        IslandHistory.shared.record(a)
         withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { self.activity = a }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
         activityTask = Task { [weak self] in

@@ -170,6 +170,21 @@ extension SelfTest {
         check("status menu: nothing beyond three hours", AppDelegate.nextEvent(in: [event("tonight", in: 300)], now: now) == nil)
     }
 
+    /// The island history keeps the last islands once each, newest first, and leaves the passing HUDs out.
+    static func islandHistory() {
+        let history = IslandHistory()
+        let code = Activity(symbol: "key.fill", title: "Code")
+        history.record(code)
+        history.record(code)
+        check("island history: an island is kept once", history.entries.count == 1)
+        history.record(Activity(symbol: "speaker.wave.2.fill", title: "Volume", progress: 0.5))
+        history.record(Activity(symbol: "capslock.fill", title: "Caps Lock", priority: .low))
+        history.record(Activity(symbol: "clock", title: "Again", inHistory: false))
+        check("island history: HUDs and replays are left out", history.entries.count == 1)
+        for i in 0..<30 { history.record(Activity(symbol: "bell", title: "\(i)")) }
+        check("island history: keeps the last \(IslandHistory.limit), newest first", history.entries.count == IslandHistory.limit && history.entries.first?.title == "29")
+    }
+
     /// The settings search finds panes by their titles and their card and row titles.
     static func settingsSearch() {
         check("settings search: an empty query shows every pane", SettingsPane.matching("  ").count == SettingsPane.allCases.count)
