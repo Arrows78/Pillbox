@@ -60,9 +60,9 @@ struct SMSReplyField: View {
     var body: some View {
         HStack(spacing: 6) {
             TextField(localized("Reply"), text: $text)
-                .textFieldStyle(.plain).font(.system(size: 11)).onSubmit(send)
+                .textFieldStyle(.plain).font(Design.label).onSubmit(send)
             if let status { Text(verbatim: status).font(.system(size: 9)).foregroundStyle(.orange).lineLimit(1) }
-            Button(action: send) { Image(systemName: "paperplane.fill").font(.system(size: 10)) }
+            Button(action: send) { Image(systemName: "paperplane.fill").font(Design.caption) }
                 .buttonStyle(.plain).disabled(text.trimmingCharacters(in: .whitespaces).isEmpty)
                 .accessibilityLabel(Text("Send reply"))
         }

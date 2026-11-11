@@ -40,7 +40,7 @@ struct ShortcutsGrid: View {
                         HStack(spacing: 6) {
                             Image(systemName: svc.running == n ? "hourglass" : "bolt.fill").foregroundStyle(.orange)
                             Text(verbatim: n).lineLimit(1)
-                        }.font(.system(size: 11)).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.vertical, 7)
+                        }.font(Design.label).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.vertical, 7)
                         .rowCard()
                     }.buttonStyle(.plain)
                 }
@@ -56,7 +56,7 @@ struct AppsGrid: View {
     var body: some View {
         ScrollView {
             if store.paths.isEmpty {
-                Text("Pin the apps you open most with +, drag to reorder").font(.system(size: 11)).foregroundStyle(Design.secondary)
+                Text("Pin the apps you open most with +, drag to reorder").font(Design.label).foregroundStyle(Design.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading).padding(.bottom, 2)
             }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 84, maximum: 96), spacing: Design.gap)], spacing: Design.gap) {
@@ -64,7 +64,7 @@ struct AppsGrid: View {
                     VStack(spacing: 3) {
                         Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().frame(width: 46, height: 46)
                         Text(((path as NSString).lastPathComponent as NSString).deletingPathExtension)
-                            .font(.system(size: 10)).lineLimit(1).minimumScaleFactor(0.75).truncationMode(.middle).padding(.horizontal, 4)
+                            .font(Design.caption).lineLimit(1).minimumScaleFactor(0.75).truncationMode(.middle).padding(.horizontal, 4)
                     }
                     .frame(maxWidth: .infinity).frame(height: 78)
                     .rowCard(radius: 10)

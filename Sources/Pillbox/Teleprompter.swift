@@ -125,7 +125,7 @@ struct TeleprompterView: View {
                         .overlay(alignment: .top) { Rectangle().fill(.orange.opacity(0.7)).frame(height: 2).offset(y: 36) }
                         .overlay {
                             if !tele.running {
-                                Label("Click to resume", systemImage: "play.fill").font(.system(size: 11, weight: .semibold))
+                                Label("Click to resume", systemImage: "play.fill").font(Design.labelStrong)
                                     .padding(.horizontal, 10).padding(.vertical, 5).background(.black.opacity(0.75), in: Capsule())
                             }
                         }
@@ -139,13 +139,13 @@ struct TeleprompterView: View {
                 if !tele.editing {
                     Button { tele.restart() } label: { Image(systemName: "backward.end.fill") }.accessibilityLabel("Restart")
                     Button { tele.toggle() } label: { Image(systemName: tele.running ? "pause.fill" : "play.fill") }.accessibilityLabel(LocalizedStringKey(tele.running ? "Pause" : "Play"))
-                    Image(systemName: "tortoise.fill").font(.system(size: 10))
+                    Image(systemName: "tortoise.fill").font(Design.caption)
                     Slider(value: $tele.speed, in: 10...120).frame(width: 110)
-                    Image(systemName: "hare.fill").font(.system(size: 10))
+                    Image(systemName: "hare.fill").font(Design.caption)
                 }
                 Spacer()
                 Button { tele.close() } label: { Image(systemName: "xmark") }.accessibilityLabel("Close")
-            }.buttonStyle(.plain).font(.system(size: 13))
+            }.buttonStyle(.plain).font(Design.title)
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 10)

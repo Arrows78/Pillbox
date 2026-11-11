@@ -182,22 +182,22 @@ struct PullRequestsTab: View {
     private func column(_ title: LocalizedStringKey, _ list: [PullRequest]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Text(title).font(.system(size: 11, weight: .semibold)).foregroundStyle(Design.secondary)
-                if !list.isEmpty { Text(verbatim: "\(list.count)").font(.system(size: 10, weight: .semibold)).padding(.horizontal, 6).padding(.vertical, 1).background(Design.card, in: Capsule()) }
+                Text(title).font(Design.labelStrong).foregroundStyle(Design.secondary)
+                if !list.isEmpty { Text(verbatim: "\(list.count)").font(Design.captionStrong).padding(.horizontal, 6).padding(.vertical, 1).background(Design.card, in: Capsule()) }
                 Spacer()
                 if svc.loading { ProgressView().controlSize(.mini) }
             }.frame(height: 16)
             ScrollView {
                 VStack(spacing: 4) {
                     if list.isEmpty && !svc.loading {
-                        Label("Nothing open", systemImage: "checkmark.circle").font(.system(size: 11)).foregroundStyle(Design.tertiary)
+                        Label("Nothing open", systemImage: "checkmark.circle").font(Design.label).foregroundStyle(Design.tertiary)
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 8)
                             .background(RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous).strokeBorder(Design.hairline, style: StrokeStyle(lineWidth: 1, dash: [3])))
                     }
                     ForEach(list) { pr in
                         Button { if let u = URL(string: pr.url) { NSWorkspace.shared.open(u) } } label: {
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(verbatim: pr.title).font(.system(size: 12)).lineLimit(1)
+                                Text(verbatim: pr.title).font(Design.body).lineLimit(1)
                                 HStack(spacing: 6) {
                                     Text(verbatim: "\(pr.repo) #\(pr.number)" + (pr.draft ? " · draft" : "")).font(.system(size: 9)).foregroundStyle(.secondary)
                                     PRStateChips(checks: pr.checks, review: pr.review)

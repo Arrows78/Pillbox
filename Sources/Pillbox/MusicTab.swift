@@ -24,9 +24,9 @@ struct MusicTab: View {
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(music.title).font(.system(size: 20, weight: .bold)).lineLimit(1)
-                    Text(music.artist).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
+                    Text(music.artist).font(Design.body).foregroundStyle(.secondary).lineLimit(1)
                     if let lyric = music.currentLine {
-                        LiveLyricLine(line: lyric).font(.system(size: 12, weight: .medium)).lineLimit(2)
+                        LiveLyricLine(line: lyric).font(Design.bodyMedium).lineLimit(2)
                             .id(lyric.id).transition(.opacity).animation(.easeInOut(duration: 0.25), value: lyric.id)
                     }
                     Spacer(minLength: 0)
@@ -72,7 +72,7 @@ struct AppVolumeView: View {
                     .buttonStyle(.plain).accessibilityLabel("Close").hoverTip(localized("Close"))
             }
             if mixer.apps.isEmpty {
-                Text("No app is playing sound").font(.system(size: 11)).foregroundStyle(.secondary)
+                Text("No app is playing sound").font(Design.label).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 let rows = VStack(spacing: 4) { ForEach(mixer.apps) { AppVolumeRow(app: $0) } }

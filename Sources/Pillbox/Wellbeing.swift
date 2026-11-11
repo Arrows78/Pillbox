@@ -176,7 +176,7 @@ struct AmbientMenu: View {
         } label: {
             Image(systemName: noise.playing ? "speaker.wave.2.fill" : "speaker.wave.2").foregroundStyle(noise.playing ? Color.orange : .white.opacity(0.6))
         }
-        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().font(.system(size: 13))
+        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().font(Design.title)
         .hoverTip(localized("Ambient sound during focus")).accessibilityLabel("Ambient sound during focus")
     }
 }

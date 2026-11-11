@@ -156,7 +156,7 @@ struct WingItemView: View {
         case .battery:
             HStack(spacing: 3) {
                 Image(systemName: battery.pluggedIn ? "battery.100percent.bolt" : battery.level <= 20 ? "battery.25percent" : "battery.75percent")
-                    .font(.system(size: 10)).foregroundStyle(battery.level <= 20 && !battery.pluggedIn ? .red : .white.opacity(0.8))
+                    .font(Design.caption).foregroundStyle(battery.level <= 20 && !battery.pluggedIn ? .red : .white.opacity(0.8))
                 Text(verbatim: "\(battery.level)%").font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.8))
             }
         case .date:
@@ -167,17 +167,17 @@ struct WingItemView: View {
         case .weather:
             if let t = weather.temperature {
                 HStack(spacing: 3) {
-                    Image(systemName: weather.symbol).font(.system(size: 10)).foregroundStyle(.white.opacity(0.8))
+                    Image(systemName: weather.symbol).font(Design.caption).foregroundStyle(.white.opacity(0.8))
                     Text(verbatim: "\(t)°").font(.system(size: 10, weight: .medium, design: .rounded)).foregroundStyle(.white.opacity(0.8))
                 }
             }
         case .nextEvent:
             if let next = calendar.next {
-                Text(verbatim: next.title).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+                Text(verbatim: next.title).font(Design.captionStrong).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
             }
         case .track:
             if resting {
-                if music.hasTrack { Text(verbatim: music.title).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white.opacity(0.85)).lineLimit(1) }
+                if music.hasTrack { Text(verbatim: music.title).font(Design.captionStrong).foregroundStyle(.white.opacity(0.85)).lineLimit(1) }
             } else if side == .left {
                 if music.hasTrack && music.isPlaying {
                     if let art = music.artwork { Image(nsImage: art).resizable().frame(width: 20, height: 20).clipShape(RoundedRectangle(cornerRadius: 5)) }
@@ -190,7 +190,7 @@ struct WingItemView: View {
             if side == .left {
                 if timer.isActive {
                     if let e = Mascot.emoji(for: Mascot.current, progress: timer.progress) { Text(e).font(.system(size: 14)) }
-                    else { Image(systemName: "timer").font(.system(size: 13, weight: .semibold)).foregroundStyle(.orange) }
+                    else { Image(systemName: "timer").font(Design.titleStrong).foregroundStyle(.orange) }
                 }
             } else if timer.isActive {
                 Text(timer.display).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.orange)
@@ -202,23 +202,23 @@ struct WingItemView: View {
             if side == .left { if cleaning.active { Image(systemName: "lock.fill").foregroundStyle(.yellow) } }
             else if cleaning.active { Text("\(cleaning.remaining)s").font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.yellow) }
         case .call:
-            if side == .left { if calls.call != nil { Image(systemName: "phone.fill").font(.system(size: 12)).foregroundStyle(.green) } }
+            if side == .left { if calls.call != nil { Image(systemName: "phone.fill").font(Design.body).foregroundStyle(.green) } }
             else if let c = calls.call { Text(c.since, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.green).frame(width: 52) }
         case .build:
-            if side == .left { if build.since != nil { Image(systemName: "hammer.fill").font(.system(size: 12)).foregroundStyle(.blue) } }
+            if side == .left { if build.since != nil { Image(systemName: "hammer.fill").font(Design.body).foregroundStyle(.blue) } }
             else if let s = build.since { Text(s, style: .timer).font(.system(size: 11, weight: .semibold, design: .monospaced)).foregroundStyle(.blue).frame(width: 52) }
         case .downloads:
-            if side == .left { if !downloads.items.isEmpty { Image(systemName: "arrow.down.circle.fill").font(.system(size: 13)).foregroundStyle(.blue) } }
+            if side == .left { if !downloads.items.isEmpty { Image(systemName: "arrow.down.circle.fill").font(Design.title).foregroundStyle(.blue) } }
             else if let d = downloads.items.first { Text(verbatim: DownloadProgress.size(d.bytes)).font(.system(size: 10, weight: .semibold, design: .monospaced)).foregroundStyle(.blue) }
         case .privacy:
             if privacy.live {
                 HStack(spacing: 4) {
                     if privacy.micLive { Image(systemName: "mic.fill").foregroundStyle(.orange) }
                     if privacy.cameraLive { Image(systemName: "video.fill").foregroundStyle(.green) }
-                }.font(.system(size: 11))
+                }.font(Design.label)
             }
         case .caffeine:
-            if side == .left { if caffeine.active { Image(systemName: "cup.and.saucer.fill").font(.system(size: 13)).foregroundStyle(.orange) } }
+            if side == .left { if caffeine.active { Image(systemName: "cup.and.saucer.fill").font(Design.title).foregroundStyle(.orange) } }
             else if caffeine.active, let u = caffeine.until { Text(u, style: .timer).font(.system(size: 10, design: .monospaced)).foregroundStyle(.orange) }
         case .stocks:
             if let sym = stocks.pinned, let q = stocks.quotes[sym] {

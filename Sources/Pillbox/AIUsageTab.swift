@@ -41,7 +41,7 @@ struct AIUsageTab: View {
         let idle = p.unit != UsageUnit.requests.rawValue && p.week == 0
         return Button(action: action) {
             HStack(spacing: 6) {
-                Image(systemName: p.symbol).font(.system(size: 10)).frame(width: 14)
+                Image(systemName: p.symbol).font(Design.caption).frame(width: 14)
                 Text(verbatim: p.name).font(.system(size: 11, weight: selected ? .semibold : .regular)).lineLimit(1).truncationMode(.tail)
                 Spacer(minLength: 0)
                 if !idle { Text(verbatim: AIUsageService.short(p.week)).font(.system(size: 10, design: .rounded)).foregroundStyle(.secondary) }
@@ -60,14 +60,14 @@ struct AIUsageTab: View {
         let windowMinutes = provider.limitWindowMinutes ?? Self.defaultLimitMinutes
         let peak = max(provider.days.map(\.tokens).max() ?? 1, 1)
         return VStack(alignment: .leading, spacing: 8) {
-            Label(provider.name, systemImage: provider.symbol).font(.system(size: 13, weight: .semibold)).lineLimit(1)
+            Label(provider.name, systemImage: provider.symbol).font(Design.titleStrong).lineLimit(1)
             if let percent = provider.limitPercent {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
                         Group { if windowMinutes >= 7 * 24 * 60 { Text("Monthly limit") } else { Text("\(windowMinutes / 60)h limit") } }.foregroundStyle(.secondary)
                         Spacer()
                         Text(String(format: "%.0f%%", percent)).font(.system(size: 12, weight: .semibold, design: .rounded))
-                    }.font(.system(size: 11))
+                    }.font(Design.label)
                     ProgressBar(value: percent, total: 100).tint(.orange)   // read-only: the limit is not ours to change
                     if let resets = provider.limitResetsAt { Text("Resets \(resets, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
                 }.padding(8).rowCard()
@@ -79,7 +79,7 @@ struct AIUsageTab: View {
                 stat("Last 5 hours", provider.fiveHour)
                 stat("Today", provider.today)
                 stat("7 days", provider.week)
-                if provider.week == 0 { Text("No activity in the last 7 days").font(.system(size: 10)).foregroundStyle(.secondary) }
+                if provider.week == 0 { Text("No activity in the last 7 days").font(Design.caption).foregroundStyle(.secondary) }
                 if let lastActivity = provider.lastActivity { Text("Last activity \(lastActivity, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
             }
             Spacer(minLength: 0)
@@ -91,7 +91,7 @@ struct AIUsageTab: View {
                         case .requests: Text("Monthly budget: no daily history")
                         case .tokens: Text("Tokens per day (cache reads excluded)")
                         }
-                    }.font(.system(size: 10)).foregroundStyle(.secondary)
+                    }.font(Design.caption).foregroundStyle(.secondary)
                     HStack(alignment: .bottom, spacing: 8) {
                         ForEach(Array(provider.days.enumerated()), id: \.offset) { _, day in
                             VStack(spacing: 3) {
@@ -108,7 +108,7 @@ struct AIUsageTab: View {
 
     private func stat(_ name: LocalizedStringKey, _ n: Int) -> some View {
         HStack { Text(name).foregroundStyle(.secondary); Spacer(); Text(AIUsageService.short(n)).font(.system(size: 14, weight: .semibold, design: .rounded)) }
-            .font(.system(size: 11)).padding(.horizontal, 8).padding(.vertical, 3)
+            .font(Design.label).padding(.horizontal, 8).padding(.vertical, 3)
             .background(Design.card, in: RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous))
     }
 }

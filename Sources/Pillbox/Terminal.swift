@@ -175,7 +175,7 @@ struct TerminalTab: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 4) {
                         ForEach(store.sessions, id: \.id) { session in sessionChip(session) }
-                        Button { store.add() } label: { Image(systemName: "plus").font(.system(size: 10, weight: .semibold)).frame(width: 22, height: 20) }
+                        Button { store.add() } label: { Image(systemName: "plus").font(Design.captionStrong).frame(width: 22, height: 20) }
                             .buttonStyle(.plain).help(localized("New terminal session"))
                     }
                 }
@@ -183,7 +183,7 @@ struct TerminalTab: View {
                 Button("Open in Terminal.app") {
                     if let session = store.selected { TerminalSession.openInTerminalApp(folder: session.workingDirectory) }
                 }
-                .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(.white.opacity(0.8))
+                .buttonStyle(.plain).font(Design.label).foregroundStyle(.white.opacity(0.8))
             }
             TerminalHost(view: store.selected?.view)
                 .clipShape(RoundedRectangle(cornerRadius: 8))

@@ -262,7 +262,7 @@ struct DictationView: View {
                 if t.isEmpty { Text("Listening…").foregroundStyle(.secondary) }
                 else { Text(verbatim: t).truncationMode(.head) }
             }
-            .font(.system(size: 12, weight: .medium)).lineLimit(1)
+            .font(Design.bodyMedium).lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
             Button { dictation.cancel() } label: { Image(systemName: "xmark.circle.fill").font(.system(size: 17)).foregroundStyle(.white.opacity(0.5)) }
                 .buttonStyle(.plain).accessibilityLabel("Cancel")

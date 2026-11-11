@@ -14,7 +14,7 @@ struct TimerTab: View {
                 VStack(spacing: 0) {
                     if let emoji = Mascot.emoji(for: Mascot.current, progress: service.progress) { Text(emoji).font(.system(size: 20)).scaleEffect(service.running ? 1.08 : 1).animation(service.running ? .easeInOut(duration: 0.8).repeatForever() : .default, value: service.running) }
                     Text(service.display).font(.system(size: 30, weight: .semibold, design: .monospaced))
-                    Text(LocalizedStringKey(service.mode.rawValue)).font(.system(size: 10)).foregroundStyle(.secondary)
+                    Text(LocalizedStringKey(service.mode.rawValue)).font(Design.caption).foregroundStyle(.secondary)
                 }
             }.frame(width: 180, height: 180)
 
@@ -47,13 +47,13 @@ struct TimerTab: View {
                                 .overlay(Capsule().strokeBorder(on ? Color.orange.opacity(0.7) : Design.hairline, lineWidth: 0.5))
                         }.buttonStyle(.plain).disabled(service.running)
                     }
-                    if service.mode == .stopwatch { Text("Counts up until you stop it").font(.system(size: 11)).foregroundStyle(Design.secondary) }
+                    if service.mode == .stopwatch { Text("Counts up until you stop it").font(Design.label).foregroundStyle(Design.secondary) }
                     Spacer(minLength: 0)
                 }.opacity(service.running ? 0.6 : 1)
                 TextField("Name this timer", text: $service.label).pillField()
                 HStack(spacing: 10) {
-                    Toggle("Chain", isOn: $service.chain).toggleStyle(.switch).controlSize(.mini).tint(.orange).font(.system(size: 11))
-                    Label("\(service.streak) day streak", systemImage: "flame.fill").font(.system(size: 11)).foregroundStyle(.orange)
+                    Toggle("Chain", isOn: $service.chain).toggleStyle(.switch).controlSize(.mini).tint(.orange).font(Design.label)
+                    Label("\(service.streak) day streak", systemImage: "flame.fill").font(Design.label).foregroundStyle(.orange)
                     Spacer()
                     HStack(alignment: .bottom, spacing: 3) {
                         ForEach(Array(service.week.enumerated()), id: \.offset) { _, day in

@@ -169,7 +169,7 @@ struct BatteryChartCard: View {
                 }
             }.font(.system(size: 9)).lineLimit(1).minimumScaleFactor(0.8)
             if !hasBattery {
-                Text("No battery").font(.system(size: 10)).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
+                Text("No battery").font(Design.caption).foregroundStyle(.secondary).frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 let day = samples.filter { now.timeIntervalSince($0.t) <= 86_400 }
                 Chart {

@@ -71,7 +71,7 @@ struct AskView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ScrollView { Text(verbatim: m.text.isEmpty ? "—" : m.text).font(.system(size: 12)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
+            ScrollView { Text(verbatim: m.text.isEmpty ? "—" : m.text).font(Design.body).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }
                 .frame(height: 110).padding(8).background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             HStack {
                 Button("Copy text") { Pasteboard.copy(m.text) }
@@ -87,7 +87,7 @@ struct AskView: View {
                     Button("Ask") { m.ask() }.disabled(m.busy)
                 }.controlSize(.small)
                 if m.busy { ProgressView().controlSize(.small) }
-                if !m.answer.isEmpty { ScrollView { Text(verbatim: m.answer).font(.system(size: 12)).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.frame(height: 90) }
+                if !m.answer.isEmpty { ScrollView { Text(verbatim: m.answer).font(Design.body).textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading) }.frame(height: 90) }
                 if let e = m.error { Text(verbatim: e).font(.caption).foregroundStyle(.orange) }
             } else {
                 Text("Add an Anthropic API key in Settings to ask questions. Only the recognised text is sent.").font(.caption).foregroundStyle(.secondary)

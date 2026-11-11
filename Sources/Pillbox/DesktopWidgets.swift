@@ -42,7 +42,7 @@ struct DesktopWidgetView: View {
                     Spacer()
                     if let t = weather.temperature { Label("\(t)°", systemImage: weather.symbol).symbolRenderingMode(.multicolor).font(.system(size: 16)) }
                 }
-                Text(ctx.date, format: .dateTime.weekday(.wide).day().month(.wide)).font(.system(size: 12)).foregroundStyle(.secondary)
+                Text(ctx.date, format: .dateTime.weekday(.wide).day().month(.wide)).font(Design.body).foregroundStyle(.secondary)
                 HStack(spacing: 14) {
                     ForEach(Self.zones, id: \.self) { id in
                         VStack(spacing: 0) {
@@ -53,7 +53,7 @@ struct DesktopWidgetView: View {
                 }
                 if music.hasTrack {
                     Label { Text(verbatim: "\(music.title) · \(music.artist)").lineLimit(1) } icon: { Image(systemName: music.isPlaying ? "play.fill" : "pause.fill") }
-                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                        .font(Design.label).foregroundStyle(.secondary)
                 }
             }
             .padding(16).frame(width: 330, alignment: .leading)

@@ -145,14 +145,14 @@ struct ActionsGrid: View {
     @ObservedObject var store = QuickActionsStore.shared
     var body: some View {
         ScrollView {
-            if store.actions.isEmpty { Text("Add shell commands, links and web mini-apps in Settings › Quick actions").font(.system(size: 11)).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading) }
+            if store.actions.isEmpty { Text("Add shell commands, links and web mini-apps in Settings › Quick actions").font(Design.label).foregroundStyle(.tertiary).frame(maxWidth: .infinity, alignment: .leading) }
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 6)], spacing: 6) {
                 ForEach(store.actions) { a in
                     Button { store.run(a) } label: {
                         HStack(spacing: 6) {
                             Image(systemName: a.kind == .shell ? "terminal" : a.kind == .web ? "macwindow" : "link").foregroundStyle(.orange)
                             Text(verbatim: a.name).lineLimit(1)
-                        }.font(.system(size: 11)).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.vertical, 7)
+                        }.font(Design.label).frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 8).padding(.vertical, 7)
                         .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
                     }.buttonStyle(.plain).contextMenu { Button("Remove") { store.remove(a) } }
                 }

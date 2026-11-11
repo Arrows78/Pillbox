@@ -143,7 +143,7 @@ struct PrompterTab: View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Label("Scripts", systemImage: "books.vertical.fill").font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.5))
+                    Label("Scripts", systemImage: "books.vertical.fill").font(Design.labelStrong).foregroundStyle(.white.opacity(0.5))
                     Spacer()
                     Button { store.add() } label: { Image(systemName: "plus") }.buttonStyle(.plain).accessibilityLabel("New script")
                 }
@@ -152,8 +152,8 @@ struct PrompterTab: View {
                         ForEach(store.scripts) { s in
                             Button { store.selected = s.id } label: {
                                 HStack(spacing: 6) {
-                                    Image(systemName: "doc.text.fill").font(.system(size: 10))
-                                    Text(verbatim: s.title).lineLimit(1).font(.system(size: 12, weight: .medium))
+                                    Image(systemName: "doc.text.fill").font(Design.caption)
+                                    Text(verbatim: s.title).lineLimit(1).font(Design.bodyMedium)
                                     Spacer(minLength: 0)
                                 }
                                 .padding(.horizontal, 8).padding(.vertical, 6)
@@ -183,7 +183,7 @@ struct PrompterTab: View {
                         ForEach(PrompterSpeed.allCases, id: \.self) { sp in
                             let on = PrompterSpeed.nearest(tele.speed) == sp
                             Button { tele.speed = sp.points } label: {
-                                Text(verbatim: sp.title).font(.system(size: 11, weight: .semibold)).frame(maxWidth: .infinity).padding(.vertical, 5)
+                                Text(verbatim: sp.title).font(Design.labelStrong).frame(maxWidth: .infinity).padding(.vertical, 5)
                                     .background(on ? Color.white.opacity(0.2) : .clear, in: Capsule())
                                     .foregroundStyle(on ? .white : .white.opacity(0.5))
                             }.buttonStyle(.plain)

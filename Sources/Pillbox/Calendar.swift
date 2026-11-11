@@ -121,14 +121,14 @@ struct CalendarTab: View {
                             Image(systemName: "calendar").font(.system(size: 26)).foregroundStyle(.white.opacity(0.3))
                             Text(week ? "No events this week" : "No events today or tomorrow").foregroundStyle(.secondary)
                             if !feeds.failed.isEmpty {
-                                Text("Some calendar links could not be loaded").font(.system(size: 11)).foregroundStyle(.orange)
+                                Text("Some calendar links could not be loaded").font(Design.label).foregroundStyle(.orange)
                             }
                         }.frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         ScrollView {
                             VStack(alignment: .leading, spacing: 10) {
                                 ForEach(days, id: \.offset) { day in
-                                    Text(verbatim: dayTitle(day)).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white.opacity(0.5))
+                                    Text(verbatim: dayTitle(day)).font(Design.labelStrong).foregroundStyle(.white.opacity(0.5))
                                     ForEach(day.events) { row($0) }
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading)
@@ -184,9 +184,9 @@ struct CalendarTab: View {
         HStack(spacing: 10) {
             RoundedRectangle(cornerRadius: 2).fill(e.color).frame(width: 4, height: 30)
             VStack(alignment: .leading, spacing: 1) {
-                Text(verbatim: e.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
+                Text(verbatim: e.title).font(Design.bodyMedium).lineLimit(1)
                 Text(verbatim: e.allDay ? localized("All day") : "\(e.start.formatted(date: .omitted, time: .shortened)) – \(e.end.formatted(date: .omitted, time: .shortened))")
-                    .font(.system(size: 10)).foregroundStyle(.secondary)
+                    .font(Design.caption).foregroundStyle(.secondary)
             }
             Spacer()
             if let url = e.join, e.end > Date() {
@@ -212,7 +212,7 @@ struct NewEventForm: View {
             TextField("Event title", text: $title).textFieldStyle(.roundedBorder)
             HStack(spacing: 8) {
                 DatePicker("", selection: $day, displayedComponents: .date).labelsHidden()
-                Text("Start").font(.system(size: 11)).foregroundStyle(.secondary)
+                Text("Start").font(Design.label).foregroundStyle(.secondary)
                 DatePicker("", selection: $time, displayedComponents: .hourAndMinute).labelsHidden()
             }
             HStack(spacing: 8) {
@@ -226,7 +226,7 @@ struct NewEventForm: View {
                     .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             }
             if let message = error {
-                Text(message).font(.system(size: 11)).foregroundStyle(.orange)
+                Text(message).font(Design.label).foregroundStyle(.orange)
             }
         }
         .controlSize(.small)

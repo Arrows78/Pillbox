@@ -42,21 +42,21 @@ struct HomeRecentIslands: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Recent islands").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+                Text("Recent islands").font(Design.captionStrong).foregroundStyle(.secondary)
                 Spacer()
                 if !history.entries.isEmpty {
-                    Button("Clear") { history.clear() }.buttonStyle(.plain).font(.system(size: 10)).foregroundStyle(.secondary)
+                    Button("Clear") { history.clear() }.buttonStyle(.plain).font(Design.caption).foregroundStyle(.secondary)
                 }
             }
             if history.entries.isEmpty {
-                Text("No island yet").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary).lineLimit(1)
+                Text("No island yet").font(Design.bodyMedium).foregroundStyle(.secondary).lineLimit(1)
             }
             ForEach(history.entries.prefix(3)) { entry in
                 HStack(spacing: 8) {
-                    Image(systemName: entry.symbol).font(.system(size: 12)).frame(width: 16)
+                    Image(systemName: entry.symbol).font(Design.body).frame(width: 16)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(verbatim: entry.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
-                        Text(entry.date, format: .dateTime.hour().minute()).font(.system(size: 10)).foregroundStyle(.secondary)
+                        Text(verbatim: entry.title).font(Design.bodyMedium).lineLimit(1)
+                        Text(entry.date, format: .dateTime.hour().minute()).font(Design.caption).foregroundStyle(.secondary)
                     }
                     Spacer(minLength: 0)
                 }

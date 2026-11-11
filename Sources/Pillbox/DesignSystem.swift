@@ -11,6 +11,20 @@ enum Design {
     static let gap: CGFloat = 8
     static let secondary = Color.white.opacity(0.55)
     static let tertiary = Color.white.opacity(0.35)
+
+    // Type scale: the sizes the island already used, named so a tab asks for a role, not a number.
+    /// Fine print: units, timestamps, badges.
+    static let caption = Font.system(size: 10)
+    /// Secondary lines and controls.
+    static let label = Font.system(size: 11)
+    /// Running text and list rows.
+    static let body = Font.system(size: 12)
+    /// Row and card titles.
+    static let title = Font.system(size: 13)
+    static let captionStrong = Font.system(size: 10, weight: .semibold)
+    static let labelStrong = Font.system(size: 11, weight: .semibold)
+    static let bodyMedium = Font.system(size: 12, weight: .medium)
+    static let titleStrong = Font.system(size: 13, weight: .semibold)
 }
 
 /// What a tab shows when it has nothing yet: an icon, one line, an optional hint and the next action.

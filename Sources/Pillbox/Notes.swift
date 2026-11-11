@@ -51,7 +51,7 @@ struct NotesTab: View {
                                 Spacer(minLength: 0)
                                 IconButton(symbol: "trash", label: localized("Delete")) { store.remove(n) }
                             }
-                            .font(.system(size: 12)).padding(.leading, 10).padding(.trailing, 4).padding(.vertical, 3).rowCard()
+                            .font(Design.body).padding(.leading, 10).padding(.trailing, 4).padding(.vertical, 3).rowCard()
                             .contextMenu {
                                 Button("Copy") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(n.text, forType: .string) }
                                 Button(LocalizedStringKey(n.done ? "Mark as not done" : "Mark as done")) { store.toggle(n) }

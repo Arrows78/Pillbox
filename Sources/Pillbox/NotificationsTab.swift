@@ -60,7 +60,7 @@ struct NotificationsTab: View {
                                             Spacer()
                                             Text(n.date, style: .relative).font(.system(size: 9)).foregroundStyle(.secondary)
                                         }
-                                        if !n.body.isEmpty { Text(verbatim: n.body).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2) }
+                                        if !n.body.isEmpty { Text(verbatim: n.body).font(Design.label).foregroundStyle(.secondary).lineLimit(2) }
                                         if n.app == MessageReply.app { SMSReplyField(sender: n.sender) }
                                     }
                                 }

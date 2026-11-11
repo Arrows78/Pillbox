@@ -29,7 +29,7 @@ struct ShelfTab: View {
                     if !kinds.isEmpty {
                         Menu {
                             ForEach(kinds) { k in Button(LocalizedStringKey(k.rawValue)) { shelf.convert(target.filter { ConvertTarget.targets(for: $0.url).contains(k) }, to: k) } }
-                        } label: { Text("Convert").font(.system(size: 11, weight: .semibold)) }
+                        } label: { Text("Convert").font(Design.labelStrong) }
                             .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                             .padding(.horizontal, 12).padding(.vertical, 5).background(Color.white.opacity(0.12), in: Capsule())
                     }
@@ -37,7 +37,7 @@ struct ShelfTab: View {
                     if target.count == 1, let one = target.first, Annotator.canAnnotate(one.url) { Button("Annotate") { Annotator.open(one.url) }.buttonStyle(PillButtonStyle()) }
                     Spacer(minLength: 6)
                     Text(verbatim: ShelfService.summary(count: shelf.items.count, selected: shelf.selection.count))
-                        .font(.system(size: 11)).foregroundStyle(Design.secondary).lineLimit(1).fixedSize()
+                        .font(Design.label).foregroundStyle(Design.secondary).lineLimit(1).fixedSize()
                     IconButton(symbol: "trash", label: localized("Clear the shelf")) { shelf.clear() }
                 }
             }
@@ -56,13 +56,13 @@ struct ShelfCell: View {
         let selected = shelf.selection.contains(item.id)
         VStack(spacing: 4) {
             Image(nsImage: NSWorkspace.shared.icon(forFile: item.path)).resizable().frame(width: 48, height: 48)
-            Text(verbatim: item.name).font(.system(size: 10)).lineLimit(2).truncationMode(.middle).multilineTextAlignment(.center)
+            Text(verbatim: item.name).font(Design.caption).lineLimit(2).truncationMode(.middle).multilineTextAlignment(.center)
                 .frame(height: 28, alignment: .top)
         }
         .padding(.horizontal, 6).frame(maxWidth: .infinity).frame(height: Self.height)
         .rowCard(radius: 10, selected: selected ? Color.cyan.opacity(0.3) : nil)
         .overlay(alignment: .topTrailing) {
-            if selected { Image(systemName: "checkmark.circle.fill").font(.system(size: 12)).foregroundStyle(.cyan).padding(5) }
+            if selected { Image(systemName: "checkmark.circle.fill").font(Design.body).foregroundStyle(.cyan).padding(5) }
         }
         .onTapGesture(count: 2) { NSWorkspace.shared.open(item.url) }
         .onTapGesture { if selected { shelf.selection.remove(item.id) } else { shelf.selection.insert(item.id) } }

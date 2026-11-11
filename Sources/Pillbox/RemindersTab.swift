@@ -15,7 +15,7 @@ struct RemindersTab: View {
             VStack(spacing: Design.gap) {
                 HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill").foregroundStyle(.blue)
-                    TextField("Add a reminder, e.g. call mum tomorrow at 9am", text: $rem.draft).textFieldStyle(.plain).font(.system(size: 12)).focused($focused)
+                    TextField("Add a reminder, e.g. call mum tomorrow at 9am", text: $rem.draft).textFieldStyle(.plain).font(Design.body).focused($focused)
                         .onSubmit { rem.add() }
                         .keepsIslandOpen(while: focused, in: model)
                 }
@@ -43,7 +43,7 @@ struct RemindersTab: View {
                                     Spacer()
                                     if let d = r.due { Text(d, format: .dateTime.day().month(.abbreviated).hour().minute()).foregroundStyle(r.overdue ? .red : Design.secondary) }
                                 }
-                                .font(.system(size: 12)).padding(.horizontal, 10).padding(.vertical, 5).rowCard()
+                                .font(Design.body).padding(.horizontal, 10).padding(.vertical, 5).rowCard()
                                 .contextMenu { Button("Complete") { rem.complete(r) } }
                             }
                         }

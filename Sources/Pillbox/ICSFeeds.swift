@@ -191,7 +191,7 @@ struct CalendarsSettings: View {
                     Button("Add") { invalid = !feeds.add(name: name, url: link); if !invalid { name = ""; link = "" } }.disabled(link.isEmpty)
                 }.controlSize(.small)
                 Text(invalid ? "Check the link: it must start with https:// or webcal://" : "The private address of a Google, Notion, Luma or Outlook calendar. Read every 30 minutes; recurring events show only when the feed expands them.")
-                    .font(.system(size: 11)).foregroundStyle(invalid ? .orange : SettingsStyle.dim).fixedSize(horizontal: false, vertical: true)
+                    .font(Design.label).foregroundStyle(invalid ? .orange : SettingsStyle.dim).fixedSize(horizontal: false, vertical: true)
             }.padding(12)
         }
     }

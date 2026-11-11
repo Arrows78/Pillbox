@@ -15,8 +15,8 @@ struct ClipboardHistory: View {
         VStack(spacing: Design.gap) {
             HStack(spacing: Design.gap) {
                 HStack(spacing: 6) {
-                    Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(Design.secondary)
-                    TextField("Search text and screenshots", text: $clip.query).textFieldStyle(.plain).font(.system(size: 12)).focused($focused)
+                    Image(systemName: "magnifyingglass").font(Design.label).foregroundStyle(Design.secondary)
+                    TextField("Search text and screenshots", text: $clip.query).textFieldStyle(.plain).font(Design.body).focused($focused)
                     if !clip.query.isEmpty {
                         Button { clip.query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(Design.secondary) }.buttonStyle(.plain).accessibilityLabel("Clear search")
                     }
@@ -86,8 +86,8 @@ struct SnippetsView: View {
                         ForEach(store.snippets) { sn in
                             HStack {
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text(sn.name).font(.system(size: 12, weight: .medium)).lineLimit(1)
-                                    Text(sn.text).font(.system(size: 10)).foregroundStyle(Design.secondary).lineLimit(1)
+                                    Text(sn.name).font(Design.bodyMedium).lineLimit(1)
+                                    Text(sn.text).font(Design.caption).foregroundStyle(Design.secondary).lineLimit(1)
                                 }
                                 Spacer()
                                 IconButton(symbol: "trash", label: localized("Delete")) { store.remove(sn) }
@@ -181,7 +181,7 @@ struct ClipCard: View {
                 }
             default:
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(t.trimmingCharacters(in: .whitespacesAndNewlines)).font(.system(size: 11)).lineLimit(9)
+                    Text(t.trimmingCharacters(in: .whitespacesAndNewlines)).font(Design.label).lineLimit(9)
                     if t.count > 140 { Text("\(t.count) chars · \(t.split(whereSeparator: \.isWhitespace).count) words").font(.system(size: 9)).foregroundStyle(Design.secondary) }
                 }
             }

@@ -59,7 +59,7 @@ struct LyricsScreenView: View {
             }
             Spacer()
             Text(verbatim: music.hasTrack ? "\(music.title) · \(music.artist)" : "").font(.system(size: 16)).foregroundStyle(.secondary)
-            Text("Press Esc or click to close").font(.system(size: 11)).foregroundStyle(.tertiary)
+            Text("Press Esc or click to close").font(Design.label).foregroundStyle(.tertiary)
         }
         .foregroundStyle(.white).padding(60).frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.opacity(0.94))
