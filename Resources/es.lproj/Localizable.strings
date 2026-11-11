@@ -738,3 +738,7 @@
 "Allow JavaScript from Apple Events in the browser" = "Permite JavaScript desde eventos de Apple en el navegador";
 "Move and resize windows with the mouse" = "Mover y redimensionar ventanas con el ratón";
 "Hold ⌃⌥ and drag a window to move it; add ⇧ to resize it. Needs Accessibility." = "Mantén ⌃⌥ y arrastra una ventana para moverla; añade ⇧ para redimensionarla. Requiere accesibilidad.";
+"Reply" = "Responder";
+"Send reply" = "Enviar respuesta";
+"No number or address for this sender" = "Ningún número ni dirección para este remitente";
+"Messages could not send it" = "Messages no pudo enviarlo";

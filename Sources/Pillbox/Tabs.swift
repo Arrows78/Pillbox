@@ -988,11 +988,12 @@ struct NotificationsTab: View {
                                             Text(n.date, style: .relative).font(.system(size: 9)).foregroundStyle(.secondary)
                                         }
                                         if !n.body.isEmpty { Text(verbatim: n.body).font(.system(size: 11)).foregroundStyle(.secondary).lineLimit(2) }
+                                        if n.app == MessageReply.app { SMSReplyField(sender: n.title) }
                                     }
                                 }
                                 .padding(.horizontal, 10).padding(.vertical, 5).frame(maxWidth: .infinity, alignment: .leading)
                                 .rowCard()
-                                .onTapGesture { open(n.app) }
+                                .onTapGesture { if n.app != MessageReply.app { open(n.app) } }
                                 .contextMenu {
                                     Button("Open the app") { open(n.app) }
                                     if let code = NotificationFeed.verificationCode(in: n.body) { Button(LocalizedStringKey(L("Copy code %@", code))) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(code, forType: .string) } }

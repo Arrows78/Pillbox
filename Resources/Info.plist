@@ -39,6 +39,8 @@
 	<string>Pillbox shows your next calendar event on the Home tab.</string>
 	<key>NSCalendarsUsageDescription</key>
 	<string>Pillbox shows your next calendar event on the Home tab.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Finds the phone number or address of a message sender, to reply to a text from the notification.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pillbox uses your location for the local weather on the Home tab.</string>
 	<key>NSLocationUsageDescription</key>
