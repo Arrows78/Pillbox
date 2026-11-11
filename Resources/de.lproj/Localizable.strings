@@ -756,3 +756,7 @@
 "Allow System Audio Recording for Pillbox." = "Systemaudioaufnahme für Pillbox erlauben.";
 "Hide everywhere" = "Überall ausblenden";
 "Also hides the island on your own screen, not only from captures. Its shortcuts keep working; open Settings from the menu bar icon to turn it back on." = "Blendet die Insel auch auf dem eigenen Bildschirm aus, nicht nur in Aufnahmen. Ihre Tastenkürzel bleiben aktiv; die Einstellungen öffnest du über das Menüleisten-Symbol, um sie wieder einzublenden.";
+"Connect a Bluetooth Device" = "Bluetooth-Gerät verbinden";
+"No paired device to connect" = "Kein gekoppeltes Gerät zum Verbinden";
+"Connected to %@" = "Verbunden mit %@";
+"Could not connect to %@" = "Verbindung mit %@ nicht möglich";

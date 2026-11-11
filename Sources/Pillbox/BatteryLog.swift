@@ -310,3 +310,28 @@ final class BluetoothIslands: NSObject {
         }
     }
 }
+
+// MARK: Connect a paired Bluetooth device from the menu bar
+
+enum BluetoothConnect {
+    struct Device { let id: String; let name: String }
+
+    /// Paired devices that are not connected right now, by address.
+    @MainActor static func pairedOffline() -> [Device] {
+        (IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice] ?? []).filter { !$0.isConnected() }
+            .compactMap { d in d.addressString.map { Device(id: $0, name: d.name ?? "Bluetooth") } }
+    }
+
+    @MainActor static func name(of id: String) -> String? {
+        (IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice])?.first { $0.addressString == id }?.name
+    }
+
+    /// Opens the connection on a background queue: a device that does not answer can take a few seconds.
+    @MainActor static func connect(_ id: String, done: @escaping @MainActor (Bool) -> Void) {
+        guard let device = (IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice])?.first(where: { $0.addressString == id }) else { done(false); return }
+        DispatchQueue.global(qos: .userInitiated).async {
+            let ok = device.openConnection() == kIOReturnSuccess
+            DispatchQueue.main.async { MainActor.assumeIsolated { done(ok) } }
+        }
+    }
+}

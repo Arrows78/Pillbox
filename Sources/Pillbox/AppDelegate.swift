@@ -1,6 +1,12 @@
 import AppKit
 import Carbon.HIToolbox
 
+/// Carries a palette action through an NSMenuItem.
+final class ActionBox {
+    let run: @MainActor () -> Void
+    init(_ run: @escaping @MainActor () -> Void) { self.run = run }
+}
+
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var controller: NotchWindowController!
@@ -192,12 +198,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let awake = add("Keep Awake", "cup.and.saucer.fill", #selector(toggleAwake), mods: [])
         awake.state = CaffeineService.shared.active ? .on : .off
 
+        // Everything the palette does, so the features are reachable without knowing the shortcut.
+        let actions = NSMenu()
+        for command in PaletteModel().commands {
+            let item = NSMenuItem(title: command.title, action: #selector(runAction(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = ActionBox(command.run)
+            actions.addItem(item)
+        }
+        let more = NSMenuItem(title: L("Actions"), action: nil, keyEquivalent: "")
+        more.image = icon("bolt")
+        more.submenu = actions
+        menu.addItem(more)
+
+        // One click connects a paired device that is off.
+        let bluetooth = NSMenu()
+        for device in BluetoothConnect.pairedOffline() {
+            let item = NSMenuItem(title: device.name, action: #selector(connectDevice(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = device.id
+            bluetooth.addItem(item)
+        }
+        if bluetooth.items.isEmpty { bluetooth.addItem(NSMenuItem(title: L("No paired device to connect"), action: nil, keyEquivalent: "")) }
+        let connect = NSMenuItem(title: L("Connect a Bluetooth Device"), action: nil, keyEquivalent: "")
+        connect.image = icon("airpodspro")
+        connect.submenu = bluetooth
+        menu.addItem(connect)
+
         menu.addItem(.separator())
         _ = add("Settings…", "gearshape", #selector(settings), key: ",", mods: .command)
         _ = add("Quit Pillbox", "power", #selector(NSApplication.terminate(_:)), key: "q", mods: .command, target: NSApp)
     }
 
     @objc private func toggleNotch() { NotchModel.shared.toggle() }
+
+    @objc private func runAction(_ sender: NSMenuItem) {
+        guard let box = sender.representedObject as? ActionBox else { return }
+        MainActor.assumeIsolated { box.run() }
+    }
+
+    @objc private func connectDevice(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String, let name = BluetoothConnect.name(of: id) else { return }
+        BluetoothConnect.connect(id) { ok in
+            NotchModel.shared.show(Activity(symbol: ok ? "checkmark.circle" : "exclamationmark.triangle",
+                                            title: ok ? L("Connected to %@", name) : L("Could not connect to %@", name),
+                                            tint: ok ? .green : .orange, duration: 2.5))
+        }
+    }
     @objc private func palette() { PaletteController.shared.toggle() }
     @objc private func settings() { SettingsWindow.show() }
     @objc private func toggleAwake() { CaffeineService.shared.toggle() }

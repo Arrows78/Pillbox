@@ -754,3 +754,7 @@ The equalizer could not start	El ecualizador no pudo iniciarse	Der Equalizer kon
 Allow System Audio Recording for Pillbox.	Permite la grabación de audio del sistema para Pillbox.	Systemaudioaufnahme für Pillbox erlauben.
 Hide everywhere	Ocultar en todas partes	Überall ausblenden
 Also hides the island on your own screen, not only from captures. Its shortcuts keep working; open Settings from the menu bar icon to turn it back on.	También oculta la isla en tu pantalla, no solo en las capturas. Sus atajos siguen funcionando; abre los ajustes desde el icono de la barra de menús para volver a mostrarla.	Blendet die Insel auch auf dem eigenen Bildschirm aus, nicht nur in Aufnahmen. Ihre Tastenkürzel bleiben aktiv; die Einstellungen öffnest du über das Menüleisten-Symbol, um sie wieder einzublenden.
+Connect a Bluetooth Device	Conectar un dispositivo Bluetooth	Bluetooth-Gerät verbinden
+No paired device to connect	Ningún dispositivo emparejado para conectar	Kein gekoppeltes Gerät zum Verbinden
+Connected to %@	Conectado a %@	Verbunden mit %@
+Could not connect to %@	No se pudo conectar a %@	Verbindung mit %@ nicht möglich
