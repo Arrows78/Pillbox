@@ -9,6 +9,7 @@ let package = Package(
         .package(url: "https://github.com/airbnb/lottie-ios.git", from: "4.5.0")
     ],
     targets: [
-        .executableTarget(name: "Pillbox", dependencies: [.product(name: "SwiftTerm", package: "SwiftTerm"), .product(name: "Lottie", package: "lottie-ios")], path: "Sources/Pillbox")
+        .executableTarget(name: "Pillbox", dependencies: [.product(name: "SwiftTerm", package: "SwiftTerm"), .product(name: "Lottie", package: "lottie-ios")], path: "Sources/Pillbox"),
+        .testTarget(name: "PillboxTests", dependencies: ["Pillbox"], path: "Tests/PillboxTests")
     ]
 )
