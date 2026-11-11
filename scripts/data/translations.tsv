@@ -942,3 +942,6 @@ Meeting in %d min	Reunión en %d min	Besprechung in %d Min.
 Meeting alert	Alerta de reunión	Besprechungswarnung
 Shows the next timed event in the island before it starts. Needs Calendars access.	Muestra en la isla el próximo evento con hora antes de que empiece. Necesita acceso a Calendario.	Zeigt das nächste Ereignis mit Uhrzeit vor Beginn in der Insel an. Benötigt Zugriff auf Kalender.
 Minutes before a timed event	Minutos antes de un evento con hora	Minuten vor einem Termin mit Uhrzeit
+%@ wants to run %@	%@ quiere ejecutar %@	%@ möchte %@ ausführen
+Copy approval hook for another agent	Copiar el hook de aprobación para otro agente	Genehmigungs-Hook für einen anderen Agenten kopieren
+For another agent, replace my-agent with its name, for example codex. The Claude Code entries name no agent.	Para otro agente, sustituya my-agent por su nombre, por ejemplo codex. Las entradas de Claude Code no nombran ningún agente.	Für einen anderen Agenten ersetzen Sie my-agent durch dessen Namen, zum Beispiel codex. Die Claude-Code-Einträge nennen keinen Agenten.

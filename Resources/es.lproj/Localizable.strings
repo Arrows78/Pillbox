@@ -74,6 +74,7 @@
 "AirDrop unavailable" = "AirDrop no disponible";
 "Pin the apps you open most with +, drag to reorder" = "Fija tus apps favoritas con +, arrastra para reordenar";
 "%@ wants to run" = "%@ quiere ejecutarse";
+"%@ wants to run %@" = "%@ quiere ejecutar %@";
 "Ask in terminal" = "Preguntar en el terminal";
 "Deny" = "Denegar";
 "Allow" = "Permitir";
@@ -121,6 +122,8 @@
 "Developer API" = "API para desarrolladores";
 "Enable local API" = "Activar la API local";
 "Copy Claude Code approval hook" = "Copiar el hook de aprobación de Claude Code";
+"Copy approval hook for another agent" = "Copiar el hook de aprobación para otro agente";
+"For another agent, replace my-agent with its name, for example codex. The Claude Code entries name no agent." = "Para otro agente, sustituya my-agent por su nombre, por ejemplo codex. Las entradas de Claude Code no nombran ningún agente.";
 "Copy zsh hook for long-running commands" = "Copiar el hook de zsh para comandos largos";
 "Copy example request" = "Copiar una petición de ejemplo";
 "⌃⌥K  command palette    ⌃⌥N  toggle notch" = "⌃⌥K  paleta de comandos    ⌃⌥N  abrir / cerrar la muesca";

@@ -88,7 +88,15 @@ struct Approval: Identifiable {
     let id = UUID()
     var tool: String
     var detail: String
+    /// The agent that asks ("Codex", "Cursor"…). Nil for Claude Code, which is the default.
+    var agent: String? = nil
     var respond: (String) -> Void   // "allow", "deny" or "ask" (hand back to the terminal)
+
+    /// "Bash wants to run" for Claude Code; "Codex wants to run shell" when an agent is named.
+    var title: String {
+        guard let agent else { return localized("%@ wants to run", tool) }
+        return localized("%@ wants to run %@", agent, tool)
+    }
 }
 
 /// Physical notch (or virtual pill on Macs without one) of the target screen.
@@ -192,10 +200,10 @@ final class NotchModel: ObservableObject {
     private var approvalTask: Task<Void, Never>?
 
     /// Shows an Allow / Deny island. Falls back to "ask" after `timeout` so the agent never hangs.
-    func requestApproval(tool: String, detail: String, timeout: TimeInterval = 120, respond: @escaping (String) -> Void) {
+    func requestApproval(tool: String, detail: String, agent: String? = nil, timeout: TimeInterval = 120, respond: @escaping (String) -> Void) {
         resolveApproval("ask")   // a newer request supersedes the previous one
         approvalTask?.cancel()
-        withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { approval = Approval(tool: tool, detail: detail, respond: respond) }
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) { approval = Approval(tool: tool, detail: detail, agent: agent, respond: respond) }
         NotificationCenter.default.post(name: .notchStateChanged, object: nil)
         NSSound(named: "Pop")?.play()
         approvalTask = Task { [weak self] in

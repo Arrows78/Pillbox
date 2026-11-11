@@ -90,6 +90,10 @@ struct SettingsIntegrationsPane: View {
                     copyRow("Copy Claude Code approval hook") {
                         Self.hookJSON(event: "PreToolUse", matcher: "Bash|Write|Edit", command: Bundle.main.path(forResource: "claude-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/claude-hook.sh", timeout: 130)
                     }
+                    copyRow("Copy approval hook for another agent") {
+                        Self.hookJSON(event: "PreToolUse", command: "\(Bundle.main.path(forResource: "agent-approval-hook", ofType: "sh") ?? "/path/to/Pillbox/scripts/agent-approval-hook.sh") my-agent", timeout: 130)
+                    }
+                    SettingsNote("For another agent, replace my-agent with its name, for example codex. The Claude Code entries name no agent.")
                     copyRow("Copy zsh hook for long-running commands") { Self.zshHook }
                     copyRow("Copy example request") {
                         "curl -X POST http://127.0.0.1:\(DevAPI.defaultPort)/notify -H 'Authorization: Bearer \(DevAPI.token)' -d '{\"title\":\"Build done\",\"symbol\":\"hammer.fill\"}'"

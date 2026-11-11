@@ -95,6 +95,7 @@
 
 /* Approbation d'agent */
 "%@ wants to run" = "%@ veut s'exécuter";
+"%@ wants to run %@" = "%@ veut exécuter %@";
 "Ask in terminal" = "Demander dans le terminal";
 "Deny" = "Refuser";
 "Allow" = "Autoriser";
@@ -146,6 +147,8 @@
 "Developer API" = "API développeur";
 "Enable local API" = "Activer l'API locale";
 "Copy Claude Code approval hook" = "Copier le hook d'approbation Claude Code";
+"Copy approval hook for another agent" = "Copier le hook d'approbation pour un autre agent";
+"For another agent, replace my-agent with its name, for example codex. The Claude Code entries name no agent." = "Pour un autre agent, remplacez my-agent par son nom, par exemple codex. Les entrées Claude Code ne nomment aucun agent.";
 "Copy zsh hook for long-running commands" = "Copier le hook zsh pour les commandes longues";
 "Copy example request" = "Copier un exemple de requête";
 "⌃⌥K  command palette    ⌃⌥N  toggle notch" = "⌃⌥K  palette de commandes    ⌃⌥N  ouvrir / fermer l'encoche";

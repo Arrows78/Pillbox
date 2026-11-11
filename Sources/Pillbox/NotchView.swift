@@ -289,7 +289,7 @@ struct ApprovalView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "hand.raised.fill").foregroundStyle(.orange)
-                Text("\(approval.tool) wants to run").font(.system(size: 13, weight: .semibold))
+                Text(verbatim: approval.title).font(.system(size: 13, weight: .semibold))
                 Spacer()
             }
             Text(approval.detail).font(.system(size: 11, design: .monospaced)).foregroundStyle(.white.opacity(0.8))

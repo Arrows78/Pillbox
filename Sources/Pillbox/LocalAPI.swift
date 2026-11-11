@@ -4,8 +4,10 @@ import Network
 /// Optional local HTTP endpoint (127.0.0.1 only), off by default, protected by a per-install bearer token.
 ///
 /// - `POST /notify`  `{"title","message","symbol","duration"}` shows a message in the notch.
-/// - `POST /approve` takes a Claude Code `PreToolUse` hook payload, shows Allow / Deny and answers
-///   with the hook's JSON decision once the user chooses (or "ask" after two minutes).
+/// - `POST /approve` takes a `PreToolUse` hook payload, shows Allow / Deny and answers once the user
+///   chooses (or "ask" after two minutes). Without an agent name it is the Claude Code hook and answers with
+///   Claude's `hookSpecificOutput`. With `?agent=<name>` (or an `agent` field) any agent can ask: the island
+///   names it, and the answer is `{"decision":"allow|deny|ask","reason":...}`. See scripts/agent-approval-hook.sh.
 @MainActor
 final class DevAPI {
     static let shared = DevAPI()
@@ -114,7 +116,7 @@ final class DevAPI {
         guard authorized(head, token: storedToken()) else { return reply(c, 401, "unauthorized") }
         let json = (try? JSONSerialization.jsonObject(with: body)) as? [String: Any] ?? [:]
         if head.hasPrefix("POST /notify") { notify(c, json) }
-        else if head.hasPrefix("POST /approve") { approve(c, json) }
+        else if head.hasPrefix("POST /approve") { approve(c, json, head: head) }
         else if head.hasPrefix("POST /action") { action(c, json) }
         else if head.hasPrefix("POST /turn") { turn(c, json) }
         else { reply(c, 404, "not found") }
@@ -154,19 +156,54 @@ final class DevAPI {
         }
     }
 
-    private nonisolated static func approve(_ c: NWConnection, _ obj: [String: Any]) {
-        let tool = obj["tool_name"] as? String ?? "A tool"
-        let input = obj["tool_input"] as? [String: Any] ?? [:]
+    /// A name an agent can be shown under: 1 to 40 letters, digits, spaces, dots, dashes or underscores.
+    nonisolated static func cleanAgent(_ raw: String) -> String? {
+        let name = raw.trimmingCharacters(in: .whitespaces)
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: " ._-"))
+        guard (1...40).contains(name.count), name.unicodeScalars.allSatisfy({ allowed.contains($0) }) else { return nil }
+        return name
+    }
+
+    /// The agent named by a request, from `?agent=` in the request line or an `agent` field in the body.
+    /// `ok` is false when a name is given but is not a valid one; `agent` is nil when no name is given (Claude Code).
+    nonisolated static func requestedAgent(head: String, body: [String: Any]) -> (ok: Bool, agent: String?) {
+        let requestLine = head.components(separatedBy: "\r\n").first ?? ""
+        let target = requestLine.split(separator: " ").dropFirst().first.map(String.init) ?? ""
+        let query = URLComponents(string: target)?.queryItems?.first { $0.name == "agent" }?.value
+        guard let raw = query ?? (body["agent"] as? String) else { return (true, nil) }
+        guard let name = cleanAgent(raw) else { return (false, nil) }
+        return (true, name)
+    }
+
+    /// The tool and what it is about to do, from a hook payload. Claude Code sends `tool_name` and `tool_input`;
+    /// other agents may send `tool` or `name`, and `input` or `arguments`.
+    nonisolated static func approvalRequest(_ obj: [String: Any]) -> (tool: String, detail: String) {
+        let tool = (obj["tool_name"] as? String) ?? (obj["tool"] as? String) ?? (obj["name"] as? String) ?? "A tool"
+        let input = (obj["tool_input"] as? [String: Any]) ?? (obj["input"] as? [String: Any]) ?? (obj["arguments"] as? [String: Any]) ?? [:]
         let raw = (input["command"] as? String) ?? (input["file_path"] as? String) ?? (input["url"] as? String)
             ?? (try? JSONSerialization.data(withJSONObject: input)).flatMap { String(data: $0, encoding: .utf8) } ?? ""
-        let detail = String(raw.prefix(240))
+        return (tool, String(raw.prefix(240)))
+    }
+
+    /// The answer to the hook. Claude Code gets its `hookSpecificOutput` (or `{}` for "ask"); a named agent gets
+    /// `{"decision","reason"}`, or `{"decision":"ask"}` when the user did not answer.
+    nonisolated static func approvalAnswer(_ decision: String, agent: String?) -> [String: Any] {
+        let reason = decision == "deny" ? "Denied from Pillbox" : "Approved from Pillbox"
+        guard agent != nil else {
+            return decision == "ask" ? [:] : ["hookSpecificOutput": [
+                "hookEventName": "PreToolUse", "permissionDecision": decision, "permissionDecisionReason": reason]]
+        }
+        return decision == "ask" ? ["decision": "ask"] : ["decision": decision, "reason": reason]
+    }
+
+    private nonisolated static func approve(_ c: NWConnection, _ obj: [String: Any], head: String) {
+        let named = requestedAgent(head: head, body: obj)
+        guard named.ok else { return reply(c, 400, "agent must be 1 to 40 letters, digits, spaces, dots, dashes or underscores") }
+        let request = approvalRequest(obj)
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
-                NotchModel.shared.requestApproval(tool: tool, detail: detail) { decision in
-                    let reason = decision == "deny" ? "Denied from Pillbox" : "Approved from Pillbox"
-                    let out: [String: Any] = decision == "ask" ? [:] : ["hookSpecificOutput": [
-                        "hookEventName": "PreToolUse", "permissionDecision": decision, "permissionDecisionReason": reason]]
-                    let data = (try? JSONSerialization.data(withJSONObject: out)) ?? Data("{}".utf8)
+                NotchModel.shared.requestApproval(tool: request.tool, detail: request.detail, agent: named.agent) { decision in
+                    let data = (try? JSONSerialization.data(withJSONObject: approvalAnswer(decision, agent: named.agent))) ?? Data("{}".utf8)
                     reply(c, 200, String(data: data, encoding: .utf8) ?? "{}", json: true)
                 }
             }

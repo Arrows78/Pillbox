@@ -38,7 +38,7 @@ for b in "$BINDIR"/*.bundle; do [ -d "$b" ] && cp -R "$b" "$APP/Contents/Resourc
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 [ -f Resources/AppIcon.icns ] && cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 for lp in Resources/*.lproj; do [ -d "$lp" ] && cp -R "$lp" "$APP/Contents/Resources/"; done
-for h in claude-hook claude-stop-hook; do [ -f "scripts/$h.sh" ] && cp "scripts/$h.sh" "$APP/Contents/Resources/$h.sh"; done
+for h in claude-hook claude-stop-hook agent-approval-hook; do [ -f "scripts/$h.sh" ] && cp "scripts/$h.sh" "$APP/Contents/Resources/$h.sh"; done
 
 # A stable signing identity keeps macOS privacy permissions across rebuilds; an ad-hoc signature changes on
 # every build and makes macOS forget them.
