@@ -25,18 +25,18 @@ enum SettingsStyle {
 }
 
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, island, alerts, menuBar, quickActions, ask, developer, shortcuts, permissions, about
+    case general, island, tabs, alerts, audio, windows, integrations, shortcuts, permissions, about
     var id: String { rawValue }
 
     var title: LocalizedStringKey {
         switch self {
         case .general: "General"
         case .island: "Island"
+        case .tabs: "Tabs and menu bar"
         case .alerts: "Alerts"
-        case .menuBar: "Menu bar"
-        case .quickActions: "Quick actions"
-        case .ask: "Ask about screen"
-        case .developer: "Developer API"
+        case .audio: "Audio and sounds"
+        case .windows: "Windows and keyboard"
+        case .integrations: "Integrations"
         case .shortcuts: "Shortcuts"
         case .permissions: "Permissions"
         case .about: "About"
@@ -47,11 +47,11 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .general: "gearshape.fill"
         case .island: "capsule.fill"
+        case .tabs: "menubar.rectangle"
         case .alerts: "bell.badge.fill"
-        case .menuBar: "menubar.rectangle"
-        case .quickActions: "bolt.fill"
-        case .ask: "sparkles"
-        case .developer: "terminal.fill"
+        case .audio: "speaker.wave.2.fill"
+        case .windows: "macwindow"
+        case .integrations: "puzzlepiece.extension.fill"
         case .shortcuts: "keyboard.fill"
         case .permissions: "lock.shield.fill"
         case .about: "info.circle.fill"
@@ -62,15 +62,40 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .general: Color(red: 0.557, green: 0.557, blue: 0.576)
         case .island: Color(red: 0.357, green: 0.549, blue: 1)
+        case .tabs: Color(red: 0.608, green: 0.42, blue: 1)
         case .alerts: Color(red: 1, green: 0.353, blue: 0.322)
-        case .menuBar: Color(red: 0.608, green: 0.42, blue: 1)
-        case .quickActions: Color(red: 1, green: 0.624, blue: 0.04)
-        case .ask: Color(red: 0.745, green: 0.353, blue: 0.949)
-        case .developer: Color(red: 0.188, green: 0.69, blue: 0.416)
+        case .audio: Color(red: 0.941, green: 0.373, blue: 0.459)
+        case .windows: Color(red: 1, green: 0.624, blue: 0.04)
+        case .integrations: Color(red: 0.745, green: 0.353, blue: 0.949)
         case .shortcuts: Color(red: 0.173, green: 0.694, blue: 0.737)
         case .permissions: Color(red: 0.898, green: 0.282, blue: 0.302)
         case .about: Color(red: 0.357, green: 0.549, blue: 1)
         }
+    }
+
+    /// What the search matches: the pane's title, and the card and row titles it shows.
+    var keywords: [String] {
+        let names: [String]
+        switch self {
+        case .general: names = ["General", "Startup", "Launch at login", "Show in the menu bar", "Appearance", "Theme", "Command palette", "Search engine", "Backup", "Export settings…", "Import settings…", "Restore defaults…"]
+        case .island: names = ["Island", "Notch", "Open when hovering the notch", "Hover delay", "Hide from screenshots and screen sharing", "Hide everywhere", "Hide the notch (black menu bar)", "Pill width", "Display", "Panel size", "Hide the island in full screen", "Hide the island while the screen is mirrored", "Close the island after", "Haptic feedback when the island opens", "Clock and battery on the resting pill", "Hide the pointer when it rests", "Show a mini player when hovering during playback", "Shake a dragged file to open the shelf", "Island appearance", "Island theme", "Volume and brightness style", "Timer mascot", "Idle animation", "Pill gestures", "Double-click the pill", "Triple-click the pill"]
+        case .tabs: names = ["Tabs and menu bar", "Tabs", "Clipboard", "Menu bar", "Hide menu bar icons", "Next calendar event in the menu bar"]
+        case .alerts: names = ["Alerts", "System", "Caps Lock island", "Volume island", "Brightness island", "Extra brightness on XDR screens", "Charged island", "Fast drain island", "Bluetooth audio island", "Drive connected island with Eject", "Download finished island", "Microphone and camera indicator", "Activity", "Focus mode island", "Call in progress island", "Build island", "Show new notifications as islands", "Verification codes with a Copy button", "Homebrew updates island", "Stage new screenshots on the shelf", "Warn when an AI limit reaches", "GitHub Copilot quota in AI usage", "Break reminder", "Eye breaks (20-20-20)", "Presentations", "Show keystrokes", "Shortcuts only, never plain typing", "Activity counter", "Count clicks, keystrokes and mouse distance", "Reset the counts"]
+        case .audio: names = ["Audio and sounds", "Live audio spectrum", "Equalizer", "System equalizer", "Sounds", "Typing sounds", "Typing volume", "Ambient sound during focus", "Ambient volume"]
+        case .windows: names = ["Windows and keyboard", "Swipe the resting pill to change desktop", "Move and resize windows with the mouse", "Snap zones when dragging a window to the notch", "Double-press Control to open the notch", "Copy stack", "Desktop and keyboard", "Desktop widgets", "Hyper key", "A quick press sends Escape"]
+        case .integrations: names = ["Integrations", "Ask about screen", "Anthropic API key", "Developer API", "Enable local API", "Token", "Address"]
+        case .shortcuts: names = ["Shortcuts", "Anywhere", "Open the notch", "While the island is open", "Switch tab", "While cleaning", "Unlock the keyboard"]
+        case .permissions: names = ["Permissions"]
+        case .about: names = ["About", "Version", "Updates", "Diagnostics", "Privacy", "Report a problem"]
+        }
+        return names.map { localized($0) }
+    }
+
+    /// The panes that match a search. An empty search matches every pane.
+    static func matching(_ query: String) -> [SettingsPane] {
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !q.isEmpty else { return allCases }
+        return allCases.filter { pane in pane.keywords.contains { $0.lowercased().contains(q) } }
     }
 }
 
@@ -168,13 +193,19 @@ struct SettingsPage<Content: View>: View {
     }
 }
 
-/// The sidebar: one tinted tile and a name per pane.
+/// The sidebar: a search field, then one tinted tile and a name per pane that matches it.
 struct SettingsSidebar: View {
     @Binding var pane: SettingsPane
+    @Binding var query: String
+
+    private var panes: [SettingsPane] { SettingsPane.matching(query) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            ForEach(SettingsPane.allCases) { p in
+            TextField(localized("Search settings"), text: $query)
+                .textFieldStyle(.roundedBorder).controlSize(.small)
+                .padding(.horizontal, 4).padding(.bottom, 8)
+            ForEach(panes) { p in
                 Button { pane = p } label: {
                     HStack(spacing: 9) {
                         Image(systemName: p.symbol).font(.system(size: 11, weight: .semibold)).foregroundStyle(.white)
@@ -188,7 +219,10 @@ struct SettingsSidebar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(pane == p ? .isSelected : [])
-                if p == .alerts || p == .developer { Spacer().frame(height: 8) }
+                if p == .windows { Spacer().frame(height: 8) }
+            }
+            if panes.isEmpty {
+                Text(localized("No matching settings")).font(.system(size: 12)).foregroundStyle(SettingsStyle.dim).padding(.horizontal, 8)
             }
             Spacer()
             SettingsSidebarFooter()
@@ -196,6 +230,9 @@ struct SettingsSidebar: View {
         .padding(.horizontal, 10).padding(.top, 38)
         .frame(width: 190)
         .background(Color(nsColor: SettingsStyle.sidebar))
+        .onChange(of: query) { _, _ in
+            if let first = panes.first, !panes.contains(pane) { pane = first }
+        }
     }
 }
 

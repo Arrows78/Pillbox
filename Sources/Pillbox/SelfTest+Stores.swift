@@ -154,4 +154,13 @@ extension SelfTest {
         router.applyChanged()
         check("settings router: applies once per change", runs == 1)
     }
+
+    /// The settings search finds panes by their titles and their card and row titles.
+    static func settingsSearch() {
+        check("settings search: an empty query shows every pane", SettingsPane.matching("  ").count == SettingsPane.allCases.count)
+        // The queries are the translated titles, so the check holds in every language.
+        check("settings search: a row title finds its pane", SettingsPane.matching(localized("Hyper key")).contains(.windows))
+        check("settings search: a card title finds its pane", SettingsPane.matching(localized("Equalizer")).contains(.audio))
+        check("settings search: nothing matches a nonsense query", SettingsPane.matching("zqxwv").isEmpty)
+    }
 }

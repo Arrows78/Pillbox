@@ -95,7 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 self?.statusItem.menu?.popUp(positioning: nil, at: NSPoint(x: 400, y: 900), in: nil)
             }
         }
-        // Debug aid: `Pillbox --open-settings ask` opens the settings window on a pane.
+        // Debug aid: `Pillbox --open-settings integrations` opens the settings window on a pane.
         if let i = CommandLine.arguments.firstIndex(of: "--open-settings") {
             let pane = CommandLine.arguments.indices.contains(i + 1) ? SettingsPane(rawValue: CommandLine.arguments[i + 1]) : nil
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { SettingsWindow.show(pane: pane ?? .general) }
