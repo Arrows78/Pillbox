@@ -6,9 +6,11 @@ enum ProcessRunner {
     /// With a `timeout` the process is terminated once the time is up and the status is 124, like coreutils `timeout`.
     /// A program that cannot be launched gives status 127. The call returns at the timeout even when a child of the
     /// command still holds the output open; that child is not killed.
-    static func run(_ executable: String, _ arguments: [String], timeout: TimeInterval? = nil) -> (status: Int32, output: String) {
+    static func run(_ executable: String, _ arguments: [String], timeout: TimeInterval? = nil, environment: [String: String]? = nil) -> (status: Int32, output: String) {
         let p = Process()
         p.executableURL = URL(fileURLWithPath: executable); p.arguments = arguments
+        // Added to the inherited environment, so a variable such as GITLAB_HOST reaches the tool without replacing the rest.
+        if let environment { p.environment = ProcessInfo.processInfo.environment.merging(environment) { _, new in new } }
         let pipe = Pipe(); p.standardOutput = pipe; p.standardError = pipe
         guard (try? p.run()) != nil else { return (127, "") }
         // The output is read on another thread so that the wait below can give up on it.

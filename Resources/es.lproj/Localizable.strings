@@ -995,3 +995,10 @@
 "Overdue" = "Atrasados";
 "Nothing here" = "Nada aquí";
 "No reminder matches this filter" = "Ningún recordatorio coincide con este filtro";
+"Where the pull requests come from" = "De dónde vienen las pull requests";
+"GitHub uses the gh command, GitLab the glab command. Each must be installed and logged in." = "GitHub usa el comando gh, GitLab el comando glab. Cada uno debe estar instalado y con sesión iniciada.";
+"GitLab server" = "Servidor de GitLab";
+"Empty for gitlab.com. For a company server, its host name, for example gitlab.example.com." = "Vacío para gitlab.com. Para un servidor de empresa, su nombre de host, por ejemplo gitlab.example.com.";
+"Needs the GitLab CLI (glab), logged in" = "Necesita la CLI de GitLab (glab), con sesión iniciada";
+"GitLab" = "GitLab";
+"gitlab.com" = "gitlab.com";

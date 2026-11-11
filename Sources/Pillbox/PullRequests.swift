@@ -33,6 +33,33 @@ enum GitHubPRs {
     }
 }
 
+/// Merge requests from GitLab through the glab CLI. A self-hosted server is named in the settings (GITLAB_HOST).
+enum GitLabMRs {
+    static let candidates = ["/opt/homebrew/bin/glab", "/usr/local/bin/glab", "/usr/bin/glab"]
+    static var tool: String? { candidates.first { FileManager.default.isExecutableFile(atPath: $0) } }
+
+    /// The project path and the merge request number from GitLab's `references.full` ("group/project!12").
+    static func parse(_ data: Data) -> [PullRequest] {
+        guard let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
+        return arr.compactMap { d in
+            guard let title = d["title"] as? String, let url = d["web_url"] as? String, let n = d["iid"] as? Int,
+                  url.hasPrefix("https://"), let full = (d["references"] as? [String: Any])?["full"] as? String else { return nil }
+            let repo = full.components(separatedBy: "!").first ?? full
+            return PullRequest(title: title, repo: repo, number: n, url: url, draft: d["draft"] as? Bool ?? false)
+        }
+    }
+
+    /// `kind` is "--author" (authored) or "--review-requested" (reviewer), for the logged-in user. GitLab has no author
+    /// filter that takes "me", so the authored list uses assignee, which is how a merge request is usually handed over.
+    static func fetch(_ kind: String, host: String) -> [PullRequest]? {
+        guard let glab = tool else { return nil }
+        let filter = kind == "--review-requested" ? "--reviewer=@me" : "--assignee=@me"
+        let env = host.isEmpty ? nil : ["GITLAB_HOST": host]
+        let r = ProcessRunner.run(glab, ["mr", "list", filter, "--per-page", "20", "-F", "json"], timeout: 30, environment: env)
+        return r.status == 0 ? parse(Data(r.output.utf8)) : nil
+    }
+}
+
 @MainActor
 final class PullRequestsService: ObservableObject {
     static let shared = PullRequestsService()
@@ -45,7 +72,13 @@ final class PullRequestsService: ObservableObject {
         guard !loading else { return }
         loading = true
         DispatchQueue.global(qos: .utility).async {
-            let m = GitHubPRs.fetch("--author"), r = GitHubPRs.fetch("--review-requested")
+            let provider = Preferences.prProvider.value, host = Preferences.prGitLabHost.value
+            let m: [PullRequest]?, r: [PullRequest]?
+            if provider == "gitlab" {
+                m = GitLabMRs.fetch("--author", host: host); r = GitLabMRs.fetch("--review-requested", host: host)
+            } else {
+                m = GitHubPRs.fetch("--author"); r = GitHubPRs.fetch("--review-requested")
+            }
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     self.loading = false; self.failed = m == nil || r == nil
@@ -62,7 +95,11 @@ struct PullRequestsTab: View {
     var body: some View {
         Group {
             if svc.failed {
-                EmptyState(symbol: "arrow.triangle.pull", title: "Needs the GitHub CLI (gh), logged in", actionTitle: "Try again", tint: .teal) { svc.refresh() }
+                if Preferences.prProvider.value == "gitlab" {
+                    EmptyState(symbol: "arrow.triangle.pull", title: "Needs the GitLab CLI (glab), logged in", actionTitle: "Try again", tint: .teal) { svc.refresh() }
+                } else {
+                    EmptyState(symbol: "arrow.triangle.pull", title: "Needs the GitHub CLI (gh), logged in", actionTitle: "Try again", tint: .teal) { svc.refresh() }
+                }
             } else if svc.loading && svc.mine.isEmpty && svc.review.isEmpty {
                 EmptyState(symbol: "arrow.triangle.pull", title: "Loading pull requests…")
             } else {

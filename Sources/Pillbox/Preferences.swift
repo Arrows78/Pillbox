@@ -111,6 +111,10 @@ enum Preferences {
     static let pomodoroLongBreak = Preference<Int>("pomodoroLongBreak", 15)
     /// The macOS sound played when a timer ends.
     static let timerSound = Preference<String>("timerSound", "Glass")
+    /// Where the pull requests come from: "github" (the gh CLI) or "gitlab" (the glab CLI).
+    static let prProvider = Preference<String>("prProvider", "github")
+    /// The GitLab server for glab, for a self-hosted instance (for example gitlab.example.com). Empty means gitlab.com.
+    static let prGitLabHost = Preference<String>("prGitLabHost", "")
     /// Minutes before a secret copy (an API key or a card number) leaves the clipboard history; 0 keeps it until removed by hand.
     static let clipboardSecretMinutes = Preference<Int>("clipboardSecretMinutes", 5)
     /// Show the music or video playing in a browser tab on the Music tab. Off by default: it asks the browser for its tab.

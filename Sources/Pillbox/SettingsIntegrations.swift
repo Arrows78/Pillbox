@@ -6,6 +6,8 @@ import ServiceManagement
 struct SettingsIntegrationsPane: View {
     @State private var apiKey = ""
     @State private var keySaved = Keychain.get(AskModel.keyService) != nil
+    @AppStorage(Preferences.prProvider.key) private var prProvider = Preferences.prProvider.defaultValue
+    @AppStorage(Preferences.prGitLabHost.key) private var prGitLabHost = Preferences.prGitLabHost.defaultValue
     @AppStorage(Preferences.devAPI.key) private var devAPI = Preferences.devAPI.defaultValue
     @AppStorage(Preferences.terminalFontSize.key) private var terminalFontSize = Preferences.terminalFontSize.defaultValue
     @AppStorage(Preferences.terminalTheme.key) private var terminalTheme = Preferences.terminalTheme.defaultValue
@@ -44,6 +46,19 @@ struct SettingsIntegrationsPane: View {
 
     var body: some View {
         SettingsPage(pane: .integrations) {
+            SettingsCard(title: "Pull requests") {
+                SettingsRow(title: "Where the pull requests come from", subtitle: "GitHub uses the gh command, GitLab the glab command. Each must be installed and logged in.") {
+                    Picker("", selection: $prProvider) { Text("GitHub").tag("github"); Text("GitLab").tag("gitlab") }
+                        .labelsHidden().frame(width: 130)
+                        .onChange(of: prProvider) { _, _ in PullRequestsService.shared.refresh() }
+                }
+                if prProvider == "gitlab" {
+                    SettingsRow(title: "GitLab server", subtitle: "Empty for gitlab.com. For a company server, its host name, for example gitlab.example.com.") {
+                        TextField("gitlab.com", text: $prGitLabHost).textFieldStyle(.roundedBorder).frame(width: 180)
+                            .onSubmit { PullRequestsService.shared.refresh() }
+                    }
+                }
+            }
             SettingsCard { VStack(alignment: .leading, spacing: 8) { QuickActionsEditor() }.padding(12) }
             SettingsCard(title: "Ask about screen") {
                 SettingsRow(title: "Anthropic API key", subtitle: keySaved ? "A key is saved in your Keychain" : "No key saved") {

@@ -209,6 +209,15 @@ extension SelfTest {
         check("reminders filter: undated only under All", !ReminderFilter.today.matches(undated, now: now, calendar: cal) && !ReminderFilter.overdue.matches(undated, now: now, calendar: cal))
     }
 
+    /// GitLab merge requests are read from glab's JSON: the project path comes from the reference, without the `!` number.
+    static func gitLabMergeRequests() {
+        let json = #"[{"title":"Fix login","web_url":"https://gitlab.example.com/team/app/-/merge_requests/12","iid":12,"draft":true,"references":{"short":"!12","full":"team/app!12"}},{"title":"Bad","web_url":"http://insecure","iid":1,"references":{"full":"x!1"}}]"#
+        let prs = GitLabMRs.parse(Data(json.utf8))
+        check("gitlab: a merge request keeps its title, project, number and draft state", prs.count == 1 && prs[0].repo == "team/app" && prs[0].number == 12 && prs[0].draft)
+        check("gitlab: a link that is not https is dropped", prs.allSatisfy { $0.url.hasPrefix("https://") })
+        check("gitlab: an empty list gives nothing", GitLabMRs.parse(Data("[]".utf8)).isEmpty)
+    }
+
     /// Copying a shelf item puts its file on the pasteboard, not its path text.
     static func shelfCopyFile() {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("shelf-copy-\(UUID().uuidString).txt")
