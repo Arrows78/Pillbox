@@ -279,7 +279,7 @@ struct AppVolumeRow: View {
                     Image(systemName: muted ? "speaker.slash.fill" : "speaker.wave.2.fill").foregroundStyle(muted ? Color.red : .white.opacity(0.7))
                         .frame(width: 18)
                 }.buttonStyle(.plain).accessibilityLabel(LocalizedStringKey(muted ? "Unmute" : "Mute")).hoverTip(L(muted ? "Unmute" : "Mute"))
-                VolumeBar(value: Double(muted ? 0 : g)) { mixer.setGain(Float($0), for: app.id) }
+                VolumeBar(value: Double(muted ? 0 : g) / Double(AppVolumeMath.maxGain)) { mixer.setGain(Float($0) * AppVolumeMath.maxGain, for: app.id) }
                     .opacity(muted ? 0.4 : 1).accessibilityLabel(Text(verbatim: app.name))
                 Text(verbatim: "\(Int((muted ? 0 : g) * 100)) %").font(.system(size: 10, design: .monospaced)).foregroundStyle(.secondary)
                     .frame(width: 40, alignment: .trailing)

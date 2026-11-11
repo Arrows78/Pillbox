@@ -21,7 +21,9 @@ enum AppVolumeMath {
     }
 
     /// A tap is only needed while the app is quieter than normal or muted.
-    static func needsTap(gain: Float, muted: Bool, equalized: Bool = false) -> Bool { muted || gain < 0.995 || equalized }
+    /// Boost goes up to 150 %; a tap is needed whenever the gain is away from 100 %, plus for equalized apps.
+    static let maxGain: Float = 1.5
+    static func needsTap(gain: Float, muted: Bool, equalized: Bool = false) -> Bool { muted || abs(gain - 1) > 0.005 || equalized }
 
     /// The tapped channel that feeds an output channel: same index, a mono tap feeds every channel, extra ones stay silent.
     static func source(for out: Int, inputs: Int) -> Int? { inputs == 1 ? 0 : out < inputs ? out : nil }
@@ -131,7 +133,7 @@ final class AppTap {
                     for f in 0..<n {
                         let v = s.0[f * s.2 + s.1]
                         if v != 0 { heard.pointee = true }
-                        d.0[f * d.2 + d.1] = v * g
+                        d.0[f * d.2 + d.1] = min(max(v * g, -1), 1)
                     }
                 }
                 for f in n..<d.3 { d.0[f * d.2 + d.1] = 0 }
@@ -230,7 +232,7 @@ final class AppVolumeService: ObservableObject {
     }
 
     func setGain(_ g: Float, for id: String) {
-        gains[id] = min(max(g, 0), 1)
+        gains[id] = min(max(g, 0), AppVolumeMath.maxGain)
         apply(id)
     }
 

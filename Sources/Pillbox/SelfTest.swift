@@ -1029,6 +1029,8 @@ extension SelfTest {
               "\(stamped)")
         check("app equalizer: a shaped app needs a tap even at full volume, a flat one does not",
               AppVolumeMath.needsTap(gain: 1, muted: false, equalized: true) && !AppVolumeMath.needsTap(gain: 1, muted: false, equalized: false))
+        check("app boost: above 100 % needs a tap and is capped at 150 %",
+              AppVolumeMath.needsTap(gain: 1.3, muted: false) && AppVolumeMath.maxGain == 1.5)
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]
