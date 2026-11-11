@@ -1005,6 +1005,11 @@ extension SelfTest {
               && ev[0].end.timeIntervalSince(ev[0].start) == 1800 && ev[0].notes == "Long folded line" && ev[1].allDay && ev[1].end.timeIntervalSince(ev[1].start) == 86400
               && MeetingLink.find(in: [ev[0].location]) != nil, "\(ev)")
         check("ics: webcal links become https, others refused", ICSFeeds.url("webcal://example.com/a.ics")?.scheme == "https" && ICSFeeds.url("file:///etc/passwd") == nil && ICSFeeds.url("nonsense") == nil)
+        let safari = VideoSpeed.script(rate: 1.5, bundleID: "com.apple.Safari") ?? ""
+        let chrome = VideoSpeed.script(rate: 2, bundleID: "com.google.Chrome") ?? ""
+        check("video speed: Safari and Chromium scripts set the rate, other apps get none",
+              safari.contains("front document") && safari.contains("playbackRate = 1.5") && chrome.contains("active tab") && chrome.contains("playbackRate = 2.0")
+              && VideoSpeed.script(rate: 1, bundleID: "com.apple.finder") == nil, "\(safari)")
         check("notifications: apps listed once, most recent first", NotificationsTab.apps(in: [NotificationItem(id: 3, app: "b", title: "", body: "", date: Date()), NotificationItem(id: 2, app: "a", title: "", body: "", date: Date()), NotificationItem(id: 1, app: "b", title: "", body: "", date: Date())]) == ["b", "a"])
         // Typed as JSON would arrive: the numbers stay Int and Double, not one inferred Double.
         let premium: [String: Any] = ["entitlement": 300, "remaining": 90, "percent_remaining": 30.0]

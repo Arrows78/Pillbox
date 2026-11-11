@@ -781,3 +781,9 @@
 "Turn keyboard backlight off" = "Éteindre le rétroéclairage du clavier";
 "Extra brightness on XDR screens" = "Luminosité supplémentaire sur les écrans XDR";
 "Lifts the built-in XDR screen slightly above standard white. Uses more power." = "Éclaire légèrement l'écran XDR intégré au-delà du blanc standard. Consomme plus d'énergie.";
+"Video speed 1×" = "Vitesse vidéo 1×";
+"Video speed 1.5×" = "Vitesse vidéo 1,5×";
+"Video speed 2×" = "Vitesse vidéo 2×";
+"Video speed %@" = "Vitesse vidéo %@";
+"Open a browser with a video" = "Ouvrez un navigateur avec une vidéo";
+"Allow JavaScript from Apple Events in the browser" = "Autorisez JavaScript depuis les événements Apple dans le navigateur";

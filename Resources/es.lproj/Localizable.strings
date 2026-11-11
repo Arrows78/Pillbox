@@ -730,3 +730,9 @@
 "Turn keyboard backlight off" = "Apagar la retroiluminación del teclado";
 "Extra brightness on XDR screens" = "Brillo extra en pantallas XDR";
 "Lifts the built-in XDR screen slightly above standard white. Uses more power." = "Eleva ligeramente la pantalla XDR integrada por encima del blanco estándar. Consume más energía.";
+"Video speed 1×" = "Velocidad de vídeo 1×";
+"Video speed 1.5×" = "Velocidad de vídeo 1,5×";
+"Video speed 2×" = "Velocidad de vídeo 2×";
+"Video speed %@" = "Velocidad de vídeo %@";
+"Open a browser with a video" = "Abre un navegador con un vídeo";
+"Allow JavaScript from Apple Events in the browser" = "Permite JavaScript desde eventos de Apple en el navegador";
