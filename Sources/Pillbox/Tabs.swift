@@ -896,7 +896,7 @@ struct AIUsageTab: View {
                         stat("Today", p.today)
                         stat("7 days", p.week)
                     }
-                    if p.unit != "requests", let d = p.lastActivity { Text("Last activity \(d, style: .relative) ago").font(.system(size: 9)).foregroundStyle(.secondary) }
+                    if p.unit != "requests", let d = p.lastActivity { Text("Last activity \(d, style: .relative)").font(.system(size: 9)).foregroundStyle(.secondary) }
                 }.frame(width: 210, alignment: .leading)
                 VStack(alignment: .leading, spacing: 4) {
                     Group {

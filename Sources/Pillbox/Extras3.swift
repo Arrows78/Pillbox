@@ -264,7 +264,8 @@ final class NotificationFeed {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if t.range(of: #"^\d{4,8}$"#, options: .regularExpression) != nil { return t }
         let keywords = ["code", "verification", "verify", "otp", "passcode", "pin", "2fa", "one-time", "mot de passe", "código", "codice"]
-        guard keywords.contains(where: { t.lowercased().contains($0) }) else { return nil }
+        // Whole words only: "pin" must not match "shipping" or "pinned".
+        guard keywords.contains(where: { t.range(of: "\\b\($0)\\b", options: [.regularExpression, .caseInsensitive]) != nil }) else { return nil }
         guard let r = t.range(of: #"(?<![\d.,])\d{3}[ -]?\d{3}(?![\d.,])|(?<![\d.,])\d{4,8}(?![\d.,])"#, options: .regularExpression) else { return nil }
         return t[r].filter(\.isNumber)
     }

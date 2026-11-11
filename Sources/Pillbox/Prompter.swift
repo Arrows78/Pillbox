@@ -58,10 +58,12 @@ enum PrompterText {
     static func advance(_ script: [String], from: Int, heard: [String]) -> Int {
         let tail = Array(heard.map(normalize).filter { !$0.isEmpty }.suffix(3))
         guard !tail.isEmpty, !script.isEmpty else { return from }
-        for k in stride(from: tail.count, through: 1, by: -1) {
+        for k in stride(from: tail.count, through: 1, by: -1) where script.count >= k {
             let want = Array(tail.suffix(k))
             var best: Int?
-            for s in max(0, from - 3)...min(script.count - k, from + 40) where s + k <= script.count {
+            let lowest = max(0, from - 3), highest = min(script.count - k, from + 40)
+            guard lowest <= highest else { continue }
+            for s in lowest...highest {
                 if Array(script[s..<s + k]) == want, best.map({ abs(s - from) < abs($0 - from) }) ?? true { best = s }
             }
             if let b = best { return b + k }

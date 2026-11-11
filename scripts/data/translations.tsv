@@ -49,7 +49,7 @@ Today	Hoy	Heute
 7 days	7 días	7 Tage
 %lldh limit	Límite de %lld h	%lld-Std.-Limit
 Resets %@	Se restablece %@	Wird zurückgesetzt %@
-Last activity %@ ago	Última actividad hace %@	Letzte Aktivität vor %@
+Last activity %@	Última actividad %@	Letzte Aktivität %@
 Tokens per day (cache reads excluded)	Tokens por día (sin lecturas de caché)	Tokens pro Tag (ohne Cache-Lesevorgänge)
 Jot something down…	Anota algo…	Notiz eingeben…
 Clear done	Borrar las terminadas	Erledigte löschen
@@ -773,3 +773,6 @@ Weather needs Location access	El tiempo necesita acceso a la ubicación	Wetter b
 Some calendar links could not be loaded	Algunos enlaces de calendario no se pudieron cargar	Einige Kalenderlinks konnten nicht geladen werden
 Hiding the pointer is not supported on this Mac	Ocultar el puntero no es compatible con este Mac	Das Ausblenden des Zeigers wird auf diesem Mac nicht unterstützt
 %@ needs Input Monitoring	%@ necesita supervisión de entrada	%@ benötigt die Eingabeüberwachung
+Wait for the price, then set the alert	Espere al precio y luego configure la alerta	Warten Sie auf den Kurs und stellen Sie dann den Alarm ein
+The checksum is missing, so the update was not installed	Falta la suma de comprobación, así que la actualización no se instaló	Die Prüfsumme fehlt, daher wurde das Update nicht installiert
+Could not unpack the download	No se pudo descomprimir la descarga	Der Download konnte nicht entpackt werden

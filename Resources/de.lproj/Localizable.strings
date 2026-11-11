@@ -51,7 +51,7 @@
 "7 days" = "7 Tage";
 "%lldh limit" = "%lld-Std.-Limit";
 "Resets %@" = "Wird zurückgesetzt %@";
-"Last activity %@ ago" = "Letzte Aktivität vor %@";
+"Last activity %@" = "Letzte Aktivität %@";
 "Tokens per day (cache reads excluded)" = "Tokens pro Tag (ohne Cache-Lesevorgänge)";
 "Jot something down…" = "Notiz eingeben…";
 "Clear done" = "Erledigte löschen";
@@ -775,3 +775,6 @@
 "Some calendar links could not be loaded" = "Einige Kalenderlinks konnten nicht geladen werden";
 "Hiding the pointer is not supported on this Mac" = "Das Ausblenden des Zeigers wird auf diesem Mac nicht unterstützt";
 "%@ needs Input Monitoring" = "%@ benötigt die Eingabeüberwachung";
+"Wait for the price, then set the alert" = "Warten Sie auf den Kurs und stellen Sie dann den Alarm ein";
+"The checksum is missing, so the update was not installed" = "Die Prüfsumme fehlt, daher wurde das Update nicht installiert";
+"Could not unpack the download" = "Der Download konnte nicht entpackt werden";

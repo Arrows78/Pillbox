@@ -152,8 +152,9 @@ final class StatsService: ObservableObject {
             $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) { host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO, $0, &count) }
         }
         if r == KERN_SUCCESS, let p = prev {
-            let u = Double(info.cpu_ticks.0 - p.cpu_ticks.0), s = Double(info.cpu_ticks.1 - p.cpu_ticks.1)
-            let i = Double(info.cpu_ticks.2 - p.cpu_ticks.2), n = Double(info.cpu_ticks.3 - p.cpu_ticks.3)
+            // The tick counters wrap around 2^32: wrapping subtraction gives the right difference across a wrap.
+            let u = Double(info.cpu_ticks.0 &- p.cpu_ticks.0), s = Double(info.cpu_ticks.1 &- p.cpu_ticks.1)
+            let i = Double(info.cpu_ticks.2 &- p.cpu_ticks.2), n = Double(info.cpu_ticks.3 &- p.cpu_ticks.3)
             let total = u + s + i + n
             if total > 0 { cpu = (u + s + n) / total }
         }

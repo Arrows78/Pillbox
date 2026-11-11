@@ -106,13 +106,13 @@ final class Updater {
     private nonisolated static func download(zip: URL, sha: URL?, version: String, into dir: URL) -> Result<URL, String> {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         guard let data = try? Data(contentsOf: zip), data.count > 1000 else { return .failure(L("The download failed")) }
-        if let sha, let text = try? String(contentsOf: sha, encoding: .utf8) {
-            guard let expected = digest(in: text), expected == sha256(data) else { return .failure(L("The checksum does not match")) }
-        }
+        // Fails closed: an update without its checksum is not installed.
+        guard let sha, let text = try? String(contentsOf: sha, encoding: .utf8) else { return .failure(L("The checksum is missing, so the update was not installed")) }
+        guard let expected = digest(in: text), expected == sha256(data) else { return .failure(L("The checksum does not match")) }
         let file = dir.appendingPathComponent("Pillbox.zip")
         guard (try? data.write(to: file)) != nil else { return .failure(L("Could not save the download")) }
         let p = Process(); p.executableURL = URL(fileURLWithPath: "/usr/bin/ditto"); p.arguments = ["-x", "-k", file.path, dir.path]; p.standardError = Pipe(); p.standardOutput = Pipe()
-        guard (try? p.run()) != nil else { return .failure("ditto") }
+        guard (try? p.run()) != nil else { return .failure(L("Could not unpack the download")) }
         p.waitUntilExit()
         let app = dir.appendingPathComponent("Pillbox.app")
         guard p.terminationStatus == 0, let info = NSDictionary(contentsOf: app.appendingPathComponent("Contents/Info.plist")),
@@ -122,13 +122,18 @@ final class Updater {
 
     /// Replaces the app once this process has exited, then relaunches it. Quarantine is dropped: the user asked for the install.
     private static func swap(new: URL, into target: URL) {
+        // Paths go in as arguments, not inside the script, so spaces and quotes in them cannot break it. The copy is
+        // made beside the old app and moved over it only once complete: a failed copy leaves the installed app in place.
         let script = """
-        while kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do sleep 0.2; done
-        rm -rf "\(target.path)" && ditto "\(new.path)" "\(target.path)" && xattr -dr com.apple.quarantine "\(target.path)" 2>/dev/null
-        rm -rf "\(new.deletingLastPathComponent().path)"
-        open "\(target.path)"
+        while kill -0 "$1" 2>/dev/null; do sleep 0.2; done
+        if rm -rf "$2.new" && ditto "$3" "$2.new" && rm -rf "$2" && mv "$2.new" "$2"; then
+            xattr -dr com.apple.quarantine "$2" 2>/dev/null
+            rm -rf "$(dirname "$3")"
+        fi
+        open "$2"
         """
-        let p = Process(); p.executableURL = URL(fileURLWithPath: "/bin/zsh"); p.arguments = ["-c", script]
+        let p = Process(); p.executableURL = URL(fileURLWithPath: "/bin/zsh")
+        p.arguments = ["-c", script, "pillbox-update", String(ProcessInfo.processInfo.processIdentifier), target.path, new.path]
         p.standardOutput = nil; p.standardError = nil
         guard (try? p.run()) != nil else { return }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { NSApp.terminate(nil) }

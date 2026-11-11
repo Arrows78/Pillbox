@@ -7,9 +7,10 @@ final class LiveState {
     static var lottiePath: String? { UserDefaults.standard.string(forKey: "lottiePath").flatMap { FileManager.default.fileExists(atPath: $0) ? $0 : nil } }
     var lottiePath: String? { Self.lottiePath }
     var hasWings: Bool {
-        let t = TimerService.shared, m = MusicService.shared
+        let t = TimerService.shared, m = MusicService.shared, stocks = StocksService.shared
         return t.isActive || CaffeineService.shared.active || (m.hasTrack && m.isPlaying) || PrivacyService.shared.live || CleaningLock.shared.active
             || CallMonitor.shared.call != nil || lottiePath != nil || !DownloadProgress.shared.items.isEmpty || BuildWatcher.shared.since != nil || ScreenRecorder.shared.recording
+            || (stocks.pinned.flatMap { stocks.quotes[$0] } != nil)   // the pinned quote is drawn on the wing too
             || IdlePill.enabled
     }
 }

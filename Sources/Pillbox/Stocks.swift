@@ -51,7 +51,9 @@ final class StocksService: ObservableObject {
     /// Alert when the price crosses ±`percent` of the current price (`nil` clears both).
     func setAlert(_ s: String, percent: Double?) {
         guard let i = watchlist.firstIndex(where: { $0.symbol == s }) else { return }
-        if let p = percent, let q = quotes[s] {
+        // Bands are measured from the current price, so without one there is nothing to set and the old bands stay.
+        if let p = percent {
+            guard let q = quotes[s] else { NotchModel.shared.show(Activity(symbol: "clock", title: L("Wait for the price, then set the alert"), tint: .orange)); return }
             watchlist[i].above = q.price * (1 + p / 100); watchlist[i].below = q.price * (1 - p / 100)
         } else { watchlist[i].above = nil; watchlist[i].below = nil }
         alerted.remove(s + "↑"); alerted.remove(s + "↓"); save()
