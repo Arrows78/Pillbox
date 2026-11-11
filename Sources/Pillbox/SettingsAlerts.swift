@@ -84,6 +84,10 @@ struct SettingsAlertsPane: View {
                 }
                 SettingsToggle("Eye breaks (20-20-20)", "Every 20 minutes at the keyboard, 20 seconds to look at something far away, counted down on the island.", isOn: $eyeBreaks)
             }
+            SettingsCard(title: "Islands") {
+                ForEach(IslandKind.allCases) { IslandKindRow(kind: $0) }
+            }
+            SettingsNote("Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen.")
             AwarenessSettings()
             SettingsCard(title: "Presentations") {
                 SettingsToggle("Show keystrokes", "For demos and screen sharing. Needs Input Monitoring. Nothing is stored.", isOn: $keystrokeHUD, needs: .inputMonitoring)
@@ -101,6 +105,42 @@ struct SettingsAlertsPane: View {
 }
 
 
+
+/// One line of the Islands table: the kind, its priority and duration, and the switch that turns it off.
+struct IslandKindRow: View {
+    let kind: IslandKind
+    @AppStorage private var on: Bool
+    @AppStorage private var priority: String
+    @AppStorage private var duration: Double
+
+    init(kind: IslandKind) {
+        self.kind = kind
+        let on = Preferences.islandOn(kind), priority = Preferences.islandPriority(kind), duration = Preferences.islandDuration(kind)
+        _on = AppStorage(wrappedValue: on.defaultValue, on.key)
+        _priority = AppStorage(wrappedValue: priority.defaultValue, priority.key)
+        _duration = AppStorage(wrappedValue: duration.defaultValue, duration.key)
+    }
+
+    var body: some View {
+        SettingsRow(title: kind.title) {
+            HStack(spacing: 10) {
+                Picker("", selection: $priority) {
+                    ForEach(Activity.Priority.all, id: \.key) { Text($0.title).tag($0.key) }
+                }
+                .labelsHidden().frame(width: 96).disabled(!on)
+                HStack(spacing: 4) {
+                    Text(verbatim: "\(duration.formatted(.number.precision(.fractionLength(0...1)))) s")
+                        .monospacedDigit().foregroundStyle(SettingsStyle.dim).frame(width: 52, alignment: .trailing)
+                    Stepper("", value: $duration, in: 1...30, step: 0.5).labelsHidden()
+                }
+                .disabled(!on)
+                .opacity(on ? 1 : 0.5)
+                Toggle("", isOn: $on).labelsHidden().toggleStyle(.switch).tint(SettingsStyle.accent)
+            }
+            .buttonStyle(.borderless).controlSize(.small)
+        }
+    }
+}
 
 /// The AI usage providers: which ones the tab shows, and in what order. Arrows move a provider; the switch hides it.
 struct AIUsageOrderRows: View {

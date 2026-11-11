@@ -111,4 +111,10 @@ enum Preferences {
     static let terminalFontSize = Preference<Int>("terminalFontSize", TerminalLook.defaultFontSize)
     /// Colors of the Terminal tab: "dark" (the default) or "light".
     static let terminalTheme = Preference<String>("terminalTheme", TerminalTheme.dark.rawValue)
+
+    /// The Alerts table, per island kind: on or off, priority ("low", "normal" or "high") and duration in seconds.
+    /// A priority or duration is applied only once the table has written it (see IslandKind.applied).
+    static func islandOn(_ kind: IslandKind) -> Preference<Bool> { Preference("island.\(kind.key).on", true) }
+    static func islandPriority(_ kind: IslandKind) -> Preference<String> { Preference("island.\(kind.key).priority", kind.defaultPriority.key) }
+    static func islandDuration(_ kind: IslandKind) -> Preference<Double> { Preference("island.\(kind.key).duration", kind.defaultDuration) }
 }

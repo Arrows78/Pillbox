@@ -31,7 +31,7 @@ final class BrightnessHUD {
         // Tracked even while the HUD is off, so turning it back on does not show the change made in the meantime.
         defer { last = v }
         guard Defaults.bool("brightnessHUD", default: true), let l = last, abs(l - v) > 0.01 else { return }
-        NotchModel.shared.show(Activity(symbol: v < 0.5 ? "sun.min.fill" : "sun.max.fill", title: localized("Brightness"), tint: .yellow, progress: Double(v), duration: 1.4, priority: .low))
+        NotchModel.shared.show(Activity(symbol: v < 0.5 ? "sun.min.fill" : "sun.max.fill", title: localized("Brightness"), tint: .yellow, progress: Double(v), duration: 1.4, priority: .low, kind: .brightness))
     }
 }
 

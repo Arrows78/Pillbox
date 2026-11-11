@@ -26,7 +26,7 @@ final class CallMonitor: ObservableObject {
         switch (call, name) {
         case (nil, let n?):
             call = (n, Date())
-            NotchModel.shared.show(Activity(symbol: "phone.fill", title: localized("In a call"), subtitle: n, tint: .green, duration: 3, priority: .high))
+            NotchModel.shared.show(Activity(symbol: "phone.fill", title: localized("In a call"), subtitle: n, tint: .green, duration: 3, priority: .high, kind: .call))
         case (let c?, let n?) where c.name != n:
             // A call that moves to another app keeps its start time, under the new name.
             call = (n, c.since)

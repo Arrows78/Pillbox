@@ -33,7 +33,7 @@ final class FocusMonitor: ObservableObject {
         guard new != mode else { return }
         mode = new
         guard !first else { return }
-        NotchModel.shared.show(Activity(symbol: new == nil ? "moon" : "moon.fill", title: new ?? localized("Focus off"), tint: new == nil ? .white : .purple, duration: 2.5))
+        NotchModel.shared.show(Activity(symbol: new == nil ? "moon" : "moon.fill", title: new ?? localized("Focus off"), tint: new == nil ? .white : .purple, duration: 2.5, kind: .focus))
     }
 }
 

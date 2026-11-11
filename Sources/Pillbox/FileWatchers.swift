@@ -62,7 +62,7 @@ final class DownloadsWatcher: FolderAlertWatcher {
     override func found(_ url: URL) {
         guard Defaults.bool("downloadAlerts", default: true) else { return }
         NotchModel.shared.show(Activity(symbol: "arrow.down.circle.fill", title: localized("Download finished"), subtitle: url.lastPathComponent, tint: .blue,
-                                        actionTitle: localized("Reveal"), action: { NSWorkspace.shared.activateFileViewerSelecting([url]) }, duration: 5))
+                                        actionTitle: localized("Reveal"), action: { NSWorkspace.shared.activateFileViewerSelecting([url]) }, duration: 5, kind: .download))
     }
 }
 
@@ -96,7 +96,7 @@ final class ScreenshotWatcher: FolderAlertWatcher {
         NotchModel.shared.show(Activity(symbol: "camera.viewfinder", title: localized("Screenshot ready"), subtitle: localized("On the shelf, drag it anywhere"), tint: .green,
                                         actionTitle: localized("Copy"), action: {
             if let img = NSImage(contentsOf: url) { NSPasteboard.general.clearContents(); NSPasteboard.general.writeObjects([img]) }
-        }, duration: 5))
+        }, duration: 5, kind: .screenshot))
     }
 }
 
@@ -129,6 +129,6 @@ final class DriveWatcher {
             } catch {
                 NotchModel.shared.show(Activity(symbol: "exclamationmark.triangle.fill", title: localized("Could not eject"), subtitle: url.lastPathComponent, tint: .orange))
             }
-        }, duration: 8))
+        }, duration: 8, kind: .drive))
     }
 }

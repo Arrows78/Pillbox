@@ -53,7 +53,7 @@ final class BluetoothIslands: NSObject {
                 let pct = Self.battery(of: name, in: BluetoothBattery.read())
                 DispatchQueue.main.async {
                     MainActor.assumeIsolated {
-                        NotchModel.shared.show(Activity(symbol: Self.symbol(for: name), title: name, subtitle: pct ?? localized("Connected"), tint: .blue, duration: 4))
+                        NotchModel.shared.show(Activity(symbol: Self.symbol(for: name), title: name, subtitle: pct ?? localized("Connected"), tint: .blue, duration: 4, kind: .bluetooth))
                     }
                 }
             }
@@ -65,7 +65,7 @@ final class BluetoothIslands: NSObject {
             note.unregister()
             if let a = device.addressString { disconnectNotes[a] = nil }
             let name = device.name ?? localized("Bluetooth device")
-            NotchModel.shared.show(Activity(symbol: Self.symbol(for: name), title: name, subtitle: localized("Disconnected"), tint: .white, duration: 3))
+            NotchModel.shared.show(Activity(symbol: Self.symbol(for: name), title: name, subtitle: localized("Disconnected"), tint: .white, duration: 3, kind: .bluetooth))
         }
     }
 }

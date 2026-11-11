@@ -998,3 +998,14 @@
 "Meeting alert" = "Alerte de réunion";
 "Shows the next timed event in the island before it starts. Needs Calendars access." = "Affiche dans l'île le prochain événement avec heure avant son début. Nécessite l'accès aux Calendriers.";
 "Minutes before a timed event" = "Minutes avant un événement avec heure";
+
+/* Tableau des îles (Réglages › Alertes) */
+"Caps Lock" = "Verr. Maj";
+"Call in progress" = "Appel en cours";
+"Bluetooth audio" = "Audio Bluetooth";
+"New notification" = "Nouvelle notification";
+"Verification code" = "Code de vérification";
+"Low" = "Basse";
+"High" = "Haute";
+"Islands" = "Îles";
+"Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen." = "Les îles basses attendent derrière les autres et sont abandonnées pendant qu'une autre est affichée. Les hautes passent devant. La durée est le temps que chacune reste à l'écran.";

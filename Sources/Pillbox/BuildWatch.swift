@@ -36,7 +36,7 @@ final class BuildWatcher: ObservableObject {
             since = nil
             NotificationCenter.default.post(name: .notchStateChanged, object: nil)
             let secs = Int(now.timeIntervalSince(s))
-            if secs >= 5 { NotchModel.shared.show(Activity(symbol: "hammer.fill", title: localized("Build finished"),subtitle: localized("%@", TimerService.format(Double(secs))), tint: .green, duration: 4)) }
+            if secs >= 5 { NotchModel.shared.show(Activity(symbol: "hammer.fill", title: localized("Build finished"),subtitle: localized("%@", TimerService.format(Double(secs))), tint: .green, duration: 4, kind: .build)) }
         default: break
         }
     }

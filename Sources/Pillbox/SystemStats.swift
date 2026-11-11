@@ -47,12 +47,12 @@ final class BatteryService: ObservableObject {
         }
         if newPlugged && newLevel >= target && !notifiedFull {
             notifiedFull = true
-            NotchModel.shared.show(Activity(symbol: "battery.100.bolt", title: localized("Charged"), subtitle: "\(newLevel)%", tint: .green, duration: 4))
+            NotchModel.shared.show(Activity(symbol: "battery.100.bolt", title: localized("Charged"), subtitle: "\(newLevel)%", tint: .green, duration: 4, kind: .charged))
         }
         if !newPlugged || newLevel < target - 2 { notifiedFull = false }
         // Once when the level drops to 10 %, then at each further point lost: never again on every power event.
         if !newPlugged && newLevel <= 10 && (oldLevel > 10 || newLevel < oldLevel) {
-            NotchModel.shared.show(Activity(symbol: "battery.0", title: localized("Low battery"), subtitle: "\(newLevel)%", tint: .red, duration: 5, priority: .high))
+            NotchModel.shared.show(Activity(symbol: "battery.0", title: localized("Low battery"), subtitle: "\(newLevel)%", tint: .red, duration: 5, priority: .high, kind: .lowBattery))
         }
     }
 }

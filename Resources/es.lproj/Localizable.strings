@@ -947,3 +947,12 @@
 "Meeting alert" = "Alerta de reunión";
 "Shows the next timed event in the island before it starts. Needs Calendars access." = "Muestra en la isla el próximo evento con hora antes de que empiece. Necesita acceso a Calendario.";
 "Minutes before a timed event" = "Minutos antes de un evento con hora";
+"Caps Lock" = "Bloq Mayús";
+"Call in progress" = "Llamada en curso";
+"Bluetooth audio" = "Audio Bluetooth";
+"New notification" = "Nueva notificación";
+"Verification code" = "Código de verificación";
+"Low" = "Baja";
+"High" = "Alta";
+"Islands" = "Islas";
+"Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen." = "Las islas bajas esperan detrás de las demás y se descartan mientras hay otra en pantalla. Las altas pasan delante. La duración es el tiempo que cada una se queda en pantalla.";

@@ -28,7 +28,7 @@ enum SystemActions {
                 capsOn = on
                 guard Defaults.bool("capsHUD", default: true) else { return }
                 NotchModel.shared.show(Activity(symbol: on ? "capslock.fill" : "capslock", title: on ? localized("Caps Lock on") : localized("Caps Lock off"),
-                                                tint: on ? .yellow : .white, duration: 1.5, priority: .low))
+                                                tint: on ? .yellow : .white, duration: 1.5, priority: .low, kind: .capsLock))
             }
         }
     }

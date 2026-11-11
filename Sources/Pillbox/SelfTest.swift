@@ -32,6 +32,7 @@ enum SelfTest {
         aiUsage(); annotateSteps(); notificationApps(); copilotQuota(); verificationCodes(); updater(); brewCheck(); clipboardImport(); clipboardPrivacy(); typingSounds(); ambientNoise(); idleCollapse()
         calendarWeek()
         agentApprovals()
+        islandTable()
         print(failures == 0 ? "\nAll checks passed." : "\n\(failures) check(s) failed.")
         return failures == 0 ? 0 : 1
     }

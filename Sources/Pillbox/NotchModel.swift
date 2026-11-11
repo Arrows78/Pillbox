@@ -81,6 +81,8 @@ struct Activity: Identifiable {
     enum Priority { case low, normal, high }
     /// False for an island shown again from the history, so it is not added a second time.
     var inHistory = true
+    /// The kind the Alerts table governs. Nil islands are not affected by the table.
+    var kind: IslandKind? = nil
 }
 
 /// A permission request from a coding agent, answered with Allow or Deny.
@@ -174,7 +176,13 @@ final class NotchModel: ObservableObject {
 
     private var queue = ActivityQueue()
 
-    func show(_ activity: Activity) {
+    func show(_ island: Activity) {
+        // The Alerts table can turn a kind off, or change its priority and duration.
+        var activity = island
+        if let kind = island.kind {
+            guard let applied = kind.applied(to: island) else { return }
+            activity = applied
+        }
         // Volume and brightness can go to a slim bar on the screen edge instead of the island.
         if let p = activity.progress, Preferences.hudStyle.value == "edge" { EdgeHUD.shared.show(symbol: activity.symbol, level: p); return }
         // In the quiet period an island that is not urgent is not shown; it is not queued to show later either.

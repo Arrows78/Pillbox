@@ -945,3 +945,12 @@ Minutes before a timed event	Minutos antes de un evento con hora	Minuten vor ein
 %@ wants to run %@	%@ quiere ejecutar %@	%@ möchte %@ ausführen
 Copy approval hook for another agent	Copiar el hook de aprobación para otro agente	Genehmigungs-Hook für einen anderen Agenten kopieren
 For another agent, replace my-agent with its name, for example codex. The Claude Code entries name no agent.	Para otro agente, sustituya my-agent por su nombre, por ejemplo codex. Las entradas de Claude Code no nombran ningún agente.	Für einen anderen Agenten ersetzen Sie my-agent durch dessen Namen, zum Beispiel codex. Die Claude-Code-Einträge nennen keinen Agenten.
+Caps Lock	Bloq Mayús	Feststelltaste
+Call in progress	Llamada en curso	Anruf läuft
+Bluetooth audio	Audio Bluetooth	Bluetooth-Audio
+New notification	Nueva notificación	Neue Mitteilung
+Verification code	Código de verificación	Bestätigungscode
+Low	Baja	Niedrig
+High	Alta	Hoch
+Islands	Islas	Inseln
+Low islands wait behind the others and are dropped while one is showing. High ones jump the queue. Duration is how long each stays on screen.	Las islas bajas esperan detrás de las demás y se descartan mientras hay otra en pantalla. Las altas pasan delante. La duración es el tiempo que cada una se queda en pantalla.	Niedrige Inseln warten hinter den anderen und werden verworfen, solange eine andere angezeigt wird. Hohe kommen zuerst. Die Dauer ist die Zeit, die jede auf dem Bildschirm bleibt.
