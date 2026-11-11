@@ -62,6 +62,15 @@ final class AudioSpectrum: ObservableObject {
         }
         guard status == noErr, let id = procID, AudioDeviceStart(aggregateID, id) == noErr else { stop(); return }
         running = true
+        // Without System Audio Recording the tap delivers silence and nothing says why: flat bars while music plays mean that.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [weak self] in MainActor.assumeIsolated { self?.checkHeard() } }
+    }
+
+    private var warnedSilence = false
+    private func checkHeard() {
+        guard running, !warnedSilence, MusicService.shared.isPlaying, bands.allSatisfy({ $0 < 0.01 }) else { return }
+        warnedSilence = true
+        NotchModel.shared.show(Activity(symbol: "waveform.slash", title: "Allow audio capture for Pillbox", subtitle: "Privacy & Security › Screen & System Audio Recording", tint: .orange, duration: 3.5))
     }
 
     private func smooth(_ new: [Float]) {
