@@ -5,6 +5,7 @@ import ServiceManagement
 /// The Audio and sounds pane: the live spectrum, the system equalizer and the typing and ambient sounds.
 struct SettingsAudioPane: View {
     @AppStorage(Preferences.liveSpectrum.key) private var liveSpectrum = Preferences.liveSpectrum.defaultValue
+    @AppStorage(Preferences.browserMusic.key) private var browserMusic = Preferences.browserMusic.defaultValue
     @AppStorage(Preferences.systemEQ.key) private var systemEQ = Preferences.systemEQ.defaultValue
     @AppStorage(Preferences.eqBass.key) private var eqBass = Preferences.eqBass.defaultValue
     @AppStorage(Preferences.eqMid.key) private var eqMid = Preferences.eqMid.defaultValue
@@ -26,6 +27,9 @@ struct SettingsAudioPane: View {
 
     var body: some View {
         SettingsPage(pane: .audio) {
+            SettingsCard(title: "Music") {
+                SettingsToggle("Show music playing in a browser", "Chrome, Edge, Brave, Arc, Chromium and Safari, once the browser allows JavaScript from Apple Events. Firefox is not supported.", isOn: $browserMusic, needs: .browsers)
+            }
             SettingsCard {
                 SettingsToggle("Live audio spectrum", "The equalizer follows the real sound. Asks for audio capture.", isOn: $liveSpectrum)
             }

@@ -36,7 +36,11 @@ final class MusicService: ObservableObject {
     private var observers: [NSObjectProtocol] = []
     private var trackKey = ""
 
-    var hasTrack: Bool { player != nil && !title.isEmpty }
+    /// What a browser tab is playing, when no Spotify or Music player is in use and the setting allows it.
+    @Published private(set) var browserNow: BrowserMusic.Now?
+    private var browserTimer: Timer?
+
+    var hasTrack: Bool { (player != nil || browserNow != nil) && !title.isEmpty }
 
     /// The line being sung, with its word stamps.
     var currentLine: LyricLine? { lyrics.last(where: { $0.time <= position + 0.2 }) }
@@ -65,6 +69,8 @@ final class MusicService: ObservableObject {
             })
         }
         poll()
+        // Browsers post no notification, so their tab is read on a short timer; it does nothing while a player is in use.
+        browserTimer = PowerGate.timer(every: 3) { [weak self] in self?.pollBrowser() }
     }
 
     nonisolated static func isPlayer(_ bundleID: String?) -> Bool {
@@ -110,6 +116,30 @@ final class MusicService: ObservableObject {
 
     private func clear() {
         if player != nil { player = nil; title = ""; artist = ""; isPlaying = false; favorited = false; artwork = nil; lyrics = []; trackKey = "" }
+        updateTicker()
+    }
+
+    /// Music in a browser tab, read every few seconds while no Spotify or Music player is in use. Off unless allowed.
+    private func pollBrowser() {
+        guard Preferences.browserMusic.value, player == nil else {
+            if player != nil, browserNow != nil { browserNow = nil }
+            return
+        }
+        queue.async { [weak self] in
+            let now = BrowserMusic.read()
+            DispatchQueue.main.async { MainActor.assumeIsolated { self?.applyBrowser(now) } }
+        }
+    }
+
+    private func applyBrowser(_ now: BrowserMusic.Now?) {
+        guard player == nil else { return }
+        guard let now else {
+            if browserNow != nil { browserNow = nil; title = ""; artist = ""; isPlaying = false; duration = 0; position = 0 }
+            return
+        }
+        browserNow = now
+        title = now.title; artist = now.browser
+        isPlaying = now.playing; duration = now.duration; position = now.position
         updateTicker()
     }
 
@@ -165,6 +195,7 @@ final class MusicService: ObservableObject {
             // Prefer whichever app is actually playing: its answer decides, this one's state is still written below.
             fetch(fallback, fallback: nil, probing: true)
         }
+        browserNow = nil
         player = p
         isPlaying = playing
         duration = num(5)
@@ -253,7 +284,14 @@ final class MusicService: ObservableObject {
 
     // MARK: Controls
 
-    func playPause() { command("playpause") }
+    func playPause() {
+        if player == nil, let now = browserNow {
+            queue.async { BrowserMusic.togglePlayback(bundleID: now.bundleID) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { MainActor.assumeIsolated { self.pollBrowser() } }
+            return
+        }
+        command("playpause")
+    }
     func next() { command("next track") }
     func previous() { command("previous track") }
     func toggleShuffle() {

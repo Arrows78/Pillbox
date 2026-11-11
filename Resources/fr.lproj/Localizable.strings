@@ -969,3 +969,5 @@
 "Older entries leave the shelf. The files themselves stay where they are." = "Les entrées plus anciennes quittent l'étagère. Les fichiers restent à leur place.";
 "1 day" = "1 jour";
 "30 days" = "30 jours";
+"Show music playing in a browser" = "Afficher la musique jouée dans un navigateur";
+"Chrome, Edge, Brave, Arc, Chromium and Safari, once the browser allows JavaScript from Apple Events. Firefox is not supported." = "Chrome, Edge, Brave, Arc, Chromium et Safari, une fois que le navigateur autorise JavaScript depuis les événements Apple. Firefox n'est pas pris en charge.";

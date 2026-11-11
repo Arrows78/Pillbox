@@ -916,3 +916,5 @@ Clear entries after	Quitar las entradas después de	Einträge entfernen nach
 Older entries leave the shelf. The files themselves stay where they are.	Las entradas más antiguas salen de la estantería. Los archivos se quedan donde están.	Ältere Einträge verlassen die Ablage. Die Dateien bleiben, wo sie sind.
 1 day	1 día	1 Tag
 30 days	30 días	30 Tage
+Show music playing in a browser	Mostrar la música que suena en un navegador	Musik aus einem Browser anzeigen
+Chrome, Edge, Brave, Arc, Chromium and Safari, once the browser allows JavaScript from Apple Events. Firefox is not supported.	Chrome, Edge, Brave, Arc, Chromium y Safari, cuando el navegador permite JavaScript desde eventos de Apple. Firefox no es compatible.	Chrome, Edge, Brave, Arc, Chromium und Safari, sobald der Browser JavaScript aus Apple-Ereignissen erlaubt. Firefox wird nicht unterstützt.

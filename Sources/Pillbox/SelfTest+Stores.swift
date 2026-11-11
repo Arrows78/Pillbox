@@ -155,6 +155,18 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// A browser's media answer is read from the end, so a title with a bar in it survives; Firefox is not scripted.
+    static func browserMusic() {
+        let now = BrowserMusic.parse("Song | Live|0|12.5|200", bundleID: "com.google.Chrome", browser: "Chrome")
+        check("browser music: a title with a bar keeps it", now?.title == "Song | Live")
+        check("browser music: a playing tab reads as playing, with its position", now?.playing == true && now?.position == 12.5 && now?.duration == 200)
+        check("browser music: a paused tab reads as paused", BrowserMusic.parse("T|1|0|0", bundleID: "x", browser: "x")?.playing == false)
+        check("browser music: no media element gives nothing", BrowserMusic.parse("none", bundleID: "x", browser: "x") == nil)
+        check("browser music: Chrome runs its JavaScript through the tab", BrowserMusic.script(bundleID: "com.google.Chrome", js: "1")?.contains("execute javascript") == true)
+        check("browser music: Safari runs its JavaScript in the front document", BrowserMusic.script(bundleID: "com.apple.Safari", js: "1")?.contains("do JavaScript") == true)
+        check("browser music: Firefox is not scripted", BrowserMusic.script(bundleID: "org.mozilla.firefox", js: "1") == nil)
+    }
+
     /// Shelf entries age out after the days chosen, an entry from before dates still loads, and muting is per app.
     static func shelfAndMute() {
         let now = Date()
