@@ -86,4 +86,9 @@ enum Preferences {
     static let typingVolume = Preference<Double>(TypingSounds.volumeKey, 0.5)
     static let ambientKind = Preference<String>(AmbientNoise.kindKey, "off")
     static let ambientVolume = Preference<Double>(AmbientNoise.volumeKey, 0.3)
+    static let focusBlocking = Preference<Bool>("focusBlocking", false)
+    static let spaceIsland = Preference<Bool>("spaceIsland", false)
+    static let cameraGuard = Preference<Bool>("cameraGuard", false)
+    /// Read by the idle animation: 1× unless changed. Clamped to 0.1× at the reader, so a stored 0 never freezes it.
+    static let lottieSpeed = Preference<Double>("lottieSpeed", 1.0)
 }

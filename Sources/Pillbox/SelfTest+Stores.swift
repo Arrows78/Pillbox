@@ -203,6 +203,19 @@ extension SelfTest {
         check("tab order: the other tabs follow in their usual order", Array(order.dropFirst(3)) == Tab.allCases.filter { ![.home, .terminal, .music].contains($0) })
     }
 
+    /// The idle animation plays at normal speed until the user changes it; a stored 0 is clamped, never frozen.
+    static func lottieSpeedDefault() {
+        check("lottie: 1x when the speed was never set", Preferences.lottieSpeed.defaultValue == 1.0)
+    }
+
+    /// Every permission is listed in exactly one card of the Permissions pane.
+    static func permissionGroups() {
+        let listed = PermissionGroup.allCases.flatMap { g in PermissionKind.allCases.filter { $0.group == g } }
+        check("permissions: every permission is in exactly one card", listed.count == PermissionKind.allCases.count && Set(listed) == Set(PermissionKind.allCases))
+        check("permissions: Bluetooth, Messages and browsers are listed", [PermissionKind.bluetooth, .messages, .browsers].allSatisfy { PermissionKind.allCases.contains($0) })
+        check("permissions: browsers are asked for the ones VideoSpeed supports", VideoSpeed.browsers.keys.contains("com.apple.Safari"))
+    }
+
     /// Home's layout always fills every slot, whatever the stored value holds.
     static func homeLayout() {
         check("home layout: nothing stored gives the defaults", HomeLayout.parse(nil, slots: 6, defaults: HomeLayout.defaultTiles) == HomeLayout.defaultTiles)
@@ -220,6 +233,7 @@ extension SelfTest {
         // The queries are the translated titles, so the check holds in every language.
         check("settings search: a row title finds its pane", SettingsPane.matching(localized("Hyper key")).contains(.windows))
         check("settings search: a card title finds its pane", SettingsPane.matching(localized("Equalizer")).contains(.audio))
+        check("settings search: a row in another pane finds its own", SettingsPane.matching(localized("Hide everywhere")).contains(.island))
         check("settings search: nothing matches a nonsense query", SettingsPane.matching("zqxwv").isEmpty)
     }
 }

@@ -67,7 +67,7 @@ final class SpaceWatcher {
     private func changed() {
         guard let info = SpaceInfo.read() else { return }
         defer { last = info.active }
-        guard UserDefaults.standard.bool(forKey: "spaceIsland"), info.active != last, let k = SpaceInfo.kind(displays: info.displays, active: info.active) else { return }
+        guard Preferences.spaceIsland.value, info.active != last, let k = SpaceInfo.kind(displays: info.displays, active: info.active) else { return }
         let m = NotchModel.shared
         if m.activity?.symbol == Self.symbol { m.dismissActivity() }   // quick switches replace the label instead of queueing
         m.show(Activity(symbol: Self.symbol, title: SpaceInfo.label(k, frontApp: NSWorkspace.shared.frontmostApplication?.localizedName), tint: .cyan, duration: 1.3))

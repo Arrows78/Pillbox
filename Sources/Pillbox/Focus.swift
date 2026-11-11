@@ -74,7 +74,7 @@ final class FocusGuard {
 
     private func check(_ app: NSRunningApplication, launched: Bool) {
         let t = TimerService.shared
-        guard UserDefaults.standard.bool(forKey: "focusBlocking"),
+        guard Preferences.focusBlocking.value,
               Self.shouldBlock(bundleID: app.bundleIdentifier, blocked: Set(BlockedAppsStore.shared.ids), mode: t.mode, running: t.running,
                                allowedUntil: allowedUntil, now: Date()), let id = app.bundleIdentifier else { return }
         app.hide()
@@ -98,8 +98,8 @@ final class FocusGuard {
 // MARK: Space name island
 
 struct AwarenessSettings: View {
-    @AppStorage("focusBlocking") private var focusBlocking = false
-    @AppStorage("spaceIsland") private var spaceIsland = false
+    @AppStorage(Preferences.focusBlocking.key) private var focusBlocking = Preferences.focusBlocking.defaultValue
+    @AppStorage(Preferences.spaceIsland.key) private var spaceIsland = Preferences.spaceIsland.defaultValue
     @AppStorage("cameraGuard") private var cameraGuard = false
     @ObservedObject private var blocked = BlockedAppsStore.shared
 

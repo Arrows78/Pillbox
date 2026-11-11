@@ -920,3 +920,14 @@
 "Ring %d" = "Anneau %d";
 "Cards, gauges and tiles" = "Cartes, anneaux et tuiles";
 "What the Home tab shows in its middle column, its rings and its quick tiles." = "Ce que l'onglet Accueil affiche dans sa colonne centrale, ses anneaux et ses tuiles rapides.";
+"Island and keyboard" = "Île et clavier";
+"Capture and camera" = "Capture et caméra";
+"Voice" = "Voix";
+"Calendar, weather and devices" = "Agenda, météo et appareils";
+"Automation of other apps" = "Automatisation d'autres apps";
+"Bluetooth" = "Bluetooth";
+"Automation: Messages" = "Automatisation : Messages";
+"Automation: browsers" = "Automatisation : navigateurs";
+"AirPods and headphones connecting, with their battery." = "Connexion des AirPods et casques, avec leur batterie.";
+"Replies to messages from the island." = "Répond aux messages depuis l'île.";
+"Video speed in the front browser tab." = "Vitesse de la vidéo dans l'onglet du premier plan.";

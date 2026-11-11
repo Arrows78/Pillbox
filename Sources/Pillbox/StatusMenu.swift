@@ -79,8 +79,8 @@ extension AppDelegate {
             toggle("Hide from screenshots and screen sharing", "eye.slash", on: Preferences.hideFromCapture.value) {
                 flip(Preferences.hideFromCapture.key, default: Preferences.hideFromCapture.defaultValue)
             },
-            toggle("Block distracting apps during focus", "hand.raised.fill", on: Defaults.bool("focusBlocking", default: false)) {
-                flip("focusBlocking", default: false)
+            toggle("Block distracting apps during focus", "hand.raised.fill", on: Preferences.focusBlocking.value) {
+                flip(Preferences.focusBlocking.key, default: Preferences.focusBlocking.defaultValue)
             },
         ]
     }

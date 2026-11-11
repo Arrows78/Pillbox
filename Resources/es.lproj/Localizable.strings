@@ -869,3 +869,14 @@
 "Ring %d" = "Anillo %d";
 "Cards, gauges and tiles" = "Tarjetas, anillos y botones";
 "What the Home tab shows in its middle column, its rings and its quick tiles." = "Lo que muestra la pestaña Inicio en su columna central, sus anillos y sus botones rápidos.";
+"Island and keyboard" = "Isla y teclado";
+"Capture and camera" = "Captura y cámara";
+"Voice" = "Voz";
+"Calendar, weather and devices" = "Calendario, tiempo y dispositivos";
+"Automation of other apps" = "Automatización de otras apps";
+"Bluetooth" = "Bluetooth";
+"Automation: Messages" = "Automatización: Mensajes";
+"Automation: browsers" = "Automatización: navegadores";
+"AirPods and headphones connecting, with their battery." = "Conexión de AirPods y auriculares, con su batería.";
+"Replies to messages from the island." = "Responde a mensajes desde la isla.";
+"Video speed in the front browser tab." = "Velocidad del vídeo en la pestaña activa.";

@@ -8,7 +8,7 @@ struct LottieIdle: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let v = LottieAnimationView(filePath: path)
         v.loopMode = .loop; v.contentMode = .scaleAspectFit
-        v.animationSpeed = max(UserDefaults.standard.double(forKey: "lottieSpeed"), 0.1)
+        v.animationSpeed = max(Preferences.lottieSpeed.value, 0.1)
         v.play()
         return v
     }

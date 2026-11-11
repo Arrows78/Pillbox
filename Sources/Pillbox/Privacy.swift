@@ -21,7 +21,7 @@ final class PrivacyService: ObservableObject {
     private var cameraWasLive: Bool?   // nil until the first poll, so a camera already on at launch is not announced
 
     private func poll() {
-        let indicator = UserDefaults.standard.object(forKey: "privacyIndicator") as? Bool ?? true, camGuard = UserDefaults.standard.bool(forKey: "cameraGuard")
+        let indicator = UserDefaults.standard.object(forKey: "privacyIndicator") as? Bool ?? true, camGuard = Preferences.cameraGuard.value
         let cam = indicator || camGuard ? Self.cameraRunning() : false
         if cam && cameraWasLive == false && camGuard { CameraGuard.cameraStarted() }
         cameraWasLive = cam
