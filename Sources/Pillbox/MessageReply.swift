@@ -15,7 +15,14 @@ enum MessageReply {
         guard (try? await store.requestAccess(for: .contacts)) == true else { return nil }
         let keys = [CNContactPhoneNumbersKey, CNContactEmailAddressesKey] as [CNKeyDescriptor]
         guard let contact = (try? store.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: name), keysToFetch: keys))?.first else { return nil }
-        return contact.phoneNumbers.first?.value.stringValue ?? (contact.emailAddresses.first?.value as String?)
+        if let phone = contact.phoneNumbers.first?.value.stringValue { return normalized(phone) }
+        return contact.emailAddresses.first?.value as String?
+    }
+
+    /// Messages matches a buddy on the bare number, so spaces, dashes and brackets from the contact are dropped.
+    static func normalized(_ phone: String) -> String {
+        let digits = phone.filter(\.isNumber)
+        return phone.hasPrefix("+") ? "+" + digits : digits
     }
 
     /// The AppleScript that sends `text` to `handle`: iMessage first, SMS when iMessage cannot.
