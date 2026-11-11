@@ -4,6 +4,21 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.11.0] - 2026-11-11
+
+### Added
+
+- **terminal**: Several sessions, font size and theme, open in Terminal.app
+- **calendar**: Week view, new event form, calendar menu and meeting alert
+- **api**: Approvals from any agent, named in the island
+- **island**: Alerts table for island kinds, on/off, priority and duration
+- **island**: A panel size per tab
+
+### Fixed
+
+- **island**: Show activity titles once, as they were localised
+- **island**: Localise the English activity titles the view used to translate
+
 ## [0.10.0] - 2026-11-11
 
 ### Added
@@ -219,6 +234,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.11.0]: https://github.com/Arrows78/Pillbox/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/Arrows78/Pillbox/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/Arrows78/Pillbox/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Arrows78/Pillbox/compare/v0.7.1...v0.8.0
