@@ -280,7 +280,9 @@ enum UpdateCheck {
             alert.messageText = localized("Pillbox %@ is up to date", current)
             alert.runModal(); return
         }
-        alert.messageText = localized("Pillbox %@ is available", tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV")))
+        // A pre-release is named as one, so a beta offered by the beta switch is not taken for a stable release.
+        let version = tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
+        alert.messageText = json["prerelease"] as? Bool == true ? localized("Pillbox %@ beta is available", version) : localized("Pillbox %@ is available", version)
         alert.informativeText = localized("You are using version %@.", current)
         // The release notes, as written on GitHub, so the user knows what the update brings.
         if let notes = json["body"] as? String, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

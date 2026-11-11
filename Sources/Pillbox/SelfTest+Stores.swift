@@ -155,6 +155,16 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// The notification search matches the title, the text or the app's name, and an empty search matches all.
+    static func notificationSearch() {
+        let n = NotificationItem(id: 1, app: "com.apple.mail", title: "Invoice ready", body: "Your PDF is attached", date: Date())
+        check("notifications: an empty search matches", NotificationsTab.matches("  ", n, app: "Mail"))
+        check("notifications: the title matches, any case", NotificationsTab.matches("invoice", n, app: "Mail"))
+        check("notifications: the text matches", NotificationsTab.matches("pdf", n, app: "Mail"))
+        check("notifications: the app name matches", NotificationsTab.matches("mail", n, app: "Mail"))
+        check("notifications: something else does not", !NotificationsTab.matches("calendar", n, app: "Mail"))
+    }
+
     /// The menu bar icon shows the most urgent state, and the menu's header only the event of the coming hours.
     static func statusMenu() {
         check("status icon: a recording wins and is red", StatusIconLook.resolve(recording: true, timer: "12:00", micMuted: true, awake: true) == StatusIconLook(symbol: "record.circle.fill", title: "", alert: true))

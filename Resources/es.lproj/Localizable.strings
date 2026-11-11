@@ -880,3 +880,6 @@
 "AirPods and headphones connecting, with their battery." = "Conexión de AirPods y auriculares, con su batería.";
 "Replies to messages from the island." = "Responde a mensajes desde la isla.";
 "Video speed in the front browser tab." = "Velocidad del vídeo en la pestaña activa.";
+"Both are off: the island and the menu bar icon. Launch Pillbox again to open Settings." = "Ambos están desactivados: la isla y el icono de la barra de menús. Vuelve a abrir Pillbox para ajustar los ajustes.";
+"Pillbox %@ beta is available" = "La beta de Pillbox %@ está disponible";
+"Search notifications" = "Buscar en las notificaciones";

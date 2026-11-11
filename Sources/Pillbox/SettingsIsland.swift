@@ -8,6 +8,7 @@ struct SettingsIslandPane: View {
     @AppStorage(Preferences.hoverDelay.key) private var hoverDelay = Preferences.hoverDelay.defaultValue
     @AppStorage(Preferences.hideFromCapture.key) private var hideFromCapture = Preferences.hideFromCapture.defaultValue
     @AppStorage(Preferences.hideEverywhere.key) private var hideEverywhere = Preferences.hideEverywhere.defaultValue
+    @AppStorage(Preferences.showMenuBarIcon.key) private var showMenuBarIcon = Preferences.showMenuBarIcon.defaultValue
     @AppStorage(Preferences.hideNotch.key) private var hideNotch = Preferences.hideNotch.defaultValue
     @AppStorage(Preferences.peekOnHover.key) private var peekOnHover = Preferences.peekOnHover.defaultValue
     @AppStorage(Preferences.hudStyle.key) private var hudStyle = Preferences.hudStyle.defaultValue
@@ -44,6 +45,10 @@ struct SettingsIslandPane: View {
                 if hoverOpen { SettingsRow(title: "Hover delay") { Slider(value: $hoverDelay, in: 0.05...0.6).frame(width: 180) } }
                 SettingsToggle("Hide from screenshots and screen sharing", "Pillbox stays out of screenshots, recordings and screen sharing.", isOn: $hideFromCapture)
                 SettingsToggle("Hide everywhere", "Also hides the island on your own screen, not only from captures. Its shortcuts keep working; open Settings from the menu bar icon to turn it back on.", isOn: $hideEverywhere)
+                if hideEverywhere && !showMenuBarIcon {
+                    Label(localized("Both are off: the island and the menu bar icon. Launch Pillbox again to open Settings."), systemImage: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11)).foregroundStyle(.orange).padding(.horizontal, 12).padding(.bottom, 8)
+                }
                 SettingsToggle("Hide the notch (black menu bar)", "Paints the menu bar black so the notch disappears.", isOn: $hideNotch)
                 if NotchModel.shared.geometry.screen?.safeAreaInsets.top == 0 {
                     SettingsRow(title: "Pill width", subtitle: "Width of the pill on a screen without a notch.") { Slider(value: $pillWidth, in: 120...260).frame(width: 180) }

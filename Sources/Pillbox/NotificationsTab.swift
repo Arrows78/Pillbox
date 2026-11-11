@@ -5,6 +5,14 @@ import SwiftUI
 struct NotificationsTab: View {
     @ObservedObject var mirror = NotificationMirror.shared
     @State private var app: String?
+    @State private var query = ""
+
+    /// A notification matches a search on its title, its text or its app's name. An empty search matches all.
+    static func matches(_ query: String, _ n: NotificationItem, app: String) -> Bool {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { return true }
+        return [n.title, n.body, app].contains { $0.localizedCaseInsensitiveContains(q) }
+    }
 
     /// Bundle identifiers present, most recent first, for the filter chips.
     nonisolated static func apps(in items: [NotificationItem]) -> [String] {
@@ -17,8 +25,11 @@ struct NotificationsTab: View {
             if let items = mirror.items, items.isEmpty {
                 EmptyState(symbol: "bell.slash", title: "No notifications")
             } else if let items = mirror.items {
-                let apps = Self.apps(in: items), shown = items.filter { app == nil || $0.app == app }
+                let apps = Self.apps(in: items)
+                let shown = items.filter { (app == nil || $0.app == app) && Self.matches(query, $0, app: Self.name($0.app)) }
                 VStack(spacing: Design.gap) {
+                    TextField(localized("Search notifications"), text: $query)
+                        .textFieldStyle(.roundedBorder).controlSize(.small)
                     if apps.count > 1 {
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 4) {
