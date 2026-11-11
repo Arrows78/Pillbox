@@ -15,6 +15,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var hoverTask: Task<Void, Never>?
     private var leaveTask: Task<Void, Never>?
     private var monitors: [Any] = []
+    /// The last app that was not Pillbox, so commands can act on it after a click on the status item.
+    private var lastOtherApp: NSRunningApplication?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Settings shows these as on by default, so the readers need the same default until the user touches them.
@@ -80,6 +82,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         RemindersService.shared.watch()
         AudioControl.shared.startVolumeHUD()
         setupStatusItem()
+        monitors.append(NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) { [weak self] note in
+            guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication, app.bundleIdentifier != Bundle.main.bundleIdentifier else { return }
+            MainActor.assumeIsolated { self?.lastOtherApp = app }
+        } as Any)
         setupMainMenu()
         if CommandLine.arguments.contains("--open-teleprompter") { DispatchQueue.main.asyncAfter(deadline: .now() + 1) { Teleprompter.shared.show() } }
         if CommandLine.arguments.contains("--open-player") { DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { FloatingPlayer.shared.show() } }
@@ -253,7 +259,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func runAction(_ sender: NSMenuItem) {
         guard let box = sender.representedObject as? ActionBox else { return }
-        MainActor.assumeIsolated { box.run() }
+        // Clicking the status item activates Pillbox, and commands like snap or video speed act on the app in front.
+        // Hand the focus back to the app the user was in first.
+        if NSWorkspace.shared.frontmostApplication?.bundleIdentifier == Bundle.main.bundleIdentifier, let app = lastOtherApp {
+            app.activate()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { MainActor.assumeIsolated { box.run() } }
+        } else {
+            MainActor.assumeIsolated { box.run() }
+        }
     }
 
     @objc private func connectDevice(_ sender: NSMenuItem) {
