@@ -43,8 +43,8 @@ struct StocksTab: View {
             Sparkline(values: quote?.series ?? [], color: up ? .green : .red).frame(height: 22)
             if let quote {
                 VStack(alignment: .trailing, spacing: 0) {
-                    Text(String(format: "%.2f", quote.price)).font(.system(size: 12, design: .monospaced))
-                    Text(String(format: "%@%.2f%%", up ? "+" : "", quote.change * 100)).font(.system(size: 10, design: .monospaced)).foregroundStyle(up ? .green : .red)
+                    Text(String(format: "%.2f", quote.price)).font(Design.body.monospaced())
+                    Text(String(format: "%@%.2f%%", up ? "+" : "", quote.change * 100)).font(Design.caption.monospaced()).foregroundStyle(up ? .green : .red)
                 }.frame(width: 80, alignment: .trailing)
             }
         }

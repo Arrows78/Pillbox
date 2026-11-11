@@ -25,7 +25,7 @@ struct ClipboardHistory: View {
                 .background(Design.card, in: Capsule()).overlay(Capsule().strokeBorder(Design.hairline, lineWidth: 0.5))
                 HStack(spacing: 2) {
                     ForEach(ClipFilter.allCases) { f in
-                        FilterChip(symbol: f.symbol, label: localized(f.label), selected: clip.filter == f, tint: .mint) { clip.filter = f }
+                        FilterChip(symbol: f.symbol, label: localized(f.label), selected: clip.filter == f, tint: Tab.clipboard.tint) { clip.filter = f }
                     }
                 }
                 IconButton(symbol: "trash", label: localized("Clear history (pinned items stay)")) { clip.clearUnpinned() }
@@ -127,7 +127,7 @@ struct ClipCard: View {
                 }
             }.font(.system(size: 9)).frame(height: 14)
         }
-        .padding(10).rowCard(radius: 10)
+        .padding(10).rowCard(radius: Design.tileRadius)
         .onHover { hovering = $0 }
         .onTapGesture(count: 2) { clip.paste(item) }
         .onTapGesture { clip.copy(item); NotchModel.shared.show(Activity(symbol: "doc.on.doc.fill", title: localized("Copied"), duration: 1.2)) }
@@ -174,10 +174,10 @@ struct ClipCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     RoundedRectangle(cornerRadius: Design.chipRadius).fill(Color(nsColor: swatch)).overlay(RoundedRectangle(cornerRadius: Design.chipRadius).strokeBorder(Design.hairline, lineWidth: 0.5))
                         .frame(maxHeight: 96)
-                    Text(hex.uppercased()).font(.system(size: 11, weight: .medium, design: .monospaced))
+                    Text(hex.uppercased()).font(Design.label.weight(.medium).monospaced())
                     let rgb = swatch.usingColorSpace(.sRGB) ?? swatch
                     Text(verbatim: "rgb(\(Int(rgb.redComponent * 255)), \(Int(rgb.greenComponent * 255)), \(Int(rgb.blueComponent * 255)))")
-                        .font(.system(size: 10, design: .monospaced)).foregroundStyle(Design.secondary)
+                        .font(Design.caption.monospaced()).foregroundStyle(Design.secondary)
                 }
             default:
                 VStack(alignment: .leading, spacing: 3) {

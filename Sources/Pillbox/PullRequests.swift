@@ -167,7 +167,7 @@ struct PullRequestsTab: View {
     var body: some View {
         Group {
             if svc.failed {
-                EmptyState(symbol: "arrow.triangle.pull", title: svc.needsSetup, actionTitle: "Try again", tint: .teal) { svc.refresh() }
+                EmptyState(symbol: "arrow.triangle.pull", title: svc.needsSetup, actionTitle: "Try again", tint: Tab.pulls.tint) { svc.refresh() }
             } else if svc.loading && svc.mine.isEmpty && svc.review.isEmpty {
                 EmptyState(symbol: "arrow.triangle.pull", title: "Loading pull requests…")
             } else {
@@ -182,7 +182,7 @@ struct PullRequestsTab: View {
     private func column(_ title: LocalizedStringKey, _ list: [PullRequest]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Text(title).font(Design.labelStrong).foregroundStyle(Design.secondary)
+                SectionHeader(title).fixedSize()
                 if !list.isEmpty { Text(verbatim: "\(list.count)").font(Design.captionStrong).padding(.horizontal, 6).padding(.vertical, 1).background(Design.card, in: Capsule()) }
                 Spacer()
                 if svc.loading { ProgressView().controlSize(.mini) }
@@ -194,12 +194,14 @@ struct PullRequestsTab: View {
                             .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 8)
                             .background(RoundedRectangle(cornerRadius: Design.rowRadius, style: .continuous).strokeBorder(Design.hairline, style: StrokeStyle(lineWidth: 1, dash: [3])))
                     }
-                    ForEach(list) { pr in
+                    ForEach(Self.byRepo(list), id: \.repo) { group in
+                        SectionHeader(Text(verbatim: group.repo)).lineLimit(1).truncationMode(.middle).padding(.top, 2)
+                    ForEach(group.items) { pr in
                         Button { if let u = URL(string: pr.url) { NSWorkspace.shared.open(u) } } label: {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(verbatim: pr.title).font(Design.body).lineLimit(1)
                                 HStack(spacing: 6) {
-                                    Text(verbatim: "\(pr.repo) #\(pr.number)" + (pr.draft ? " · draft" : "")).font(.system(size: 9)).foregroundStyle(.secondary)
+                                    Text(verbatim: "#\(pr.number)" + (pr.draft ? " · draft" : "")).font(.system(size: 9)).foregroundStyle(.secondary)
                                     PRStateChips(checks: pr.checks, review: pr.review)
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 10).padding(.vertical, 5)
@@ -210,9 +212,20 @@ struct PullRequestsTab: View {
                             Button("Copy link") { TextCopy.copy(pr.url) }
                         }
                     }
+                    }
                 }
             }
         }.frame(maxWidth: .infinity)
+    }
+
+    /// The list split by repository, in the order each repository first appears.
+    static func byRepo(_ list: [PullRequest]) -> [(repo: String, items: [PullRequest])] {
+        var order: [String] = [], groups: [String: [PullRequest]] = [:]
+        for pr in list {
+            if groups[pr.repo] == nil { order.append(pr.repo) }
+            groups[pr.repo, default: []].append(pr)
+        }
+        return order.map { ($0, groups[$0] ?? []) }
     }
 }
 

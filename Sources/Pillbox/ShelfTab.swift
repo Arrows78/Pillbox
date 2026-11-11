@@ -62,7 +62,7 @@ struct ShelfCell: View {
         .padding(.horizontal, 6).frame(maxWidth: .infinity).frame(height: Self.height)
         .rowCard(radius: Design.tileRadius, selected: selected ? Tab.shelf.tint.opacity(0.3) : nil)
         .overlay(alignment: .topTrailing) {
-            if selected { Image(systemName: "checkmark.circle.fill").font(Design.body).foregroundStyle(.cyan).padding(5) }
+            if selected { Image(systemName: "checkmark.circle.fill").font(Design.body).foregroundStyle(Tab.shelf.tint).padding(5) }
         }
         .onTapGesture(count: 2) { NSWorkspace.shared.open(item.url) }
         .onTapGesture { if selected { shelf.selection.remove(item.id) } else { shelf.selection.insert(item.id) } }
