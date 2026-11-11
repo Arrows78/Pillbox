@@ -17,7 +17,7 @@ final class CallMonitor: ObservableObject {
     }
 
     func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.poll() } }
+        timer = PowerGate.timer(every: 2) { [weak self] in MainActor.assumeIsolated { self?.poll() } }
     }
 
     private func poll() {

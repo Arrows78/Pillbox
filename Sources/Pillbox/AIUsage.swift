@@ -31,7 +31,7 @@ final class AIUsageService: ObservableObject {
 
     func start() {
         refresh()
-        timer = Timer.scheduledTimer(withTimeInterval: 120, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 120) { [weak self] in
             MainActor.assumeIsolated { self?.refresh() }
         }
     }

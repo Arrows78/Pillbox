@@ -41,7 +41,7 @@ final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyKilometer
         manager.requestLocation()
-        timer = Timer.scheduledTimer(withTimeInterval: 900, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 900) { [weak self] in
             MainActor.assumeIsolated { self?.manager.requestLocation() }
         }
     }

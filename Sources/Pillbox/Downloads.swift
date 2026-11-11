@@ -33,7 +33,7 @@ final class DownloadProgress: ObservableObject {
 
     func start() {
         let dir = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
-        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 1.5) { [weak self] in
             guard Defaults.bool("downloadAlerts", default: true) else { return }
             DispatchQueue.global(qos: .utility).async {
                 let found = DownloadScan.scan(dir)

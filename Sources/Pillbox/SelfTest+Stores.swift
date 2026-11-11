@@ -155,6 +155,21 @@ extension SelfTest {
         check("settings router: applies once per change", runs == 1)
     }
 
+    /// Background work pauses while the screen is locked, the Mac sleeps or Low Power Mode is on, and resumes after.
+    static func powerGate() {
+        let gate = PowerGate.shared
+        let (asleep, locked, lowPower) = (gate.asleep, gate.locked, gate.lowPower)
+        defer { gate.asleep = asleep; gate.locked = locked; gate.lowPower = lowPower }
+        gate.asleep = false; gate.locked = false; gate.lowPower = false
+        check("power gate: running when nothing is hiding the screen", !gate.paused)
+        gate.locked = true
+        check("power gate: the screen lock pauses", gate.paused)
+        gate.locked = false; gate.asleep = true
+        check("power gate: sleep pauses", gate.paused)
+        gate.asleep = false; gate.lowPower = true
+        check("power gate: low power pauses", gate.paused)
+    }
+
     /// A file written before versions still loads, and the next save writes its version beside the data.
     static func storeSchema() {
         let name = "schema-check.json"

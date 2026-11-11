@@ -46,6 +46,8 @@ final class FeatureRouter {
 @MainActor
 enum AppFeatures {
     static let all: [AppFeature] = [
+        // First, so it has seen a lock or a sleep that began before the timers of the other features ran.
+        AppFeature(name: "power gate", start: { _ = PowerGate.shared }),
         AppFeature(name: "music", start: { MusicService.shared.start() }),
         AppFeature(name: "clipboard", start: { ClipboardService.shared.start() }),
         AppFeature(name: "battery", start: { BatteryService.shared.start() }),

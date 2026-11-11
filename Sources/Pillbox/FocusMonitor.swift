@@ -22,7 +22,7 @@ final class FocusMonitor: ObservableObject {
     }
 
     func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 3, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.poll() } }
+        timer = PowerGate.timer(every: 3) { [weak self] in MainActor.assumeIsolated { self?.poll() } }
         poll()
     }
 

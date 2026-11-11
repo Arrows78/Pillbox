@@ -81,9 +81,9 @@ final class StatsService: ObservableObject {
     func start() {
         guard timer == nil else { return }
         refreshBluetooth()
-        btTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.refreshBluetooth() } }
+        btTimer = PowerGate.timer(every: 60) { [weak self] in MainActor.assumeIsolated { self?.refreshBluetooth() } }
         sample()
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 2) { [weak self] in
             MainActor.assumeIsolated { self?.sample() }
         }
     }

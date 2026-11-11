@@ -23,7 +23,7 @@ final class BrightnessHUD {
 
     func start() {
         last = DisplayBrightness.current()
-        timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { [weak self] _ in MainActor.assumeIsolated { self?.poll() } }
+        timer = PowerGate.timer(every: 0.4) { [weak self] in MainActor.assumeIsolated { self?.poll() } }
     }
 
     private func poll() {

@@ -30,7 +30,7 @@ final class NotificationFeed {
     }
 
     func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 5) { [weak self] in
             let codes = UserDefaults.standard.object(forKey: Self.codeIslandKey) as? Bool ?? true
             guard UserDefaults.standard.bool(forKey: "notificationIsland") || codes else { MainActor.assumeIsolated { self?.lastID = nil }; return }
             DispatchQueue.global(qos: .utility).async {

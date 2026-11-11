@@ -31,7 +31,7 @@ final class StocksService: ObservableObject {
 
     func start() {
         refresh()
-        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 60) { [weak self] in
             MainActor.assumeIsolated { self?.refresh(onlyIfMarketOpen: true) }
         }
     }

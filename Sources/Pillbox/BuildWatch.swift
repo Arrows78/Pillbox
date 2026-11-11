@@ -15,7 +15,7 @@ final class BuildWatcher: ObservableObject {
     }
 
     func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 2) { [weak self] in
             guard UserDefaults.standard.object(forKey: "buildIsland") as? Bool ?? true else { return }
             DispatchQueue.global(qos: .utility).async {
                 let out = Self.ps()

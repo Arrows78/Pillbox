@@ -42,7 +42,7 @@ final class IdleCollapse {
     }
 
     func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { _ in
+        timer = PowerGate.timer(every: 2) {
             MainActor.assumeIsolated {
                 let m = NotchModel.shared
                 let idle = CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: CGEventType(rawValue: ~0)!)

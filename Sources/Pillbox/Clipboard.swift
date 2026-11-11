@@ -62,7 +62,7 @@ final class ClipboardService: ObservableObject {
 
     func start() {
         try? FileManager.default.createDirectory(at: imageDir, withIntermediateDirectories: true)
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 0.5) { [weak self] in
             MainActor.assumeIsolated { self?.poll() }
         }
     }

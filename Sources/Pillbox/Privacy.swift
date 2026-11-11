@@ -13,7 +13,7 @@ final class PrivacyService: ObservableObject {
     private var timer: Timer?
 
     func start() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] _ in
+        timer = PowerGate.timer(every: 1.5) { [weak self] in
             MainActor.assumeIsolated { self?.poll() }
         }
     }
