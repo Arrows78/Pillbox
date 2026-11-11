@@ -191,6 +191,10 @@ enum UpdateCheck {
         }
         alert.messageText = L("Pillbox %@ is available", tag.trimmingCharacters(in: CharacterSet(charactersIn: "vV")))
         alert.informativeText = L("You are using version %@.", current)
+        // The release notes, as written on GitHub, so the user knows what the update brings.
+        if let notes = json["body"] as? String, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            alert.informativeText += "\n\n" + String(notes.trimmingCharacters(in: .whitespacesAndNewlines).prefix(700))
+        }
         let release = Updater.release(from: json)
         let canInstall = release?.zip != nil && Updater.installTarget != nil
         if canInstall { alert.addButton(withTitle: L("Update")) }
