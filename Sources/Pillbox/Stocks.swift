@@ -32,7 +32,7 @@ final class StocksService: ObservableObject {
     func start() {
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.refresh() }
+            MainActor.assumeIsolated { self?.refresh(onlyIfMarketOpen: true) }
         }
     }
 
@@ -61,7 +61,10 @@ final class StocksService: ObservableObject {
 
     private func save() { Store.save(watchlist, "stocks.json") }
 
-    func refresh() {
+    /// The timer skips the polling while every symbol's market is closed: the prices cannot move, so Yahoo is not asked.
+    /// A symbol without a quote yet is always fetched, so the first reading still arrives.
+    func refresh(onlyIfMarketOpen: Bool = false) {
+        if onlyIfMarketOpen, !watchlist.isEmpty, watchlist.allSatisfy({ quotes[$0.symbol]?.state == "Closed" }) { return }
         for w in watchlist { fetch(w.symbol) }
     }
 

@@ -6,6 +6,7 @@ struct ShelfTab: View {
     @ObservedObject var shelf = ShelfService.shared
 
     var body: some View {
+        Group {
         if shelf.items.isEmpty {
             EmptyState(symbol: "tray.and.arrow.down", title: "Drop files on the notch to stash them", message: "They stay here, ready to drag out or send",
                        actionTitle: "Add files…", tint: .cyan) { shelf.browse() }
@@ -41,6 +42,8 @@ struct ShelfTab: View {
                 }
             }
         }
+        }
+        .onAppear { shelf.purgeMissing() }
     }
 }
 

@@ -20,6 +20,15 @@ final class ShelfService: ObservableObject {
         save()
     }
 
+    /// Drops the entries whose file was moved or deleted since they were added. Runs when the tab opens, not only at launch.
+    func purgeMissing() {
+        let before = items.count
+        items.removeAll { !$0.exists }
+        guard items.count != before else { return }
+        selection = selection.filter { id in items.contains { $0.id == id } }
+        save()
+    }
+
     func remove(_ ids: Set<UUID>) { items.removeAll { ids.contains($0.id) }; selection.subtract(ids); save() }
     func clear() { items.removeAll(); selection.removeAll(); save() }
     private func save() { Store.save(items, "shelf.json") }

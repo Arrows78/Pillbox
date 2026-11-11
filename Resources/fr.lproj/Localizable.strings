@@ -871,3 +871,7 @@
 "The browser is not running" = "Le navigateur n'est pas ouvert";
 "Could not change the video speed" = "Impossible de changer la vitesse de la vidéo";
 "Could not play the sound" = "Impossible de jouer le son";
+"Edit" = "Édition";
+"Redo" = "Rétablir";
+"Cut" = "Couper";
+"Select All" = "Tout sélectionner";

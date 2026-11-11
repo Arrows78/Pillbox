@@ -173,6 +173,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         appMenu.addItem(NSMenuItem(title: localized("Quit Pillbox"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
         appItem.submenu = appMenu
         main.addItem(appItem)
+        // Without an Edit menu, ⌘C, ⌘V, ⌘X, ⌘A and ⌘Z do nothing in the text fields of Settings. The actions go to the
+        // first responder (nil target), so they reach whichever field has focus.
+        let editItem = NSMenuItem()
+        let editMenu = NSMenu(title: localized("Edit"))
+        for (title, action, key) in [(localized("Undo"), Selector(("undo:")), "z"), (localized("Redo"), Selector(("redo:")), "Z"),
+                                     (localized("Cut"), #selector(NSText.cut(_:)), "x"), (localized("Copy"), #selector(NSText.copy(_:)), "c"),
+                                     (localized("Paste"), #selector(NSText.paste(_:)), "v"), (localized("Select All"), #selector(NSText.selectAll(_:)), "a")] {
+            editMenu.addItem(NSMenuItem(title: title, action: action, keyEquivalent: key))
+        }
+        editItem.submenu = editMenu
+        main.addItem(editItem)
         NSApp.mainMenu = main
     }
 

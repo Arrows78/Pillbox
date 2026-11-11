@@ -63,7 +63,7 @@
 
 - **Mini player on hover** (opt-in): hovering the pill during playback opens the Music tab.
 - **Double-press Control** (opt-in) opens the notch on any Mac.
-- **Snap zones** (opt-in): drag a window to the notch and four zones appear (left half, right half, full screen, centre); release over one to snap. A real file drag is told apart from a window drag through the drag pasteboard's change count.
+- **Snap zones** (opt-in): drag a window to the notch and eight zones appear (halves, thirds, centre and full screen); release over one to snap. A real file drag is told apart from a window drag through the drag pasteboard's change count.
 - **Volume and brightness style**: bar in the island, a slim **edge bar** on the right of the screen, or a circle. **Brightness island** for the built-in display (private DisplayServices API: silently absent where unavailable).
 - **App volume** (macOS 14.4+): the Music tab (slider button, or "App volume" in the palette) lists the apps playing sound, with a volume bar and a mute button each. Muting uses a Core Audio process tap; a lower volume taps the app and plays it back at that level through a private aggregate device. Nothing runs while every app is at 100 %, settings last until quit, and changing the output device rebuilds the taps. Asks for audio capture.
 - **Live audio spectrum** (opt-in): the pill's equalizer follows real system audio through a Core Audio process tap (macOS 14.4+, asks for audio capture).
@@ -280,40 +280,36 @@ A local build always ends with the app in `/Applications`, replacing the previou
 
 ```text
 Pillbox/
-├── Package.swift          # Swift Package, one executable target
-├── build.sh               # Builds and signs build/Pillbox.app, installs it into /Applications
-├── install.sh             # Builds, installs into /Applications, relaunches
-├── Resources/             # Info.plist, app icon and its generator, en, fr, es and de .lproj
-├── scripts/               # ci.sh, release.py and its tests, l10n tools and table, signing helper, claude-hook.sh
-├── packaging/homebrew/    # Cask template for the Homebrew tap
-├── docs/                  # Releasing guide, app icon
-├── .github/workflows/     # CI and release
+├── Package.swift             # Swift Package: the app target and the XCTest target
+├── build.sh                  # Builds and signs build/Pillbox.app, installs it into /Applications
+├── install.sh                # Builds, installs into /Applications, relaunches
+├── Resources/                # Info.plist, app icon and its generator, en, fr, es and de .lproj
+├── scripts/                  # ci.sh, release.py and its tests, l10n tools and table, signing helper, hooks
+├── packaging/homebrew/       # Cask template for the Homebrew tap
+├── docs/                     # Releasing guide, app icon
+├── Tests/PillboxTests/       # XCTest suites (swift test)
+├── .github/workflows/        # CI and release
 └── Sources/Pillbox/
-    ├── main.swift, AppDelegate.swift    # Entry point, menu bar, hover and drag monitors
-    ├── NotchModel, NotchPanel           # State, geometry, click-through panel
-    ├── NotchView, Tabs                  # Island, wings, activities, tab views
-    ├── Music, Timers, Clipboard, Shelf  # Feature services
-    ├── Converter.swift                  # Offline image, audio and video conversion for the shelf
-    ├── System.swift                     # Keep awake, battery, stats, downloads, tools, calendar
-    ├── Stores.swift                     # Notes, launcher, snippets
-    ├── Audio, Mirror, Cleaning, WindowSnap  # Volume, mic, privacy, camera, locks, snapping
-    ├── Weather, Stocks, AIUsage         # Weather, watchlist, Claude Code and Codex usage
-    ├── Terminal, Keystrokes             # Shell tab, keystroke display
-    ├── Shortcuts, WebSearch, Devices    # Apple Shortcuts, palette search, accessory battery and network speed
-    ├── Overlays.swift                   # Hidden notch, teleprompter
-    ├── Dictation, ActivityCounter       # Speech listener and dictation, daily click/key/distance counts
-    ├── Mcp.swift                        # MCP server, agent actions, turn tokens
-    ├── Player.swift                     # Floating player, full-screen lyrics, copy stack, calculation history
-    ├── Extras4.swift                    # Usage limit alert, GitHub pull requests, edge volume bar
-    ├── Extras3.swift                    # Activity queue, themes, pill gestures, quick actions and web mini-apps, notification island
-    ├── Features2.swift                  # Shake, break reminder, download and build islands, Bluetooth batteries, quick capture
-    ├── BatteryLog.swift                 # Battery history, health and fast drain, network sparkline, Bluetooth audio islands
-    ├── Hyper, MenuBar, SystemWatch      # Hyper key, menu bar items, brightness, Focus, notifications, calls
-    ├── Screen, Spectrum, Gestures       # Region picker, window watch, Ask about screen, audio spectrum, snap zones, Lottie, widgets
-    ├── Permissions.swift                # Permissions center
-    ├── L10n.swift                       # L() helper for text built in code
-    ├── SelfTest.swift                   # Behind --selftest
-    ├── Palette, Settings, DevAPI        # Command palette, hotkeys, settings, local API
+    ├── main.swift, AppDelegate.swift      # Entry point, status item and main menu, hover and drag monitors
+    ├── NotchModel, NotchPanel, NotchView  # Island state, click-through panel, island views
+    ├── IslandQueue, IslandAppearance      # Queue of islands, themes
+    ├── IdlePill, PointerHider, Haptics    # Resting pill, hide the pointer, haptics
+    ├── CommandPalette, HotKeys, Calculator # Palette, global shortcuts, quick maths
+    ├── Settings, SettingsKit, SettingsControls, SettingsWindow
+    ├── Home/Music/Timer/Notes/Clipboard/Shelf/Launcher/Stocks/AIUsage/Reminders/Calendar/
+    │   Notifications/Terminal/Prompter/PullRequests tabs (…Tab.swift and their services)
+    ├── Music, Lyrics, FloatingPlayer, CopyStack   # Now playing, lyrics, floating player, copy stack
+    ├── TimerService, Wellbeing, BreakReminder     # Focus timer, eye breaks, ambient noise, break reminders
+    ├── Clipboard, ClipboardImport, Snippets, Notes, Launcher, Shelf, Converter, Annotate
+    ├── Stocks, Weather, AIUsage, Updater         # Quotes, weather, AI usage, updates (app and Homebrew)
+    ├── SystemStats, BatteryLog, Network, DeviceBatteries, Bluetooth, Caffeine, Tools (SystemActions)
+    ├── Audio, AppVolume, SystemEqualizer, Spectrum, TypingSounds, ExternalBrightness, ExtraBrightness
+    ├── Capture, ScreenTools, RegionPicker, AskAboutScreen, CameraMirror, Keychain
+    ├── Dictation, Teleprompter, Privacy, Focus, Spaces, CameraGuard, Brightness
+    ├── WindowSnap, WindowDrag, SnapZones, AXWindow, Cleaning, ActivityCounter, Keystrokes
+    ├── LocalAPI, MCPServer, DesktopWidgets, MessageReply, CalendarService, ICSFeeds, PullRequests
+    ├── Permissions, Localization (localized()), DesignSystem (Design tokens), Store, Defaults, Pasteboard
+    └── SelfTest.swift, SelfTest+*.swift   # Behind --selftest
 ```
 
 ## 🌐 What leaves your Mac
@@ -354,7 +350,7 @@ Not done yet, or not verifiable without hardware or accounts:
 - **Audio and displays**: keyboard backlight, external display brightness, extra brightness.
 - **Widgets**: lock-screen and WidgetKit widgets (they need an Xcode project).
 - **Distribution**: automatic updates, notarised releases, and a native review of the Spanish and German texts.
-- **Smaller ones**: in-app translation (Apple's Translation framework), connecting AirPods from the island, browser video speed, importing other clipboard managers' history, knock to control, Cursor and Copilot usage.
+- **Smaller ones**: in-app translation (Apple's Translation framework), connecting AirPods from the island, browser video speed, importing other clipboard managers' history, knock to control.
 
 Face Unlock is deliberately left out: it would mean storing your password to type it at the lock screen.
 
