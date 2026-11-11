@@ -73,7 +73,7 @@ struct ShortcutsGrid: View {
     }
 }
 
-/// The Actions page: `ActionsGrid` (QuickActions.swift) with the search applied.
+/// The Actions page: the quick actions of Settings › Quick actions, with the search applied.
 struct LauncherActionsGrid: View {
     @ObservedObject var store = QuickActionsStore.shared
     var query = ""
