@@ -4,6 +4,22 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.8.0] - 2026-11-11
+
+### Added
+
+- **menu**: A live menu bar icon, a Now header, switches and grouped actions
+- **island**: Keep the last twenty islands, and show them from the menu bar
+- **home**: Choose the cards and the quick tiles
+- **tabs**: Put the tabs in any order
+- **menu,home**: Recent clipboard, check for updates, and configurable rings
+- **permissions,settings**: Finish the permissions list, the search index and the typed keys
+
+### Changed
+
+- **music**: Follow the players' notifications instead of asking every second
+- **app**: Gather the launch switches, split left and right clicks, build strictly
+
 ## [0.7.1] - 2026-11-11
 
 ### Changed
@@ -179,6 +195,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.8.0]: https://github.com/Arrows78/Pillbox/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/Arrows78/Pillbox/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Arrows78/Pillbox/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/Arrows78/Pillbox/compare/v0.6.0...v0.6.1
