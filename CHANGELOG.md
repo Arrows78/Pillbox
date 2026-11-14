@@ -4,6 +4,30 @@ All notable changes to Pillbox are listed here, newest first. The file is genera
 from the commit messages (Conventional Commits) and the `v*` tags: do not edit it by hand. See
 `docs/RELEASING.md`. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.13.0] - 2026-11-14
+
+### Added
+
+- **pull requests**: GitLab through glab, with a server host for self-hosted instances
+- **home**: The next six hours of weather, and a rain alert
+- **music**: A volume slider for Spotify and Music
+- **keyboard**: Show the island when the keyboard backlight changes with the keys
+- **pull requests**: Show the checks and the review state of each pull request
+- **pull requests**: GitHub and GitLab at the same time
+- **island**: One header button style and tab families in the bar
+
+### Changed
+
+- **design**: Name the type scale and use it in the tabs
+- **design**: Radius scale, tab accents and the first shared list components
+- **design**: List tabs use the shared components
+- **design**: Home, music, timer and launcher use the shared components
+- **launcher**: Drop the unused ActionsGrid
+
+### Fixed
+
+- **brightness**: Read the laptop's own screen, not the main display
+
 ## [0.12.0] - 2026-11-11
 
 ### Added
@@ -245,6 +269,7 @@ from the commit messages (Conventional Commits) and the `v*` tags: do not edit i
 
 - Initial release.
 
+[0.13.0]: https://github.com/Arrows78/Pillbox/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/Arrows78/Pillbox/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/Arrows78/Pillbox/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/Arrows78/Pillbox/compare/v0.9.0...v0.10.0
