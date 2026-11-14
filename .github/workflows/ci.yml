@@ -18,7 +18,7 @@ jobs:
     runs-on: macos-15
     steps:
       # The whole history: the release files check reads the tags and the commits.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
